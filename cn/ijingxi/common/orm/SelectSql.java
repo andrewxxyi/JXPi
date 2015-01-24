@@ -17,7 +17,7 @@ import cn.ijingxi.common.util.utils;
 public class SelectSql
 {
 	jxLink<String,Integer> Tables=new jxLink<String,Integer>();
-	//目前假定，由and组合的各组or链
+	//目前假定，由or组合的各组and链
 	jxLink<Integer,contionLink> con=new jxLink<Integer,contionLink>();
 	public Queue<Object> params=new LinkedList<Object>();
 	/**
@@ -30,12 +30,13 @@ public class SelectSql
 		if(a.DBTableName!=null&&!Tables.Exist(a.DBTableName))
 		{
 			Tables.addByRise(a.DBTableName, Tables.getCount()+1);
-			ORMClassAttr p=jxORMobj.getSuperClassAttr(ClassName);
+			ORMClassAttr p=jxORMobj.getClassAttr(a.SuperClassName);
 			if(p!=null)
 			{
 				AddTable(p.DBTableName);
 				//如果存在继承则必须只能有一个主键进行链接
-				AddContion(a.DBTableName,a.PrimaryKeys.get(0),p.DBTableName,p.PrimaryKeys.get(0));
+				selectContion sc=new selectContion(a.DBTableName,a.PrimaryKeys.get(0),p.DBTableName,p.PrimaryKeys.get(0));
+				AddContion(0,sc);
 			}
 		}
 	}
@@ -56,7 +57,6 @@ public class SelectSql
 		if(cl==null)
 		{
 			cl=new contionLink();
-			cl.isOr=true;
 			con.addByRise(LinkID, cl);
 		}
 		cl.conList.add(sc);
@@ -65,6 +65,14 @@ public class SelectSql
 	{
 		AddContion(0,ClassName,ColName,OtherClassName,OtherColName);
 	}
+	/**
+	 * 在有继承的情况下，会自动寻找到属性所在的表进行条件关联
+	 * @param LinkID
+	 * @param ClassName
+	 * @param ColName
+	 * @param OtherClassName
+	 * @param OtherColName
+	 */
 	public void AddContion(Integer LinkID,String ClassName,String ColName,String OtherClassName,String OtherColName)
 	{
 		String cn=jxORMobj.GetClassName(ClassName,ColName);
@@ -101,7 +109,7 @@ public class SelectSql
 			if(w==null)
 				w=node.getValue().GetSql();
 			else
-				w+=" And "+node.getValue().GetSql();
+				w+=" OR "+node.getValue().GetSql();
 		}
 		return w;
 	}

@@ -315,13 +315,42 @@ public class utils
 	
 	public static Object getFiledValue(Object obj,String FieldName) throws Exception
 	{
-		Field f = obj.getClass().getDeclaredField(FieldName);
-		return f.get(obj);
+		Field f=null;
+		Class<?> cls=obj.getClass();
+		while(cls!=null)
+		{
+			try{
+				f = cls.getDeclaredField(FieldName);
+			}
+			catch(Exception e){
+				f=null;
+			}
+			if(f!=null)
+				break;
+			cls=cls.getSuperclass();
+		}
+		if(f!=null)	
+			return f.get(obj);
+		return null;
 	}
 	public static void setFiledValue(Object obj,String FieldName,Object value) throws Exception
 	{
-		Field f = obj.getClass().getDeclaredField(FieldName);
-		f.set(obj, value);
+		Field f=null;
+		Class<?> cls=obj.getClass();
+		while(cls!=null)
+		{
+			try{
+				f = cls.getDeclaredField(FieldName);
+			}
+			catch(Exception e){
+				f=null;
+			}
+			if(f!=null)
+				break;
+			cls=cls.getSuperclass();
+		}
+		if(f!=null)	
+			f.set(obj, value);
 	}
 	
 	public static void P(Object msg)

@@ -75,7 +75,11 @@ public class jxORMobj
 	{
 		IjxEnum e=jxEnumTransor.get(utils.GetClassName(cls));
 		if(e!=null)
+		{
+			if(v==null)
+				return e.TransToORMEnum(0);
 			return e.TransToORMEnum((Integer) v);
+		}
 		return null;
 	}
 	
@@ -238,6 +242,8 @@ public class jxORMobj
 		Queue<jxORMobj> rs=new LinkedList<jxORMobj>();
 		String clsName=utils.GetClassName(cls);
 		String sql = s.GetSql(clsName);
+		
+		utils.P(sql);
 				
 		PreparedStatement stmt = conn.prepareStatement(sql);
 		int len=s.params.size();
@@ -257,6 +263,8 @@ public class jxORMobj
 				
 				Object dv=db.TransValueFromDBToJava(fa, v);
 				Object ev=DeEncryptField(fa, dv);
+				
+				utils.P(cn+"：v:"+v+"，dv:"+dv+"，ev:"+ev);
 				
 				utils.setFiledValue(obj, cn, ev);
 			}
@@ -438,12 +446,15 @@ public class jxORMobj
 	}
 	private Integer Insert(DB db,Connection conn,ORMClassAttr attr) throws Exception
 	{
+		
+		utils.P(attr.ClsName);
+		
 		if(params==null)
 			params=new LinkedList<Object>();
 		String cl=null,vl=null;
 		for(String s:attr.Fields.keySet())
 		{
-			if(myClassAttr.DBGenerateKey==s)
+			if(attr.DBGenerateKey==s)
 				continue;
 			cl=utils.StringAdd(cl, ",", s);
 			vl=utils.StringAdd(vl, ",", "?");
@@ -459,7 +470,7 @@ public class jxORMobj
 		if(attr.DBGenerateKey!=null)
 		{
 			Integer id=db.GetGeneratedKey(conn, attr.DBGenerateKey);
-			utils.setFiledValue(this, myClassAttr.DBGenerateKey, id);
+			utils.setFiledValue(this, attr.DBGenerateKey, id);
 			return id;
 		}
 		return 0;
@@ -550,8 +561,13 @@ public class jxORMobj
 	static FieldAttr getFieldAttr(String ClassName,String FieldName)
 	{
 		ORMClassAttr attr=getClassAttr(ClassName);
-		if(attr!=null)
-			return attr.Fields.get(FieldName);
+		while(attr!=null)
+		{
+			FieldAttr fa = attr.Fields.get(FieldName);
+			if(fa!=null)
+				return fa;
+			attr=ClassAttrTree.get(attr.SuperClassName);
+		}
 		return null;
 	}
 	static String GetClassName(String ClassName,String ColName)
@@ -573,6 +589,7 @@ public class jxORMobj
 	}
 	static ORMClassAttr getClassAttr(String ClassName)
 	{
+		if(ClassName==null)return null;
 		return ClassAttrTree.get(ClassName);
 	}
 	static ORMClassAttr getClassAttr(Class<?> cls)
