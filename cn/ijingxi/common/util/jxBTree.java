@@ -7,6 +7,7 @@ import java.util.*;
  * B+树  
  * @author Andrew Xu  
  */   
+/*
 public class jxBTree<TKey extends Comparable<TKey>, TValue> implements Iterable<BTreeNode<TKey, TValue>>
 {
 	//每节点可存储的子节点数
@@ -45,6 +46,7 @@ public class jxBTree<TKey extends Comparable<TKey>, TValue> implements Iterable<
 	 * @param Key
 	 * @return 返回两个值：父节点，和可能存在的节点
 	 */
+/*
     private ArrayList<BTreeNode<TKey, TValue>> Search_Node(TKey Key)
     {
     	BTreeNode<TKey, TValue> node = m_Tree,pn=null;
@@ -89,6 +91,7 @@ public class jxBTree<TKey extends Comparable<TKey>, TValue> implements Iterable<
 	 * @param Key
 	 * @param Value
 	 */
+/*
     public void Insert(TKey Key, TValue Value)
     {
         synchronized (this)
@@ -137,6 +140,7 @@ public class jxBTree<TKey extends Comparable<TKey>, TValue> implements Iterable<
      * 从树中删除
      * @param Key
      */
+/*
     public void Remove(TKey Key)
     {
     	synchronized (this)
@@ -278,6 +282,7 @@ public class jxBTree<TKey extends Comparable<TKey>, TValue> implements Iterable<
     /** 
      * 实现Iterable接口中要求实现的方法 
      */  
+/*
     @Override  
     public Iterator<BTreeNode<TKey, TValue>> iterator() 
     {  
@@ -287,6 +292,7 @@ public class jxBTree<TKey extends Comparable<TKey>, TValue> implements Iterable<
     /** 
      * MyIterator是内部类，实现了Iterator<E>接口的类 
      */  
+/*
     class MyIterator implements Iterator<BTreeNode<TKey, TValue>>
     {
         private BTreeNode<TKey, TValue> currentNode =GetMinNode(m_Tree);
@@ -309,3 +315,6 @@ public class jxBTree<TKey extends Comparable<TKey>, TValue> implements Iterable<
     }	
 
 }
+
+
+*/

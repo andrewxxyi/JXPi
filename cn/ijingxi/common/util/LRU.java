@@ -1,6 +1,9 @@
   
 package cn.ijingxi.common.util;   
 
+import java.util.HashMap;
+import java.util.Map;
+
 import cn.ijingxi.common.orm.*;
    
 /**  
@@ -16,7 +19,7 @@ public class LRU
 		MaxSize=size;
     }
 	private jxLink<ORMID,jxORMobj> link=new jxLink<ORMID,jxORMobj>();
-	private jxBTree<ORMID,jxORMobj> tree=new jxBTree<ORMID,jxORMobj>();
+	private Map<ORMID,jxORMobj> tree=new HashMap<ORMID,jxORMobj>();
 	
 	public void add(jxORMobj obj) throws Exception
 	{		
@@ -24,11 +27,11 @@ public class LRU
 			synchronized (this)
 			{
 				link.offer(obj.getORMID(),obj);
-				tree.Insert(obj.getORMID(), obj);
+				tree.put(obj.getORMID(), obj);
 				if(link.getCount()>MaxSize)
 				{
 					jxORMobj o=link.poll();
-					tree.Remove(o.getORMID());
+					tree.remove(o.getORMID());
 				}
 			}
 	}
@@ -36,7 +39,7 @@ public class LRU
 	{
 		synchronized (this)
 		{
-			tree.Remove(id);
+			tree.remove(id);
 			link.delete(id);
 		}
 	}
@@ -44,7 +47,7 @@ public class LRU
 	{
 		synchronized (this)
 		{
-			jxORMobj obj=tree.Search(id);
+			jxORMobj obj=tree.get(id);
 			if(obj!=null)
 			{
 				LinkNode<ORMID, jxORMobj> node = link.searchNode(id);

@@ -1,6 +1,9 @@
 
 package cn.ijingxi.common.Process;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import cn.ijingxi.common.app.Container;
 import cn.ijingxi.common.orm.*;
 import cn.ijingxi.common.orm.ORM.KeyType;
@@ -9,7 +12,10 @@ import cn.ijingxi.common.util.*;
 
 public class ProcessInstance extends Container
 {	
-	public static void Init() throws Exception{	InitClass(ProcessInstance.class);}
+	public static void Init() throws Exception
+	{	
+		InitClass(ProcessInstance.class);
+	}
 	public static void CreateDB() throws Exception
 	{
 		CreateTableInDB(ProcessInstance.class);
@@ -46,9 +52,9 @@ public class ProcessInstance extends Container
 	//变量与属性
 	//
 	//用来保存到数据库中
-	Process process=null;
+	jxProcess process=null;
 	
-    jxBTree<String,ProcessNode> AllNode=new jxBTree<String,ProcessNode>();    
+    Map<String,ProcessNode> AllNode=new HashMap<String,ProcessNode>();    
     //各子节点的输入token
     jxSparseTable<String,String,Integer> NodeInputToken=new jxSparseTable<String,String,Integer>();
     
@@ -64,7 +70,7 @@ public class ProcessInstance extends Container
 	{
 		try
 		{
-			Process p=(Process)jxORMobj.GetByID(Process.class, ProcessID);
+			jxProcess p=(jxProcess)jxORMobj.GetByID(Process.class, ProcessID);
 			if(p!=null)
 				p.ResetInstance(this);
 		}
@@ -76,16 +82,16 @@ public class ProcessInstance extends Container
 	
 	public ProcessNode getNode(String NodeName)
 	{
-		return AllNode.Search(NodeName);
+		return AllNode.get(NodeName);
 	}
 	jxJson getNodesJSON() throws Exception
     {
 		if(AllNode!=null)
 		{
 			jxJson j=jxJson.GetObjectNode("Nodes");
-			for(BTreeNode<String,ProcessNode> node: AllNode)
+			for(String s: AllNode.keySet())
 			{
-				j.AddSubObjNode(node.getValue().ToJsonNode());
+				j.AddSubObjNode(AllNode.get(s).ToJsonNode());
 			}			
 		}
         return null;
@@ -108,7 +114,7 @@ public class ProcessInstance extends Container
 		{
 			String n=ol.search(Export);
 			if(n!=null)
-				return AllNode.Search(n);			
+				return AllNode.get(n);			
 		}
 		return null;
 	}

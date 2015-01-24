@@ -16,7 +16,7 @@ public enum InstanceEvent implements IjxEnum
 	Cancel,
 	//暂停
 	Pause;
-	
+		
 	@Override
 	public Object TransToORMEnum(Integer param) 
 	{

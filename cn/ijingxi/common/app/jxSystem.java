@@ -9,15 +9,22 @@ import cn.ijingxi.common.orm.ORM.KeyType;
 import cn.ijingxi.common.util.*;
 
 public class jxSystem extends jxORMobj
-{
+{	
+	public static final UUID zeroUUID=UUID.fromString("00000000-0000-0000-0000-000000000000");
+	public static final UUID broadUUID=UUID.fromString("11111111-1111-1111-1111-111111111111");
+
 	public static void Init() throws Exception{	InitClass(jxSystem.class);}	
 	public static void CreateDB() throws Exception
 	{
 		CreateTableInDB(jxSystem.class);
-		jxSystem s=new jxSystem();
-		UUID uuid=UUID.randomUUID();
-		s.UUIDSTR=utils.TransToSTR(uuid);
+		CreateTableInDB(People.class);
+		jxSystem s=(jxSystem) jxORMobj.New(jxSystem.class);
+		s.SystemUUID=UUID.randomUUID();
 		s.Insert();
+		People p=(People) jxORMobj.New(People.class);;
+		//1号是手机主人，但如果某人在两台手机上都装了，则会出现冲突，需要加以解决
+		p.PeopleID=s.SystemUUID;
+		p.Insert();
 	}
 	
 	public static jxSystem getSystem() throws Exception
@@ -32,13 +39,7 @@ public class jxSystem extends jxORMobj
 	public Date MainSyncTime;
 	
 	@ORM
-	public String UUIDSTR;
-	public UUID getUUID()
-	{
-		if(UUIDSTR!=null)
-			return utils.TransToUUID(UUIDSTR);
-		return null;
-	}
+	public UUID SystemUUID;
 
 	//用{}框起来的字符串Purpose（流水号用在哪，如流程名）、Name（当前请求者的姓名）YYYY、MM、DD或YYYYMMDD、SND4（4位日流水）、
 	//SNT8（8位总流水）之类
@@ -55,11 +56,11 @@ public class jxSystem extends jxORMobj
 	@ORM(Descr="json格式的附加信息")
 	public String Addition;
 		
-	private static jxBTree<String,SN> SNTree=new jxBTree<String,SN>();
+	private static Map<String,SN> SNTree=new HashMap<String,SN>();
 	
 	public String GetSN(String Purpose,IExecutor caller) throws Exception
 	{
-		SN sn=SNTree.Search(Purpose);
+		SN sn=SNTree.get(Purpose);
 		if(sn==null)
 		{
 			String m=getExtendValue(SNModel,Purpose);
@@ -71,7 +72,7 @@ public class jxSystem extends jxORMobj
 			sn=new SN(Purpose,m,utils.TransToDate(dt));
 			sn.Number=utils.TransToInteger(dn);
 			sn.TatolNumber=utils.TransToInteger(tn);
-			SNTree.Insert(Purpose, sn);
+			SNTree.put(Purpose, sn);
 		}
 		return sn.GetNumber(caller);
 	}

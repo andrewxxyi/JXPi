@@ -201,9 +201,9 @@ class ProcessClose implements IDoSomething
 	public void Do(CallParam param) throws Exception
 	{
 		ProcessInstance process=(ProcessInstance)param.getParam();
-		for(BTreeNode<String, ProcessNode>  tn: process.AllNode)
+		for(String  s: process.AllNode.keySet())
 		{
-			ProcessNode node=tn.getValue();				
+			ProcessNode node=process.AllNode.get(s);				
 			if(node.getState()==InstanceState.Doing)
 			{
 				CallParam p=new CallParam(node.Execer,param.getCaller(),"流程实例被强行关闭！！！");
@@ -227,9 +227,9 @@ class ProcessCancel implements IDoSomething
 		ProcessInstance process=(ProcessInstance)param.getParam();
         synchronized (process)
         {
-			for(BTreeNode<String, ProcessNode>  tn: process.AllNode)
+			for(String  s: process.AllNode.keySet())
 			{
-				ProcessNode node=tn.getValue();				
+				ProcessNode node=process.AllNode.get(s);					
 				if(node.getState()==InstanceState.Doing)
 				{
 					CallParam p=new CallParam(node.Execer,param.getCaller(),"流程实例被强行关闭！！！");
@@ -248,9 +248,9 @@ class ProcessPause implements IDoSomething
         synchronized (process)
         {
 			process.pauseNodes=new jxLink<String,ProcessNode>();		
-			for(BTreeNode<String, ProcessNode>  tn: process.AllNode)
+			for(String  s: process.AllNode.keySet())
 			{
-				ProcessNode node=tn.getValue();				
+				ProcessNode node=process.AllNode.get(s);			
 				if(node.getState()==InstanceState.Doing)
 				{
 					//正在运行的节点也全部进入暂停状态并予以保存

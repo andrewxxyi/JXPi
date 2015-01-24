@@ -4,6 +4,7 @@ package cn.ijingxi.common.orm;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -121,7 +122,7 @@ public class jxJson implements Iterable<jxJson>
 	public void setValue(Object value)
 	{
 		if (Type == NodeType.Original)
-            Value = value;
+			Value = value;
 	}
 
     //==============================================================================
@@ -381,8 +382,11 @@ public class jxJson implements Iterable<jxJson>
         	case "String":
                 str = String2Json(str);
                 return "\"" + str + "\"";
+        	case "UUID":
+                str = utils.TransToString((UUID) obj);
+                return "\"" + str + "\"";
         	case "Date":
-        		return "\"" + utils.TransDateToString((Date)obj) + "\"";
+        		return "\"" + utils.TransToString((Date)obj) + "\"";
         	case "boolean":
         	case "Boolean":
         		return str.toLowerCase();

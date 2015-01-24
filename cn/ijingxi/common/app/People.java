@@ -5,7 +5,6 @@ import java.util.*;
 
 import cn.ijingxi.common.orm.*;
 import cn.ijingxi.common.orm.ORM.KeyType;
-import cn.ijingxi.common.util.utils;
 
 public class People extends Container
 {
@@ -21,6 +20,7 @@ public class People extends Container
 	
 	public People(){ContainerType=1;}
 	
+	//1号是手机主人，但如果某人在两台手机上都装了，则会出现冲突，需要加以解决
 	@ORM(keyType=KeyType.PrimaryKey)
 	public int ID;
 
@@ -31,13 +31,7 @@ public class People extends Container
 	public Date Birthday;
 	
 	@ORM(Index=3)
-	public String UUIDSTR;
-	public UUID getUUID()
-	{
-		if(UUIDSTR!=null)
-			return utils.TransToUUID(UUIDSTR);
-		return null;
-	}
+	public UUID PeopleID;
 		
 	@ORM
 	public String Passwd;	

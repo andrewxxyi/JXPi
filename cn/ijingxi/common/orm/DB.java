@@ -14,7 +14,7 @@ public interface DB
 	public void ReleaseConnection(Connection conn) throws SQLException;
 	//用于对象值与数据库之间的转换
 	public Object TransValueFromJavaToDB(Object value);
-	public Object TransValueFromDBToJava(Class<?> cls, Object value);
+	public Object TransValueFromDBToJava(FieldAttr fa, Object value);
 
 
 	//
@@ -24,4 +24,6 @@ public interface DB
 	//public String TransDataTypeFromJavaToDB(String TypeName);
 	//用于自增长列的定义
 	public String GetDBGeneratedSQL();
-	public String TransDataTypeFromJavaToDB(Class<?> cls);}
+	public String TransDataTypeFromJavaToDB(Class<?> cls);
+	
+}

@@ -8,21 +8,50 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.UUID;
 
-import cn.ijingxi.common.Process.InstanceState;
+import cn.ijingxi.common.Process.*;
+import cn.ijingxi.common.app.*;
+import cn.ijingxi.common.orm.jxORMobj;
 
 
 public class utils
 {
+	public static void Init() throws Exception
+	{
+		jxMsg.Init();
+		jxProcess.Init();
+		ProcessInstance.Init();
+		
+		Container.Init();
+		jxSystem.Init();
+		People.Init();
+		Relation.Init();
+		Tag.Init();
+
+		jxORMobj.AddEunmType(InstanceState.Doing);
+		jxORMobj.AddEunmType(InstanceEvent.Touch);
+		jxORMobj.AddEunmType(jxMsgType.Text);
+	}
+	public static void CreateDBTable() throws Exception
+	{
+		jxMsg.CreateDB();
+		jxProcess.CreateDB();
+		ProcessInstance.CreateDB();
+		
+		Container.CreateDB();
+		//People在jxSystem中已完成了创建与初始化
+		jxSystem.CreateDB();
+		//People.CreateDB();
+		Relation.CreateDB();
+		Tag.CreateDB();		
+	}
+	
 	public static String DateFormat="yyyy-MM-dd HH:mm:ss";
 	public static SimpleDateFormat DateFormatter=new SimpleDateFormat(DateFormat);
-	public static String TransDateToString(Date ct)
+	public static String TransToString(Date ct)
 	{
 		 return DateFormatter.format(ct);
 	}
-	public static Date TransToDate(String str) throws ParseException
-	{
-		 return DateFormatter.parse(str);
-	}
+
 	
 	public static Calendar GetDate(Calendar t)
 	{
@@ -48,8 +77,27 @@ public class utils
 	        	return false;
 	        	}
 	}
-	
-	public static String TransToSTR(UUID id)
+
+	public static byte[] TransToByteArray(UUID id)
+	{
+		byte[] bs=new byte[16];
+		TransToByteArray(bs,0,id);
+		return bs;
+	}
+	public static void TransToByteArray(byte[] bs,int start,UUID id)
+	{
+		if(bs==null||start<0||bs.length<start+16)return;
+		long lm=id.getMostSignificantBits();
+		TransToByteArray(bs,start+8,lm);
+		long ll=id.getLeastSignificantBits();
+		TransToByteArray(bs,start,ll);
+	}
+	public static UUID TransToUUID(byte[] bs,int start)
+	{
+		if(bs==null||start<0||bs.length<start+16)return null;
+		return new UUID(TransToLong(bs,start+8),TransToLong(bs,start));
+	}
+	public static String TransToString(UUID id)
 	{
 		String s = id.toString(); 
         //去掉“-”符号 
@@ -61,30 +109,92 @@ public class utils
 		return UUID.fromString(s);
 	}
 	
-	public static Integer TransToInteger(String str)
+	public static Object TransTo(Class<?> cls,Object value) throws ParseException
 	{
-		return Integer.parseInt(str);
+		if(JudgeIsEnum(cls))
+			return jxORMobj.TransTojxEunm(cls, value);
+		String cn=GetClassName(cls);
+		switch(cn)
+		{
+		case "byte":
+		case "Byte":
+			return TransToByte(value);
+		case "short":
+		case "Short":
+			return TransToShort(value);
+		case "long":
+		case "Long":
+			return TransToLong(value);
+		case "float":
+		case "Float":
+			return TransToFloat(value);
+		case "double":
+		case "Double":
+			return TransToDouble(value);
+		case "boolean":
+		case "Boolean":
+			return TransToBoolean(value);
+		case "Date":
+			return TransToDate(value);
+		}
+		return value;
 	}
-	
-	public static int TransByteArrayToInt(byte[] bs,int start)
+
+	public static Boolean TransToBoolean(Object value)
 	{
-		return (int) ((((bs[start + 3] & 0xff) << 24)  
-            | ((bs[start + 2] & 0xff) << 16)  
-            | ((bs[start + 1] & 0xff) << 8)
-            | (bs[start + 0] & 0xff))); 
+		return Boolean.parseBoolean(String.valueOf(value));
 	}
-	public static long TransByteArrayToLong(byte[] bs,int start)
+	public static Double TransToDouble(Object value)
 	{
-		return (long) (
-			((bs[start + 7] & 0xff) << 56)  
-	        | ((bs[start + 6] & 0xff) << 48)  
-	        | ((bs[start + 5] & 0xff) << 40)
-	        | ((bs[start + 4] & 0xff) << 32)
-			|	((bs[start + 3] & 0xff) << 24)  
-            | ((bs[start + 2] & 0xff) << 16)  
-            | ((bs[start + 1] & 0xff) << 8)
-            | (bs[start + 0] & 0xff)
-            ); 
+		return Double.parseDouble(String.valueOf(value));
+	}
+	public static Float TransToFloat(Object value)
+	{
+		return Float.parseFloat(String.valueOf(value));
+	}
+	public static Long TransToLong(Object value)
+	{
+		return Long.parseLong(String.valueOf(value));
+	}
+	public static Integer TransToInteger(Object value)
+	{
+		return Integer.parseInt(String.valueOf(value));
+	}
+	public static Short TransToShort(Object value)
+	{
+		return Short.parseShort(String.valueOf(value));
+	}
+	public static Byte TransToByte(Object value)
+	{
+		return Byte.parseByte(String.valueOf(value));
+	}
+	public static Date TransToDate(Object str) throws ParseException
+	{
+		 return DateFormatter.parse(String.valueOf(str));
+	}
+	public static Integer TransToInteger(byte[] bs,int start)
+	{
+		Integer value= 0;
+		//由高位到低位
+		for (int i = 0; i < 4; i++)
+		{
+			int shift= (4 - 1 - i) * 8;
+			//往高位游
+			value +=(bs[start+i] & 0xFF) << shift;
+		}
+		return value;
+	}
+	public static long TransToLong(byte[] bs,int start)
+	{
+		long value= 0;
+		//由高位到低位
+		for (int i = 0; i < 8; i++)
+		{
+			int shift= (8 - 1 - i) * 8;
+			//往高位游
+			value +=((long)(bs[start+i] & 0xFF)) << shift;
+		}
+		return value;
 	}
 	/**
 	 * 将num放到从start起的bs中，连续4个字节
@@ -92,27 +202,35 @@ public class utils
 	 * @param start
 	 * @param num
 	 */
-	public static void TransIntToByteArray(byte[] bs,int start,int num)
+	public static void TransToByteArray(byte[] bs,int start,int num)
 	{
-		// 最低位 
-		bs[start + 0] = (byte) (num & 0xff);
-		bs[start + 1] = (byte) ((num >> 8) & 0xff);
-		bs[start + 2] = (byte) ((num >> 16) & 0xff);
-		// 最高位,无符号右移。 
-		bs[start + 3] = (byte) (num >>> 24);
+		bs[start+0] = (byte)((num >> 24) & 0xFF);
+		bs[start+1] = (byte)((num >> 16) & 0xFF);
+		bs[start+2] = (byte)((num >> 8) & 0xFF);
+		bs[start+3] = (byte)(num & 0xFF);
 	}
-	public static void TransLongToByteArray(byte[] bs,int start,long num)
+	public static byte[] TransToByteArray(int num)
 	{
-		// 最低位 
-		bs[start + 0] = (byte) (num & 0xff);
-		bs[start + 1] = (byte) ((num >> 8) & 0xff);
-		bs[start + 2] = (byte) ((num >> 16) & 0xff);
-		bs[start + 3] = (byte) ((num >> 24) & 0xff);
-		bs[start + 4] = (byte) ((num >> 32) & 0xff);
-		bs[start + 5] = (byte) ((num >> 40) & 0xff);
-		bs[start + 6] = (byte) ((num >> 48) & 0xff);
-		// 最高位,无符号右移。 
-		bs[start + 7] = (byte) (num >>> 56);
+		byte[] bs=new byte[4];
+		TransToByteArray(bs,0,num);
+		return bs;
+	}
+	public static byte[] TransToByteArray(long num)
+	{
+		byte[] bs=new byte[8];
+		TransToByteArray(bs,0,num);
+		return bs;
+	}
+	public static void TransToByteArray(byte[] bs,int start,long num)
+	{
+		bs[start+0] = (byte)((num >> 56) & 0xFF);
+		bs[start+1] = (byte)((num >> 48) & 0xFF);
+		bs[start+2] = (byte)((num >> 40) & 0xFF);
+		bs[start+3] = (byte)((num >> 32) & 0xFF);
+		bs[start+4] = (byte)((num >> 24) & 0xFF);
+		bs[start+5] = (byte)((num >> 16) & 0xFF);
+		bs[start+6] = (byte)((num >> 8) & 0xFF);
+		bs[start+7] = (byte)(num & 0xFF);
 	}
 	
 	
@@ -174,8 +292,8 @@ public class utils
 	}
 	public static String GetClassName(String ClassName)
 	{
-		String[] ss = ClassName.split(".");
-		if(ss==null)
+		String[] ss = ClassName.split("\\.");
+		if(ss.length==0)
 			return ClassName;
 		else
 			return ss[ss.length-1];
@@ -183,7 +301,8 @@ public class utils
 	public static boolean JudgeIsEnum(Class<?> cls)
 	{
 		Class<?> p=cls.getSuperclass();
-		return p!=null&&p.getName().compareTo("Enum")==0;
+		if(p==null)return false;
+		return GetClassName(p).compareTo("Enum")==0;
 	}
 	
 	public static String StringAdd(String str,String split,String WantAdd)
@@ -205,7 +324,7 @@ public class utils
 		f.set(obj, value);
 	}
 	
-	public static void P(String msg)
+	public static void P(Object msg)
 	{
 		System.out.println(msg);
 	}

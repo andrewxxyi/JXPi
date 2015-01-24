@@ -95,6 +95,7 @@ public class BTreeNode<TKey extends Comparable<TKey>, TValue>
      */
     BTreeNode<TKey, TValue> SearchNode(TKey Key)
     {
+    	if(Key==null)return null;
     	//有数据，且key可能在本节点的数据链条中
     	if (LastSon!=null && Key.compareTo(LastSon.Key)<=0)
     	{    	

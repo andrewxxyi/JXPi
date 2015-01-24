@@ -10,7 +10,10 @@ import cn.ijingxi.common.orm.ORM.KeyType;
 
 public class jxMsg extends jxORMobj implements Iterable<byte[]>
 {
-	public static void Init() throws Exception{	InitClass(jxMsg.class);}	
+	public static void Init() throws Exception
+	{
+		InitClass(jxMsg.class);
+	}
 	public static void CreateDB() throws Exception
 	{
 		CreateTableInDB(jxMsg.class);
@@ -37,8 +40,13 @@ public class jxMsg extends jxORMobj implements Iterable<byte[]>
 		return null;
 	}
 	
-	@ORM
+	//public 
+	
+	@ORM(Encrypted=true)
 	public String MSG;
+
+	@ORM(Descr="json格式的附加信息",Encrypted=true)
+	public String Addition;
 
 	//消息的字节数组长度
 	Integer MsgLength=0;
@@ -47,8 +55,8 @@ public class jxMsg extends jxORMobj implements Iterable<byte[]>
 	jxMsg(){}
 	public jxMsg(UUID SenderID,UUID ReceiverID,String MSG) throws Exception
 	{
-		SenderIDSTR=utils.TransToSTR(SenderID);
-		ReceiverIDSTR=utils.TransToSTR(ReceiverID);
+		SenderIDSTR=utils.TransToString(SenderID);
+		ReceiverIDSTR=utils.TransToString(ReceiverID);
 		Date d=new Date();
 		MsgTime=d.getTime();
 		this.MSG=MSG;
@@ -70,7 +78,7 @@ public class jxMsg extends jxORMobj implements Iterable<byte[]>
 	}
 	static long getMsgTime(byte[] Block)
 	{
-		return utils.TransByteArrayToLong(Block, 32);
+		return utils.TransToLong(Block, 32);
 	}
 
 	static jxSparseTable<UUID,Long,ReceiveBufferMsg> BlockBuffer=new jxSparseTable<UUID,Long,ReceiveBufferMsg>();
@@ -80,14 +88,14 @@ public class jxMsg extends jxORMobj implements Iterable<byte[]>
     	jxMsg msg=null;
     	UUID uuid=getSenderID(Block);
     	long mid=getMsgTime(Block);
-    	int mlen=utils.TransByteArrayToInt(Block, 72);
+    	int mlen=utils.TransToInteger(Block, 72);
     	if(mlen==Block.length-80)
     	{
     		msg=new jxMsg();
     		byte[] bs=new byte[32];
     		System.arraycopy(Block, 0, bs, 0, 32);
     		msg.SenderIDSTR=new String(bs,"UTF8");
-    		msg.MsgTime=utils.TransByteArrayToLong(Block, 32);
+    		msg.MsgTime=utils.TransToLong(Block, 32);
     		System.arraycopy(Block, 0, bs, 40, 32);
     		msg.ReceiverIDSTR=new String(bs,"UTF8");
     		msg.MsgLength=mlen;
@@ -159,14 +167,14 @@ erator是内部类，实现了Iterator<E>接口的类
     			Block=new byte[Block_Size];
     			bs=SenderIDSTR.getBytes("UTF8");
     			System.arraycopy(bs, 0, Block, 0, 32);
-    			utils.TransLongToByteArray(Block, 32, MsgTime);
+    			utils.TransToByteArray(Block, 32, MsgTime);
     			bs=ReceiverIDSTR.getBytes("UTF8");
 			} catch (UnsupportedEncodingException e) {
 				return null;
 			}
 			System.arraycopy(bs, 0, Block, 40, 32);
-			utils.TransIntToByteArray(Block, 72,MsgLength);
-			utils.TransIntToByteArray(Block, 76, BlockNum);
+			utils.TransToByteArray(Block, 72,MsgLength);
+			utils.TransToByteArray(Block, 76, BlockNum);
 			System.arraycopy(Data, start, Block, 80, len);
     		if(end<MsgLength)
         		BlockNum++;
@@ -212,16 +220,16 @@ class ReceiveBufferMsg
     		byte[] bs=new byte[32];
     		System.arraycopy(Block, 0, bs, 0, 32);
     		msg.SenderIDSTR=new String(bs,"UTF8");
-    		msg.MsgTime=utils.TransByteArrayToLong(Block, 32);
+    		msg.MsgTime=utils.TransToLong(Block, 32);
     		System.arraycopy(Block, 0, bs, 40, 32);
     		msg.ReceiverIDSTR=new String(bs,"UTF8");
-    		msg.MsgLength=utils.TransByteArrayToInt(Block,72);
+    		msg.MsgLength=utils.TransToInteger(Block,72);
     		msg.Data=new byte[msg.MsgLength];   
     		int num=msg.MsgLength/jxMsg.BlockData_Size;
     		if(msg.MsgLength%jxMsg.BlockData_Size!=0)num++;    		
     		received=new boolean[num];    		 		
 		}
-		int bn=utils.TransByteArrayToInt(Block, 76);
+		int bn=utils.TransToInteger(Block, 76);
 		int start=jxMsg.BlockData_Size*bn;
 		int end=jxMsg.BlockData_Size*(bn+1);
 		int len=0;

@@ -10,11 +10,11 @@ public class Tag extends jxORMobj
 	public static void Init() throws Exception
 	{	
 		InitClass(Tag.class);
-		Init_AddTag();
 	}
 	public static void CreateDB() throws Exception
 	{
 		CreateTableInDB(Tag.class);
+		Init_AddTag();
 	}
 	
 	//非自动生成！！
