@@ -8,6 +8,10 @@ import cn.ijingxi.common.orm.ORM.KeyType;
 
 public class People extends Container
 {
+	protected People() throws Exception {
+		super();
+		ContainerType=ContainerType_People;
+	}
 	/**
 	 * 要在Container之后执行
 	 * @throws Exception
@@ -18,7 +22,6 @@ public class People extends Container
 		CreateTableInDB(People.class);
 	}
 	
-	public People(){ContainerType=1;}
 	
 	//1号是手机主人，但如果某人在两台手机上都装了，则会出现冲突，需要加以解决
 	@ORM(keyType=KeyType.PrimaryKey)
@@ -29,10 +32,7 @@ public class People extends Container
 
 	@ORM(Index=2)
 	public Date Birthday;
-	
-	@ORM(Index=3)
-	public UUID PeopleID;
-		
+			
 	@ORM
 	public String Passwd;	
 	
@@ -45,5 +45,6 @@ public class People extends Container
 	@ORM
 	public Boolean NoUsed;
 		
+	
 	
 }

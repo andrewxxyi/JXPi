@@ -5,7 +5,6 @@ import cn.ijingxi.common.util.IjxEnum;
 
 public enum jxMsgType implements IjxEnum
 {
-	None,
 	//文字信息
 	Text,
 	//带格式的文本

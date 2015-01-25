@@ -19,11 +19,11 @@ public class jxORMSM<TState extends Enum<?>,TEvent extends Enum<?>>
 	 * @throws Exception
 	 */
 	@SuppressWarnings("unchecked")
-	public void Happen(Object obj,String StateFieldName,TEvent Event,CallParam param) throws Exception
+	public void Happen(jxORMobj obj,String StateFieldName,TEvent Event,CallParam param) throws Exception
 	{
         synchronized (obj)
         {
-        	utils.setFiledValue(obj, StateFieldName, SM.Happen((TState) utils.getFiledValue(obj, StateFieldName), Event, param));
+        	jxORMobj.setFiledValue(obj, StateFieldName, SM.Happen((TState) jxORMobj.getFiledValue(obj, StateFieldName), Event, param));
         }
 	}
 	

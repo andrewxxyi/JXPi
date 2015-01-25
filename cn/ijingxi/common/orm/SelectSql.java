@@ -5,6 +5,7 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 import cn.ijingxi.common.util.LinkNode;
+import cn.ijingxi.common.util.Trans;
 import cn.ijingxi.common.util.jxCompare;
 import cn.ijingxi.common.util.jxLink;
 import cn.ijingxi.common.util.utils;
@@ -150,6 +151,7 @@ class selectContion
 	Object value=null;
 	String OtherTableName=null;
 	String OtherColName=null;
+	
 	selectContion(String TableName,String ColName,jxCompare cp,Object value)
 	{
 		this.TableName=TableName;
@@ -173,7 +175,7 @@ selectContion(String TableName,String ColName,String OtherTableName,String Other
 		String sc=GetFullName(TableName,ColName);
 		if(sc==null)
 			return null;
-		sc+=utils.TransCompareToString(cp);
+		sc+=Trans.TransCompareToString(cp);
 		if(cpValue)
 		{
 			sc +=" ?";

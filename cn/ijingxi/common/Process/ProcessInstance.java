@@ -3,8 +3,9 @@ package cn.ijingxi.common.Process;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
-import cn.ijingxi.common.app.Container;
+import cn.ijingxi.common.app.*;
 import cn.ijingxi.common.orm.*;
 import cn.ijingxi.common.orm.ORM.KeyType;
 import cn.ijingxi.common.util.*;
@@ -12,6 +13,11 @@ import cn.ijingxi.common.util.*;
 
 public class ProcessInstance extends Container
 {	
+	protected ProcessInstance() throws Exception {
+		super();
+		ContainerType=ContainerType_ProcessInstance;
+	}	
+	
 	public static void Init() throws Exception
 	{	
 		InitClass(ProcessInstance.class);
@@ -26,14 +32,37 @@ public class ProcessInstance extends Container
 	
 	@ORM(Index=3,Descr="流程的创建者ID，一定是人")
 	public Integer CteaterID;
+	public static People GetCteater(int PIID)
+	{
+		SelectSql s=new SelectSql();
+		s.AddTable("ProcessInstance");
+		s.AddContion("ProcessInstance", "ID", jxCompare.Equal, PIID);
+		ProcessInstance pi=(ProcessInstance) Get(ProcessInstance.class,s);
+		return (People) GetByID(People.class, pi.CteaterID);
+	}
 	
 	@ORM(Index=4)
 	public int ProcessID;
-
+	public static jxProcess GetProcess(int PIID)
+	{
+		SelectSql s=new SelectSql();
+		s.AddTable("ProcessInstance");
+		s.AddContion("ProcessInstance", "ID", jxCompare.Equal, PIID);
+		ProcessInstance pi=(ProcessInstance) Get(ProcessInstance.class,s);
+		return (jxProcess) GetByID(jxProcess.class, pi.ProcessID);
+	}
+	
 	@ORM(Descr="流程的当前状态，创建就是在运行中")
 	public InstanceState State=InstanceState.Doing;
+
+	@ORM
+	public Result Result;
 	
-	
+	@Override
+	public UUID GetOwnerID() {
+		People p=(People) People.GetByID(People.class, CteaterID);
+		return p.UniqueID;
+	}
 	//
 	//静态变量与构造函数
 	//
@@ -79,118 +108,47 @@ public class ProcessInstance extends Container
 			  e.printStackTrace();
 		}
 	}
-	
-	public ProcessNode getNode(String NodeName)
-	{
-		return AllNode.get(NodeName);
-	}
-	jxJson getNodesJSON() throws Exception
+
+    static void Start(Integer PIID,IExecutor Caller) throws Exception
     {
-		if(AllNode!=null)
-		{
-			jxJson j=jxJson.GetObjectNode("Nodes");
-			for(String s: AllNode.keySet())
-			{
-				j.AddSubObjNode(AllNode.get(s).ToJsonNode());
-			}			
-		}
-        return null;
-    }    	
-    
-	/**
-	 * 查找指定节点的输出路径
-	 * @param NodeName
-	 * @return 出口名为键，目的节点为值
-	 */
-	public jxLink<String,String> getOutBranch(String NodeName)
-	{
-		return process.OutBranch.search(NodeName);
-	}
-	//根据From节点名和出口名查找To节点
-	ProcessNode getToNode(String From,String Export)
-	{
-		jxLink<String,String> ol=process.OutBranch.search(From);
-		if(ol!=null)
-		{
-			String n=ol.search(Export);
-			if(n!=null)
-				return AllNode.get(n);			
-		}
-		return null;
-	}
-	
-	/**
-	 * 查找指定节点的输入路径
-	 * @param NodeName
-	 * @return 源节点为键，出口名为值
-	 */
-	public jxLink<String,String> getInBranch(String NodeName)
-	{
-		return process.InBranch.search(NodeName);
-	}
-    jxJson getTransJSON() throws Exception
-    {
-		jxJson rs=jxJson.GetObjectNode("Trans");
-		for(LinkNode<String, jxLink<String, String>> node: process.OutBranch)
-		{
-			jxLink<String, String> ts=node.getValue();
-			for(LinkNode<String, String> n:ts)
-			{
-				jxJson j=jxJson.GetObjectNode("Trans");
-				rs.AddSubObjNode(j);
-				j.AddValue("Name", n.getKey());
-				j.AddValue("From", node.getKey());
-				j.AddValue("To", n.getValue());
-			}			
-		}
-        return rs;
-    }    	
-    
-    void Start(IExecutor Caller,String msg) throws Exception
-    {
-    	ProcessNode node=getNode(ProcessNode.Node_Start);
-		CallParam param=new CallParam(null, Caller, msg);
-		param.addParam(node);
-		ProcessNode.NodeSM.Happen(node, "state", InstanceEvent.Trigger, param);
+		jxMsg msg=jxMsg.NewEventMsg(null,GetCteater(PIID).UniqueID,InstanceEvent.Trigger,null);
+		msg.SetParam("Purpose", "PI");
+		msg.SetParam("PIID", PIID.toString());
+		msg.SetParam("CallerID", Caller.GetID().getID().toString());
+		MsgCenter.Post(msg);
     }
-    public void Pause(IExecutor Caller,String msg) throws Exception
+    public static void Pause(Integer PIID,IExecutor Caller,String Msg) throws Exception
     {
-		CallParam param=new CallParam(null, Caller, msg);
-		param.addParam(this);
-		ProcessSM.Happen(this, "State", InstanceEvent.Pause, param);
+		jxMsg msg=jxMsg.NewEventMsg(null,GetCteater(PIID).UniqueID,InstanceEvent.Pause,Msg);
+		msg.SetParam("Purpose", "PI");
+		msg.SetParam("PIID", PIID.toString());
+		msg.SetParam("CallerID", Caller.GetID().getID().toString());
+		MsgCenter.Post(msg);
     }
-    public void ReDo(IExecutor Caller,String msg) throws Exception
+    public static void ReDo(Integer PIID,IExecutor Caller,String Msg) throws Exception
     {
-		CallParam param=new CallParam(null, Caller, msg);
-		param.addParam(this);
-		ProcessSM.Happen(this, "State", InstanceEvent.Trigger, param);
+		jxMsg msg=jxMsg.NewEventMsg(null,GetCteater(PIID).UniqueID,InstanceEvent.Trigger,Msg);
+		msg.SetParam("Purpose", "PI");
+		msg.SetParam("PIID", PIID.toString());
+		msg.SetParam("CallerID", Caller.GetID().getID().toString());
+		MsgCenter.Post(msg);
     }
-    public void Cancle(IExecutor Caller,String msg) throws Exception
+    public static void Cancle(Integer PIID,IExecutor Caller,String Msg) throws Exception
     {
-		CallParam param=new CallParam(null, Caller, msg);
-		param.addParam(this);
-		ProcessSM.Happen(this, "State", InstanceEvent.Cancel, param);
+		jxMsg msg=jxMsg.NewEventMsg(null,GetCteater(PIID).UniqueID,InstanceEvent.Cancel,Msg);
+		msg.SetParam("Purpose", "PI");
+		msg.SetParam("PIID", PIID.toString());
+		msg.SetParam("CallerID", Caller.GetID().getID().toString());
+		MsgCenter.Post(msg);
     }
-    public void Close(IExecutor Caller,String msg) throws Exception
+    public static void Close(Integer PIID,IExecutor Caller,String Msg) throws Exception
     {
-		CallParam param=new CallParam(null, Caller, msg);
-		param.addParam(this);
-		ProcessSM.Happen(this, "State", InstanceEvent.Close, param);
+		jxMsg msg=jxMsg.NewEventMsg(null,GetCteater(PIID).UniqueID,InstanceEvent.Close,Msg);
+		msg.SetParam("Purpose", "PI");
+		msg.SetParam("PIID", PIID.toString());
+		msg.SetParam("CallerID", Caller.GetID().getID().toString());
+		MsgCenter.Post(msg);
     }
-    
-    public void Node_Pause(String NodeName,IExecutor Caller,String msg) throws Exception
-    {
-    	ProcessNode node=getNode(NodeName);
-		CallParam param=new CallParam(node.Execer, Caller, msg);
-		param.addParam(node);
-		ProcessNode.NodeSM.Happen(node, "state", InstanceEvent.Pause, param);
-    }
-    public void Node_ReDo(String NodeName,IExecutor Caller,String msg) throws Exception
-    {
-    	ProcessNode node=getNode(NodeName);
-		CallParam param=new CallParam(node.Execer, Caller, msg);
-		param.addParam(node);
-		ProcessNode.NodeSM.Happen(node, "state", InstanceEvent.Trigger, param);
-    }
+
     
 }

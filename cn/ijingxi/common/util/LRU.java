@@ -26,12 +26,12 @@ public class LRU
 		if(obj!=null)
 			synchronized (this)
 			{
-				link.offer(obj.getORMID(),obj);
-				tree.put(obj.getORMID(), obj);
+				link.offer(obj.GetID(),obj);
+				tree.put(obj.GetID(), obj);
 				if(link.getCount()>MaxSize)
 				{
 					jxORMobj o=link.poll();
-					tree.remove(o.getORMID());
+					tree.remove(o.GetID());
 				}
 			}
 	}
@@ -52,7 +52,7 @@ public class LRU
 			{
 				LinkNode<ORMID, jxORMobj> node = link.searchNode(id);
 				link.delete(node);
-				link.offer(obj.getORMID(),obj);			
+				link.offer(obj.GetID(),obj);			
 			}
 			return obj;
 		}

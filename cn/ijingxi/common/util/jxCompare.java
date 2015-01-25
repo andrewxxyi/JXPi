@@ -1,12 +1,19 @@
 
 package cn.ijingxi.common.util;
 
-public enum jxCompare
+import cn.ijingxi.common.util.IjxEnum;
+
+public enum jxCompare implements IjxEnum
 {
 	Equal,
 	NoEqual,	
 	Less,
 	LessEqual,
 	Greate,
-	GreateEqual
+	GreateEqual;
+	@Override
+	public Object TransToORMEnum(Integer param) 
+	{
+		return jxCompare.values()[param];
+	}
 }

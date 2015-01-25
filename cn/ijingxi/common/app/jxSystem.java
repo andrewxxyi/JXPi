@@ -10,6 +10,11 @@ import cn.ijingxi.common.util.*;
 
 public class jxSystem extends jxORMobj
 {	
+	protected jxSystem() throws Exception {
+		super();
+		// TODO Auto-generated constructor stub
+	}
+
 	public static final UUID zeroUUID=UUID.fromString("00000000-0000-0000-0000-000000000000");
 	public static final UUID broadUUID=UUID.fromString("11111111-1111-1111-1111-111111111111");
 
@@ -69,9 +74,9 @@ public class jxSystem extends jxORMobj
 			String dn=getExtendValue(SNDayNumber,Purpose);
 			String tn=getExtendValue(SNTotalNumber,Purpose);
 			String dt=getExtendValue(SNLastDate,Purpose);
-			sn=new SN(Purpose,m,utils.TransToDate(dt));
-			sn.Number=utils.TransToInteger(dn);
-			sn.TatolNumber=utils.TransToInteger(tn);
+			sn=new SN(Purpose,m,Trans.TransToDate(dt));
+			sn.Number=Trans.TransToInteger(dn);
+			sn.TatolNumber=Trans.TransToInteger(tn);
 			SNTree.put(Purpose, sn);
 		}
 		return sn.GetNumber(caller);

@@ -9,6 +9,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import cn.ijingxi.common.util.LinkNode;
+import cn.ijingxi.common.util.Trans;
 import cn.ijingxi.common.util.jxLink;
 import cn.ijingxi.common.util.utils;
 
@@ -201,6 +202,13 @@ public class jxJson implements Iterable<jxJson>
 		else
 			throw new Exception("只有数组或对象节点才能添加值元素");
 	}
+	public  Object getSubObjectValue(String SubName) throws Exception
+	{
+		jxJson js=GetSubObject(SubName);
+		if(js!=null)
+			return js.getValue();
+		return null;		
+	}
     /**
      * 作为对象添加子对象
      * @param sub
@@ -383,10 +391,10 @@ public class jxJson implements Iterable<jxJson>
                 str = String2Json(str);
                 return "\"" + str + "\"";
         	case "UUID":
-                str = utils.TransToString((UUID) obj);
+                str = Trans.TransToString((UUID) obj);
                 return "\"" + str + "\"";
         	case "Date":
-        		return "\"" + utils.TransToString((Date)obj) + "\"";
+        		return "\"" + Trans.TransToString((Date)obj) + "\"";
         	case "boolean":
         	case "Boolean":
         		return str.toLowerCase();

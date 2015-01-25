@@ -5,6 +5,7 @@ import java.sql.*;
 import java.util.Date;
 import java.util.UUID;
 
+import cn.ijingxi.common.util.Trans;
 import cn.ijingxi.common.util.utils;
 
 public class JdbcSqlite implements DB
@@ -58,7 +59,7 @@ public class JdbcSqlite implements DB
 		case "Boolean":
 			return (boolean)value ? 1 :0; 
 		case "UUID":
-			return utils.TransToByteArray((UUID) value);
+			return Trans.TransToByteArray((UUID) value);
 		}
 		return value;
 	}
@@ -67,7 +68,7 @@ public class JdbcSqlite implements DB
 	public Object TransValueFromDBToJava(FieldAttr fa,Object value)
 	{
 		if(fa!=null&&fa.IsEnum)
-			return jxORMobj.TransTojxEunm(fa.FieldType, value);
+			return Trans.TransTojxEunm(fa.FieldType, value);
 		String n=utils.GetClassName(fa.FieldType);
 		return TransValueFromDBToJava(n,value);
 	}
@@ -104,7 +105,7 @@ public class JdbcSqlite implements DB
 		case "Boolean":
 			return (Integer)value !=0;
 		case "UUID":
-			return utils.TransToUUID((byte[]) value,0);
+			return Trans.TransToUUID((byte[]) value,0);
 		}
 		return value;
 	}

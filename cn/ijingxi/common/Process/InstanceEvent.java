@@ -15,7 +15,9 @@ public enum InstanceEvent implements IjxEnum
 	//取消
 	Cancel,
 	//暂停
-	Pause;
+	Pause,
+	//设置流程实例的结果
+	SetResult;
 		
 	@Override
 	public Object TransToORMEnum(Integer param) 
