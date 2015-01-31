@@ -9,6 +9,7 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 
 import cn.ijingxi.common.app.Container;
+import cn.ijingxi.common.app.Result;
 import cn.ijingxi.common.app.jxSystem;
 import cn.ijingxi.common.orm.*;
 import cn.ijingxi.common.orm.ORM.KeyType;
@@ -21,9 +22,16 @@ import cn.ijingxi.common.util.*;
  */
 public class jxProcess extends Container
 {	
-	protected jxProcess() throws Exception {
+	protected jxProcess()
+	{
 		super();
+		TypeName="jxProcess";
 		ContainerType=ContainerType_Process;
+	}	
+	
+	public static ORMID GetORMID(Integer ID)
+	{
+		return new ORMID(GetTypeID("jxProcess"),ID);
 	}
 	
 	public static void Init() throws Exception{	InitClass(Process.class);}
@@ -68,17 +76,17 @@ public class jxProcess extends Container
 	}
 	
 	//发起新流程时调用
-	public ProcessInstance StartNewInstance(IExecutor Caller, String Msg) throws Exception
+	public PI StartNewInstance(IExecutor Caller, String Msg) throws Exception
 	{
-		ProcessInstance p=(ProcessInstance) ProcessInstance.New(ProcessInstance.class);
+		PI p=(PI) New(PI.class);
 		p.TopSpaceID=this.TopSpaceID;
 		p.CteaterID=Caller.GetID().getID();
-		p.Name=jxSystem.getSystem().GetSN(SNPurpose,Caller);
+		p.Name=jxSystem.System.GetSN(SNPurpose,Caller);
 		p.ProcessID=this.ID;
 		p.Descr=Msg;
 		p.Insert();
 		//启动流程
-		ProcessNode sn=new ProcessNode(ID,p.ID,ProcessNode.Node_Start);
+		PN sn=new  PN(ID,p, PN.Node_Start);
 		sn.Start(p, Caller);
 		return p;
 	}
@@ -92,15 +100,23 @@ public class jxProcess extends Container
 	 * @param ExecerID
 	 * @throws Exception
 	 */
-	public void setNode(String NodeName,boolean InputTypeIsAnd,boolean OutputTypeIsAnd,boolean Auto,boolean AutoByExecer,UUID ExecerID) throws Exception
+	public void setNode(String NodeName,boolean InputTypeIsAnd,boolean OutputTypeIsAnd,boolean Auto,UUID ExecerID) throws Exception
 	{
 		Map<String,String> ks=new HashMap<String,String>();
 		ks.put("NodeName", NodeName);
 		setExtendArrayValue(Nodes,ks,"InputType",InputTypeIsAnd);
 		setExtendArrayValue(Nodes,ks,"OutputType",OutputTypeIsAnd);
 		setExtendArrayValue(Nodes,ks,"Auto",Auto);
-		setExtendArrayValue(Nodes,ks,"AutoByExecer",AutoByExecer);
 		setExtendArrayValue(Nodes,ks,"Execer",ExecerID);
+	}
+	public List<String> ListNodes() throws Exception
+	{
+		Map<String,String> ks=new HashMap<String,String>();
+		List<jxJson> ls=getExtendArrayList(Nodes,ks);
+		List<String> rs=new LinkedList<String>();
+		for(jxJson js:ls)
+			rs.add((String) js.GetSubValue("NodeName"));
+		return rs;
 	}
 	public boolean getNode_InputType(String NodeName) throws Exception
 	{
@@ -162,7 +178,25 @@ public class jxProcess extends Container
 		ks.put("NodeName", NodeName);
 		setExtendArrayValue(Nodes,ks,"AutoByExecer",AutoByExecer);
 	}
-	
+	/*
+
+	public Result getNode_AutoResult(String NodeName) throws Exception
+	{
+		Map<String,String> ks=new HashMap<String,String>();
+		ks.put("NodeName", NodeName);
+		String rs=getExtendArrayValue(Nodes,ks,"Result");
+		if(rs!=null)
+			return (Result) Trans.TransTojxEunm("Result", Trans.TransToInteger(rs));
+		return Result.None;
+	}
+	public void setNode_AutoResult(String NodeName,Result result) throws Exception
+	{
+		Map<String,String> ks=new HashMap<String,String>();
+		ks.put("NodeName", NodeName);
+		setExtendArrayValue(Nodes,ks,"Result",result.ordinal());
+	}
+
+	*/
 	public IExecutor getNode_RealExecer(String NodeName) throws Exception
 	{
 		Map<String,String> ks=new HashMap<String,String>();
@@ -241,9 +275,25 @@ public class jxProcess extends Container
 		ks.put("Export", ExportName);
 		List<jxJson> rs=getExtendArrayList(NodeTrans,ks);
 		if(rs!=null&&rs.size()==1)
-			return new ContionLink(rs.get(0));
+			return new ContionLink(rs.get(0).GetSubObject("ContionLink"));
 		return null;
 	}	
+	public void setNodeOP(String NodeName,OPLink ol) throws Exception
+	{
+		Map<String,String> ks=new HashMap<String,String>();
+		ks.put("Node", NodeName);
+		setExtendArraySubNode(Nodes,ks,ol.TojxJson());
+	}	
+	public OPLink getNodeOP(String NodeName) throws Exception
+	{
+		Map<String,String> ks=new HashMap<String,String>();
+		ks.put("Node", NodeName);
+		List<jxJson> rs=getExtendArrayList(Nodes,ks);
+		if(rs!=null&&rs.size()==1)
+			return new OPLink(rs.get(0).GetSubObject("OPLink"));
+		return null;
+	}	
+
 
 	
 	/**
@@ -252,45 +302,63 @@ public class jxProcess extends Container
 	 */
     public void G5_Init() throws Exception
     {
-    	setNode(ProcessNode.Node_Start,false,false,true,null);
-    	setNode(ProcessNode.Node_End,false,false,true,null);
-    	setNode(ProcessNode.Node_Accept,false,false,true,null);
-    	setNode(ProcessNode.Node_Reject,false,false,true,null);
+    	setNode(PN.Node_Start,false,false,true,null);
+    	setNode_AutoByExecer(PN.Node_Start,true);
+    	setNode(PN.Node_End,false,false,true,null);
+    	setNode_AutoByExecer(PN.Node_End,true);
+    	
+    	setNode(PN.Node_Accept,false,false,true,null);
+    	setNode_AutoByExecer(PN.Node_Accept,true);
+    	//setNode_AutoResult(PN.Node_Accept,Result.Accept);
+    	OPLink ol=new OPLink();
+    	ol.AddOP("Result", null, jxOP.Equal, Result.Accept);
+    	setNodeOP(PN.Node_Accept,ol);
+    	
+    	setNode(PN.Node_Reject,false,false,true,null);
+    	setNode_AutoByExecer(PN.Node_Reject,true);
+    	//setNode_AutoResult(PN.Node_Reject,Result.Reject);
+    	ol=new OPLink();
+    	ol.AddOP("Result", null, jxOP.Equal, Result.Reject);
+    	setNodeOP(PN.Node_Reject,ol);
     	
     	setNode("申请",false,false,false,null);
     	setNode("第一级审核",false,false,false,null);
     	setNode("第一级已同意",false,false,true,null);
+    	setNode_AutoByExecer("第一级已同意",true);
     	setNode("第二级审核",false,false,false,null);
     	setNode("第二级已同意",false,false,true,null);
+    	setNode_AutoByExecer("第二级已同意",true);
     	setNode("第三级审核",false,false,false,null);
     	setNode("第三级已同意",false,false,true,null);
+    	setNode_AutoByExecer("第三级已同意",true);
     	setNode("第四级审核",false,false,false,null);
     	setNode("第四级已同意",false,false,true,null);
+    	setNode_AutoByExecer("第四级已同意",true);
     	setNode("第五级审核",false,false,false,null);
 
-    	setTrans("自动",ProcessNode.Node_Start,"申请");
+    	setTrans("自动",PN.Node_Start,"申请");
     	setTrans("申请","申请","第一级审核");
-    	setTrans("拒绝","第一级审核",ProcessNode.Node_Reject);
+    	setTrans("拒绝","第一级审核",PN.Node_Reject);
     	setTrans("同意","第一级审核","第一级已同意");
     	setTrans("后继节点有人执行","第一级已同意","第二级审核");
-    	setTrans("后继节点无人执行","第一级已同意",ProcessNode.Node_Accept);
-    	setTrans("拒绝","第二级审核",ProcessNode.Node_Reject);
+    	setTrans("后继节点无人执行","第一级已同意",PN.Node_Accept);
+    	setTrans("拒绝","第二级审核",PN.Node_Reject);
     	setTrans("同意","第二级审核","第二级已同意");
     	setTrans("后继节点有人执行","第二级已同意","第三级审核");
-    	setTrans("后继节点无人执行","第二级已同意",ProcessNode.Node_Accept);
-    	setTrans("拒绝","第三级审核",ProcessNode.Node_Reject);
+    	setTrans("后继节点无人执行","第二级已同意",PN.Node_Accept);
+    	setTrans("拒绝","第三级审核",PN.Node_Reject);
     	setTrans("同意","第三级审核","第三级已同意");
     	setTrans("后继节点有人执行","第三级已同意","第四级审核");
-    	setTrans("后继节点无人执行","第三级已同意",ProcessNode.Node_Accept);
-    	setTrans("拒绝","第四级审核",ProcessNode.Node_Reject);
+    	setTrans("后继节点无人执行","第三级已同意",PN.Node_Accept);
+    	setTrans("拒绝","第四级审核",PN.Node_Reject);
     	setTrans("同意","第四级审核","第四级已同意");
     	setTrans("后继节点有人执行","第四级已同意","第五级审核");
-    	setTrans("后继节点无人执行","第四级已同意",ProcessNode.Node_Accept);
-    	setTrans("拒绝","第五级审核",ProcessNode.Node_Reject);
-    	setTrans("同意","第五级审核",ProcessNode.Node_Accept);
+    	setTrans("后继节点无人执行","第四级已同意",PN.Node_Accept);
+    	setTrans("拒绝","第五级审核",PN.Node_Reject);
+    	setTrans("同意","第五级审核",PN.Node_Accept);
     	
-    	setTrans("自动",ProcessNode.Node_Reject,ProcessNode.Node_End);
-    	setTrans("自动",ProcessNode.Node_Accept,ProcessNode.Node_End);    	
+    	setTrans("自动",PN.Node_Reject,PN.Node_End);
+    	setTrans("自动",PN.Node_Accept,PN.Node_End);    	
     }
     
 

@@ -157,12 +157,9 @@ public class jxJson implements Iterable<jxJson>
 			return node;
 		return null;
 	}
-	public ArrayList<jxJson> GetSubEL(String SubName) throws Exception
+	public ArrayList<jxJson> GetSubEL() throws Exception
 	{
-		utils.Check(SubName==null, "需要给出子对象的名字");
 		utils.Check(Type!=NodeType.Array, "只有数组才能读取子元素");
-		if(Array==null)
-			return null;
 		return Array;
 	}
 	
@@ -171,6 +168,7 @@ public class jxJson implements Iterable<jxJson>
 		jxJson j=new jxJson();
 		j.Name=Name;
 		j.Type=NodeType.Object;
+		j.SubObjectList=new jxLink<String,jxJson>();
 		return j;
 	}
 	public static jxJson GetArrayNode(String Name)
@@ -178,6 +176,7 @@ public class jxJson implements Iterable<jxJson>
 		jxJson j=new jxJson();
 		j.Name=Name;
 		j.Type=NodeType.Array;
+		j.Array=new ArrayList<jxJson>();
 		return j;
 	}
 	public static jxJson GetValueNode(String Name,Object value)
@@ -218,8 +217,6 @@ public class jxJson implements Iterable<jxJson>
     {
     	utils.Check(sub==null, "不能添加空的子对象");
     	utils.Check(Type!=NodeType.Object, "只有对象节点才能添加子对象");
-    	if(SubObjectList==null)
-    		SubObjectList=new jxLink<String,jxJson>();
     	SubObjectList.addByRise(sub.Name, sub);
     }
 	/**
@@ -231,8 +228,6 @@ public class jxJson implements Iterable<jxJson>
     {
     	utils.Check(el==null, "不能添加空的子元素");
     	utils.Check(Type!=NodeType.Array, "只有数组节点才能添加子元素");
-    	if(Array==null)
-    		Array=new ArrayList<jxJson>();
     	Array.add(el);
     }
 
@@ -394,7 +389,7 @@ public class jxJson implements Iterable<jxJson>
                 str = Trans.TransToString((UUID) obj);
                 return "\"" + str + "\"";
         	case "Date":
-        		return "\"" + Trans.TransToString((Date)obj) + "\"";
+        		return "\"" + Trans.TransToInteger((Date)obj) + "\"";
         	case "boolean":
         	case "Boolean":
         		return str.toLowerCase();

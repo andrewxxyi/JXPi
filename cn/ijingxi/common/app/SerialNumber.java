@@ -22,6 +22,7 @@ class SN
     	SNSM.AddTrans(SNState.Model, Event_InputChar.Bracket_R, SNState.Common, new SN_EndModel());
     }
 
+    jxSystem system=null;
     String Purpose = null;
     String SN_Model = null;
     int Number=0;
@@ -31,8 +32,9 @@ class SN
     
     SNState state=SNState.None;
     
-    SN(String Purpose,String Model,Date Time)
+    SN(jxSystem system,String Purpose,String Model,Date Time) throws Exception
     {
+    	this.system=system;
     	this.Purpose=Purpose;
     	SN_Time = Calendar.getInstance();
         // 初始化 Calendar 对象，但并不必要，除非需要重置时间  
@@ -44,24 +46,28 @@ class SN
     	else
     	{
         	SN_Time.setTime(new Date());  
-        	SN_Time=utils.GetDate(SN_Time);    		
+        	SN_Time=utils.GetDate(SN_Time); 
+        	system.SaveSN_LastDate(Purpose,SN_Time.getTime());
     	}
         SN_Model=Model;    
     }
-    int GetSN_Day()
+    int GetSN_Day() throws Exception
     {
     	Calendar cal= utils.GetDate();
     	if(SN_Time.compareTo(cal)<0)
     	{
     		SN_Time=cal;
     		Number=0;
+        	system.SaveSN_LastDate(Purpose,SN_Time.getTime());
     	}
     	Number++;
+    	system.SaveSN_DayNumber(Purpose,Number);
     	return Number;
     }
-    int GetSN_Total()
+    int GetSN_Total() throws Exception
     {
     	TatolNumber++;
+    	system.SaveSN_TotalNumber(Purpose,Number);
     	return TatolNumber;
     }
 
@@ -149,7 +155,7 @@ class SN_EndModel implements IDoSomething
             	case "Purpose":
             		str = sn.Purpose;
             	case "Name":
-            		str = param.getCaller().GetName();
+            		str = param.getCaller().getName();
                 case "YYYY":
                     str = String.format("%04d", sn.SN_Time.get(Calendar.YEAR));
                     break;

@@ -3,11 +3,9 @@ package cn.ijingxi.common.orm;
 
 public class ORMID implements Comparable<ORMID>
 {
-	String Name;
-	public String getName()
-    {
-        return Name;
-    }
+	Integer TypeID;
+	public Integer getTypeID(){return TypeID;}
+	//public String getName(){return Name;}
 	Integer ID;
 	public Integer getID()
     {
@@ -16,18 +14,21 @@ public class ORMID implements Comparable<ORMID>
 	@Override
 	public int compareTo(ORMID o) 
 	{
-		if(o==null||o.Name==null||o.Name=="")
-			return 1;
-		if(Name==null||Name=="")
-			return -1;
-		int sn=Name.compareTo(o.Name);
-		if(sn==0)
-			return ID-o.ID;
-		return sn;
+		if(o==null)return 1;
+		if(TypeID<o.TypeID)return -1;
+		if(TypeID>o.TypeID)return 1;
+		return ID-o.ID;
 	}	
-	ORMID(String Name,Integer ID)
+	public ORMID(Integer TypeID,Integer ID)
 	{
-		this.Name=Name;
+		this.TypeID=TypeID;
 		this.ID=ID;
+	}
+
+	public boolean Equal(ORMID id)
+	{
+		if(id!=null)
+			return this.compareTo(id)==0;
+		return false;
 	}
 }

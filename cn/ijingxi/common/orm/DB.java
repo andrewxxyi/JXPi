@@ -9,8 +9,10 @@ public interface DB
 	public void SetUserID(String uid);
 	public void SetPasswd(String pwd);
 	
-	public Integer GetGeneratedKey(Connection conn,String IDName) throws SQLException;
-	public Connection GetConnection() throws ClassNotFoundException, SQLException;
+	public Integer GetGeneratedKey(String IDName) throws SQLException;
+	public void Release() throws SQLException;
+	//Connection最好只用于内部，用户只用Release
+	public Connection GetConnection();
 	public void ReleaseConnection(Connection conn) throws SQLException;
 	//用于对象值与数据库之间的转换
 	public Object TransValueFromJavaToDB(Object value);

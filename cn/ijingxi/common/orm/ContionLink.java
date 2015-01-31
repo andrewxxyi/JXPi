@@ -63,10 +63,10 @@ public class ContionLink
 		Contion(jxJson js) throws Exception
 		{
 			if(js==null)throw new Exception("初始化字符串不能为空");
-			Field=(String) js.GetSubValue("Field");
-			Target=(String) js.GetSubValue("Target");
+			Field=(String) js.GetSubValue("F");
+			Target=(String) js.GetSubValue("T");
 			cp=(jxCompare) Trans.TransTojxEunm(jxCompare.class,js.GetSubValue("cp"));
-			value=Trans.TransToFloat(js.GetSubValue("Field"));
+			value=Trans.TransToFloat(js.GetSubValue("v"));
 		}
 
 		boolean  Judge(jxORMobj obj) throws Exception
@@ -92,10 +92,10 @@ public class ContionLink
 		jxJson TojxJson() throws Exception
 		{
 			jxJson js=jxJson.GetObjectNode("Contion");
-			js.AddValue("Field", Field);
-			js.AddValue("Target", Target);
+			js.AddValue("F", Field);
+			js.AddValue("T", Target);
 			js.AddValue("cp", cp.ordinal());
-			js.AddValue("value", value);
+			js.AddValue("v", value);
 			return js;
 		}	
 	}

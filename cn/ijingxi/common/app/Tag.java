@@ -6,7 +6,12 @@ import cn.ijingxi.common.orm.*;
 import cn.ijingxi.common.orm.ORM.KeyType;
 
 public class Tag extends jxORMobj
-{	
+{		
+	public static ORMID GetORMID(Integer ID)
+	{
+		return new ORMID(GetTypeID("Tag"),ID);
+	}
+	
 	public static void Init() throws Exception
 	{	
 		InitClass(Tag.class);

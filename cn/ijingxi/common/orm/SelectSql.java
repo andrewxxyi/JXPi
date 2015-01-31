@@ -17,6 +17,8 @@ import cn.ijingxi.common.util.utils;
  */
 public class SelectSql
 {
+	int Limit=0;
+	int Offset=0;
 	jxLink<String,Integer> Tables=new jxLink<String,Integer>();
 	//目前假定，由or组合的各组and链
 	jxLink<Integer,contionLink> con=new jxLink<Integer,contionLink>();
@@ -41,11 +43,11 @@ public class SelectSql
 			}
 		}
 	}
-	public void AddContion(String ClassName,String ColName,jxCompare cp,Object value)
+	public void AddContion(String ClassName,String ColName,jxCompare cp,Object value) throws Exception
 	{
 		AddContion(0,ClassName,ColName,cp,value);
 	}
-	public void AddContion(Integer LinkID,String ClassName,String ColName,jxCompare cp,Object value)
+	public void AddContion(Integer LinkID,String ClassName,String ColName,jxCompare cp,Object value) throws Exception
 	{
 		String cn=jxORMobj.GetClassName(ClassName,ColName);
 		DB db=JdbcUtils.GetDB();
@@ -100,7 +102,13 @@ public class SelectSql
 				select=utils.StringAdd(select, ",",GetFullName(p.DBTableName,"*"));
 			p=jxORMobj.getSuperClassAttr(p.ClsName);
 		}
-		return "Select "+select+" From "+GetSql_From()+" Where "+GetSql_Where();		
+		String sql="Select "+select+" From "+GetSql_From()+" Where "+GetSql_Where();		
+		if(Limit>0)
+		{
+			sql+=" LIMIT "+Limit+" OFFSET "+Offset;
+			Offset+=Limit;
+		}
+		return sql;
 	}
 	String GetSql_Where() throws Exception
 	{

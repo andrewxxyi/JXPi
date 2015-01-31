@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import cn.ijingxi.common.Process.*;
+import cn.ijingxi.common.orm.ORMID;
 
 
 public class Trans
@@ -29,25 +30,46 @@ public class Trans
 		else if(utils.GetClassName(cls).compareTo("UUID")==0)
 			return Trans.TransToString((UUID)obj);
 		else if(utils.GetClassName(cls).compareTo("Date")==0)
-			return Trans.TransToString((Date)obj);
+			return Trans.TransToInteger((Date)obj);
 		else
 			return obj;
 	}
 	public static Object TransFromJSONToJava(Class<?> cls,Object obj) throws ParseException
 	{
+		return TransFromJSONToJava(utils.GetClassName(cls),obj);
+	}
+	public static Object TransFromJSONToJava(String clsName,Object obj) throws ParseException
+	{
 		if(obj==null)return null;
-		if(utils.JudgeIsEnum(cls))
-			return Trans.TransTojxEunm(cls, obj);
-		else if(utils.GetClassName(cls).compareTo("UUID")==0)
+		Object eo=TransTojxEunm(clsName,obj);
+		if(eo!=null)return eo;
+		else if(clsName.compareTo("UUID")==0)
 			return Trans.TransToUUID((String)obj);
-		else if(utils.GetClassName(cls).compareTo("Date")==0)
-			return Trans.TransToDate((String)obj);
+		else if(clsName.compareTo("Date")==0)
+			return Trans.TransToDate((Integer)obj);
 		else
-			return obj;
+			return TransTo(clsName,obj);
 	}
 	
-	
-
+	public static ORMID TransToORMID(byte[] bs,int start)
+	{
+		if(bs==null||start<0||bs.length<start+8)return null;
+		return new ORMID(TransToInteger(bs,start),TransToInteger(bs,start+4));
+	}
+	public static byte[] TransToByteArray(ORMID id)
+	{
+		if(id==null)return null;
+		byte[] bs=new byte[8];
+		TransToByteArray(bs,0,id.getTypeID());
+		TransToByteArray(bs,4,id.getID());
+		return bs;
+	}
+	public static void TransToByteArray(byte[] bs,int start,ORMID id)
+	{
+		if(bs==null||start<0||bs.length<start+8)return;
+		TransToByteArray(bs,start+0,id.getTypeID());
+		TransToByteArray(bs,start+4,id.getID());
+	}
 	public static byte[] TransToByteArray(UUID id)
 	{
 		if(id==null)return null;
@@ -70,7 +92,7 @@ public class Trans
 	}
 	public static String TransToString(UUID id)
 	{
-		if(obj==id)return null;
+		if(id==null)return null;
 		String s = id.toString(); 
         //去掉“-”符号 
         return s.substring(0,8)+s.substring(9,13)+s.substring(14,18)+s.substring(19,23)+s.substring(24); 
@@ -84,11 +106,14 @@ public class Trans
 	
 	public static Object TransTo(Class<?> cls,Object value) throws ParseException
 	{
+		return TransTo(utils.GetClassName(cls),value);
+	}
+	public static Object TransTo(String clsName,Object value) throws ParseException
+	{
 		if(value==null)return null;
-		if(utils.JudgeIsEnum(cls))
-			return TransTojxEunm(cls, value);
-		String cn=utils.GetClassName(cls);
-		switch(cn)
+		Object eo=TransTojxEunm(clsName,value);
+		if(eo!=null)return eo;
+		switch(clsName)
 		{
 		case "byte":
 		case "Byte":
@@ -114,34 +139,44 @@ public class Trans
 		return value;
 	}
 
+	public static Date TransToDate(Integer i)
+	{
+		if(i==null)return null;
+		return new Date((long)i*1000);
+	}
 	public static Boolean TransToBoolean(Object value)
 	{
-		if(value==null)return null;
+		if(value==null)return false;
 		return Boolean.parseBoolean(String.valueOf(value));
 	}
 	public static Double TransToDouble(Object value)
 	{
-		if(value==null)return null;
+		if(value==null)return 0D;
 		return Double.parseDouble(String.valueOf(value));
 	}
 	public static Float TransToFloat(Object value)
 	{
-		if(value==null)return null;
+		if(value==null)return 0F;
 		return Float.parseFloat(String.valueOf(value));
 	}
 	public static Long TransToLong(Object value)
 	{
-		if(value==null)return null;
+		if(value==null)return 0L;
 		return Long.parseLong(String.valueOf(value));
 	}
 	public static Integer TransToInteger(Object value)
 	{
-		if(value==null)return null;
+		if(value==null)return 0;
 		return Integer.parseInt(String.valueOf(value));
+	}
+	public static Integer TransToInteger(Date d)
+	{
+		if(d==null)return null;
+		return (int) (((Date)d).getTime()/1000);
 	}
 	public static Short TransToShort(Object value)
 	{
-		if(value==null)return null;
+		if(value==null)return 0;
 		return Short.parseShort(String.valueOf(value));
 	}
 	public static Byte TransToByte(Object value)
@@ -175,7 +210,7 @@ public class Trans
 	public static Long TransToLong(byte[] bs,int start)
 	{
 		if(bs==null)return null;
-		Long value= 0;
+		Long value= 0L;
 		//由高位到低位
 		for (int i = 0; i < 8; i++)
 		{

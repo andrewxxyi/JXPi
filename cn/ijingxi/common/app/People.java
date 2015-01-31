@@ -8,10 +8,18 @@ import cn.ijingxi.common.orm.ORM.KeyType;
 
 public class People extends Container
 {
-	protected People() throws Exception {
+	protected People()
+	{
 		super();
+		TypeName="People";
 		ContainerType=ContainerType_People;
 	}
+	
+	public static ORMID GetORMID(Integer ID)
+	{
+		return new ORMID(GetTypeID("People"),ID);
+	}
+	
 	/**
 	 * 要在Container之后执行
 	 * @throws Exception
@@ -20,6 +28,12 @@ public class People extends Container
 	public static void CreateDB() throws Exception
 	{
 		CreateTableInDB(People.class);
+	}
+	@Override
+	protected boolean CheckForMsgRegister() throws Exception
+	{
+		//如果是在自己的手机上则接收消息
+		return jxSystem.System.SystemUUID.compareTo(UniqueID)==0;
 	}
 	
 	
@@ -44,7 +58,17 @@ public class People extends Container
 		
 	@ORM
 	public Boolean NoUsed;
-		
-	
+
+	@Override
+	public boolean CheckRight(Container c,String RoleName) throws Exception
+	{
+		Queue<jxORMobj> pl=((Organize)c).ListRealMapTo(RoleName);
+		if(pl!=null)
+			for(jxORMobj p:pl)
+				if(((People)p).GetID().Equal(GetID()))
+					return true;
+		return false;
+	}
+
 	
 }

@@ -3,14 +3,16 @@ package cn.ijingxi.common.Process;
 
 import java.util.UUID;
 
+import cn.ijingxi.common.app.Container;
 import cn.ijingxi.common.orm.ORMID;
 
 public interface IExecutor
 {
 	public String getName();
-	public UUID getUniqueD();
-	public ORMID GetID();
+	public UUID getUniqueID();
+	public ORMID GetID() throws Exception;
 	public UUID GetOwnerID() throws Exception;
+	public boolean CheckRight(Container c,String RoleName) throws Exception;
 	//public void Inform(jxEvent<?> event);	
 	//比如指定的是某个角色，在运行时需将其转换为具体的某个人，GetInsteadExecutor只获取第一次转换
 	//而GetRealExecutor则获取最终的替代者，如

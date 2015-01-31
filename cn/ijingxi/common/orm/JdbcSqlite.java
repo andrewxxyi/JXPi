@@ -17,8 +17,23 @@ public class JdbcSqlite implements DB
 	public void SetDBName(String dbname){DBName=dbname;}
 	public void SetUserID(String uid){}
 	public void SetPasswd(String pwd){}
+
+	public JdbcSqlite() throws Exception
+	{
+		if(conn==null)
+		{
+			Class.forName("org.sqlite.JDBC");
+			conn=DriverManager.getConnection("jdbc:sqlite:"+DBName+".db");
+			conn.setAutoCommit(false);
+		}
+	}
 	
-	public Integer GetGeneratedKey(Connection conn,String IDName) throws SQLException
+	@Override
+	public void Release() throws SQLException 
+	{
+		conn.commit();
+	}
+	public Integer GetGeneratedKey(String IDName) throws SQLException
 	{
 		String sql = "Select last_insert_rowid()";
 		Statement stmt = conn.createStatement();
@@ -27,14 +42,8 @@ public class JdbcSqlite implements DB
 		rs.close();
 		return id;
 	}
-	public Connection GetConnection() throws ClassNotFoundException, SQLException
+	public Connection GetConnection()
 	{
-		if(conn==null)
-		{
-			Class.forName("org.sqlite.JDBC");
-			conn=DriverManager.getConnection("jdbc:sqlite:"+DBName+".db");
-			conn.setAutoCommit(false);
-		}
 		return conn;
 	}
 	public void ReleaseConnection(Connection conn) throws SQLException
@@ -54,7 +63,7 @@ public class JdbcSqlite implements DB
 		switch(n)
 		{
 		case "Date":
-			return ((Date)value).getTime()/1000;
+			return Trans.TransToInteger((Date)value);
 		case "boolean":
 		case "Boolean":
 			return (boolean)value ? 1 :0; 
@@ -100,7 +109,7 @@ public class JdbcSqlite implements DB
 		case "[B":	
 			return (byte[]) value;
 		case "Date":
-			return  new Date(Long.parseLong(String.valueOf(value))*1000);
+			return Trans.TransToDate((Integer)value);
 		case "boolean":
 		case "Boolean":
 			return (Integer)value !=0;

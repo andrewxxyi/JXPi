@@ -11,20 +11,14 @@ public class Relation extends jxORMobj
 	{
 		CreateTableInDB(Relation.class);
 	}
+		
+	@ORM(keyType=KeyType.PrimaryKey)
+	public int ContainerID;
 	
 	@ORM(keyType=KeyType.PrimaryKey)
-	public String ClassType;
+	public int TargetContainerID;
 	
-	@ORM(keyType=KeyType.PrimaryKey)
-	public int ObjID;
-
-	@ORM(keyType=KeyType.PrimaryKey)
-	public String TargetClassType;
-	
-	@ORM(keyType=KeyType.PrimaryKey)
-	public int TargetObjID;
-	
-	@ORM(keyType=KeyType.PrimaryKey)
+	@ORM
 	public int RelationType;	
 	
 }
