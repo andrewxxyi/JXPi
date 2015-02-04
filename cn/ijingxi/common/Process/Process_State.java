@@ -1,6 +1,7 @@
 
 package cn.ijingxi.common.Process;
 
+/*
 import cn.ijingxi.common.app.Container;
 import cn.ijingxi.common.util.*;
 
@@ -39,17 +40,9 @@ class ProcessClose implements IDoSomething
 				PN.NodeSM.Happen(node, "state", InstanceEvent.Close, p);
 			}			
 		}
-		*/
-		/* 应该通知流程实例的发起者
-		jxEvent<InstanceEvent> e=new jxEvent<InstanceEvent>(InstanceEvent.Close);
-		e.Param.offer(param.getCaller());
-		e.Param.offer(null);
-		e.Param.offer(param.getMsg());
-		node.Execer.Inform(e);	
-		*/
+
 	}
 }
-/*
 class ProcessCancel implements IDoSomething
 {
 	@Override

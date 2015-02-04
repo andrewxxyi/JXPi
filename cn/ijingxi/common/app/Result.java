@@ -9,7 +9,13 @@ public enum Result implements IjxEnum
 	OK,
 	Erroy,
 	Reject,
-	Accept;
+	Accept,
+	Success,
+	Fail,
+	//放弃
+	GiveUp,
+	//部分完成
+	Part;
 
 	@Override
 	public Object TransToORMEnum(Integer param) 

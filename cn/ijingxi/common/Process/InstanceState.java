@@ -6,6 +6,7 @@ import cn.ijingxi.common.util.IjxEnum;
 
 	public enum InstanceState implements IjxEnum
 	{
+		None,
 		//非活动状态
 		NoActive,
 		//等待执行

@@ -24,7 +24,7 @@ public class CallParam
         return Msg;
     }    	
 	Queue<Object> Param=null;
-	public CallParam(IExecutor Execer,IExecutor Caller,String Msg)
+	public CallParam(IExecutor Caller,IExecutor Execer,String Msg)
 	{
 		this.Execer=Execer;
 		this.Caller=Caller;

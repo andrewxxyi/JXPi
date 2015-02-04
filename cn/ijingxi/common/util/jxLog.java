@@ -3,34 +3,39 @@ package cn.ijingxi.common.util;
 
 import java.util.*;
 
+import cn.ijingxi.common.app.jxSystem;
 import cn.ijingxi.common.orm.*;
-import cn.ijingxi.common.orm.ORM.KeyType;
 
+/**
+ * 只在全局中有，
+ * 
+ * 统计分析在lanserver中每天晚上运行
+ * 本机上只统计分析自己的
+ * 
+ * @author andrew
+ *
+ */
 public class jxLog extends jxORMobj
 {
-	protected jxLog() throws Exception {
-		super();
-	}
-
-	public static void Init() throws Exception{	InitClass(jxLog.class);}
+	public static void Init() throws Exception{	InitClass(ORMType.jxLog.ordinal(),jxLog.class);}
 	public static void CreateDB() throws Exception
 	{
-		CreateTableInDB(jxLog.class);
+		CreateTableInDB(jxLog.class,null);
 	}
-	
-	@ORM(Index=1,Descr="相关人，或者是事件的触发者，或者是执行人，或者是目标人")
-	public UUID CorrelationID;
+
+	@ORM(Index=1)
+	public UUID OwnerID;	
 	
 	@ORM(Index=2)
-	public int ContainerType;
+	public int TypeID;
 	@ORM(Index=2)
-	public int ContainerID;
+	public int ID;
+	
+	@ORM
+	public String Name;
 	
 	@ORM
 	public String Descr;
-	
-	@ORM
-	public int Event;
 
 	@ORM(Index=3)
 	public Date LogTime;
@@ -39,21 +44,47 @@ public class jxLog extends jxORMobj
 	public String Info;
 
 
-	public static jxLog Log(UUID CorrelationID,int ContainerType,int ContainerID,int Event,String Descr) throws Exception
+	/**
+	 * 尚未保存，最终设置完毕要注意保存
+	 * @param OwnerID
+	 * @param TypeID
+	 * @param ID
+	 * @param Name
+	 * @param Descr
+	 * @return
+	 * @throws Exception
+	 */
+	public static jxLog Log(UUID OwnerID,int TypeID,int ID,String Name,String Descr) throws Exception
 	{
 		jxLog log=(jxLog) jxLog.New(jxLog.class);
-		log.CorrelationID=CorrelationID;
-		log.ContainerType=ContainerType;
-		log.ContainerID=ContainerID;
-		log.Event=Event;
+		log.OwnerID=OwnerID;
+		log.TypeID=TypeID;
+		log.ID=ID;
+		log.Name=Name;
 		log.Descr=Descr;
 		log.LogTime=new Date();
-		log.Insert();
 		return log;
 	}
-	public void AddInfo(String Purpose,Object value) throws Exception
+	public void setInfo(String Purpose,Object value) throws Exception
 	{
 		setExtendValue("Info",Purpose,value);
+	}
+	
+	public static jxMsg NewLogMsg(jxLog log,UUID Receiver) throws Exception
+	{
+		jxMsg msg=(jxMsg) jxMsg.New(jxMsg.class);
+		msg.Sender=jxSystem.System.SystemUUID;
+		msg.SenderID=ORMID.SystemID;
+		msg.Receiver=Receiver;
+		msg.ReceiverID=ORMID.SystemID;
+		msg.MsgID=jxSystem.System.GetMsgID();
+		msg.MsgType=jxMsgType.Log;
+		msg.setMsg(log.ToJSONString());
+		return msg;
+	}
+	public static jxLog GetFromMsg(jxMsg msg) throws Exception
+	{
+		return (jxLog) Trans.TransFromJSONToJava(jxLog.class, msg.getMsg());
 	}
 	
 }

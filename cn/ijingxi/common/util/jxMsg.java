@@ -7,33 +7,38 @@ import java.util.*;
 import cn.ijingxi.common.app.jxSystem;
 import cn.ijingxi.common.orm.ORM;
 import cn.ijingxi.common.orm.ORMID;
+import cn.ijingxi.common.orm.ORMType;
 import cn.ijingxi.common.orm.jxORMobj;
 import cn.ijingxi.common.orm.ORM.KeyType;
 
 /**
- * 带确认的消息传递
+ * 带确认的消息传递，全局
  * @author andrew
  *
  */
 public class jxMsg extends jxORMobj implements Iterable<byte[]>
 {
+    static final int Msg_Version = 1;
+	
 	
 	public static ORMID GetORMID(Integer ID)
 	{
-		return new ORMID(GetTypeID("jxMsg"),ID);
+		return new ORMID(ORMType.jxMsg.ordinal(),ID);
 	}
 	
 	public static void Init() throws Exception
 	{
-		InitClass(jxMsg.class);
+		InitClass(ORMType.jxMsg.ordinal(),jxMsg.class);
 	}
 	public static void CreateDB() throws Exception
 	{
-		CreateTableInDB(jxMsg.class);
+		CreateTableInDB(jxMsg.class,null);
 	}
 
 	@ORM(keyType=KeyType.PrimaryKey)
 	public UUID Sender;
+	@ORM(Index=1)
+	public ORMID SenderID;
 	//发送方的消息号
 	@ORM(keyType=KeyType.PrimaryKey)
 	public Long MsgID;
@@ -100,10 +105,11 @@ public class jxMsg extends jxORMobj implements Iterable<byte[]>
 		super();
 	}
 	
-	public static jxMsg NewRichMsg(UUID Receiver,ORMID ReceiverID,String MSG) throws Exception
+	public static jxMsg NewRichMsg(ORMID SenderID,UUID Receiver,ORMID ReceiverID,String MSG) throws Exception
 	{
 		jxMsg msg=(jxMsg) jxMsg.New(jxMsg.class);
 		msg.Sender=jxSystem.System.SystemUUID;
+		msg.SenderID=SenderID;
 		msg.Receiver=Receiver;
 		msg.ReceiverID=ReceiverID;
 		msg.MsgID=jxSystem.System.GetMsgID();
@@ -111,15 +117,17 @@ public class jxMsg extends jxORMobj implements Iterable<byte[]>
 		msg.setMsg(MSG);
 		return msg;
 	}
-	public static jxMsg NewEventMsg(UUID Receiver,ORMID ReceiverID,IjxEnum Event,String MSG) throws Exception
+	public static jxMsg NewEventMsg(ORMID SenderID,UUID Receiver,ORMID ReceiverID,IjxEnum Event,String MSG) throws Exception
 	{
 		jxMsg msg=(jxMsg) jxMsg.New(jxMsg.class);
 		msg.Sender=jxSystem.System.SystemUUID;
+		msg.SenderID=SenderID;
 		msg.Receiver=Receiver;
 		msg.ReceiverID=ReceiverID;
 		msg.MsgID=jxSystem.System.GetMsgID();
 		msg.MsgType=jxMsgType.Event;
-		msg.setMsg(MSG);
+		if(MSG!=null)
+			msg.setMsg(MSG);
 		msg.SetParam("EventType",utils.GetClassName(Event.getClass()));
 		msg.SetParam("Event",Trans.TransToInteger(Event));		
 		return msg;
@@ -151,10 +159,12 @@ public class jxMsg extends jxORMobj implements Iterable<byte[]>
     static final int BlockLong_Size = 8;
     static final int BlockInt_Size = 4;
     static final int BlockStart_Sender = 0;
-    static final int BlockStart_Receiver = BlockUUID_Size;
+    static final int BlockStart_SenderID = BlockUUID_Size;
+    static final int BlockStart_Receiver = BlockStart_SenderID+BlockLong_Size;
     static final int BlockStart_ReceiverID = BlockStart_Receiver+BlockLong_Size;
     static final int BlockStart_MsgID = BlockStart_ReceiverID+BlockUUID_Size;
-    static final int BlockStart_MsgState = BlockStart_MsgID+BlockLong_Size;
+    static final int BlockStart_Version = BlockStart_MsgID+BlockLong_Size;
+    static final int BlockStart_MsgState = BlockStart_Version+BlockInt_Size;
     static final int BlockStart_MsgLength = BlockStart_MsgState+BlockInt_Size;
     static final int BlockStart_MsgType = BlockStart_MsgLength+BlockInt_Size;
     static final int BlockStart_BlockID = BlockStart_MsgType+BlockInt_Size;
@@ -207,9 +217,11 @@ public class jxMsg extends jxORMobj implements Iterable<byte[]>
 						BlockNum=msgLength/Block_DataSize+((msgLength%Block_DataSize==0)?0:1);
 					}
 					Trans.TransToByteArray(bs, BlockStart_Sender,Sender);
+					Trans.TransToByteArray(bs, BlockStart_SenderID,SenderID);
 					Trans.TransToByteArray(bs, BlockStart_Receiver,Receiver);
 					Trans.TransToByteArray(bs, BlockStart_ReceiverID,ReceiverID);
 					Trans.TransToByteArray(bs, BlockStart_MsgID,MsgID);
+					Trans.TransToByteArray(bs, BlockStart_Version,Msg_Version);
 					//用于消息确认
 					Trans.TransToByteArray(bs, BlockStart_MsgState,State.ordinal());
 					Trans.TransToByteArray(bs, BlockStart_MsgType,MsgType.ordinal());
@@ -278,6 +290,7 @@ class ReceiveBufferMsg
 		{
 			msg=(jxMsg) jxMsg.New(jxMsg.class);
 			msg.Sender=Trans.TransToUUID(Block, jxMsg.BlockStart_Sender);
+			msg.SenderID=Trans.TransToORMID(Block, jxMsg.BlockStart_SenderID);
 			msg.Receiver=Trans.TransToUUID(Block, jxMsg.BlockStart_Receiver);
 			msg.ReceiverID=Trans.TransToORMID(Block, jxMsg.BlockStart_ReceiverID);
 			msg.MsgID=Trans.TransToLong(Block, jxMsg.BlockStart_MsgID);

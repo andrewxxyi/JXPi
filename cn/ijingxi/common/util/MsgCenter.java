@@ -106,7 +106,7 @@ public class MsgCenter
 				if(mo!=null)
 				{
 					mo.mcTimer.cancel();
-					mo.DelaySave();
+					mo.DelaySave(null);
 					MsgCenter.Msgs.Delete(mo.Sender, mo.MsgID);
 				}
 			}

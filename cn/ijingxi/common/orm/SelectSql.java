@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Queue;
 
+import cn.ijingxi.common.app.TopSpace;
 import cn.ijingxi.common.util.LinkNode;
 import cn.ijingxi.common.util.Trans;
 import cn.ijingxi.common.util.jxCompare;
@@ -19,6 +20,7 @@ public class SelectSql
 {
 	int Limit=0;
 	int Offset=0;
+	jxLink<String,String> clsToDBTablename=new jxLink<String,String>();
 	jxLink<String,Integer> Tables=new jxLink<String,Integer>();
 	//目前假定，由or组合的各组and链
 	jxLink<Integer,contionLink> con=new jxLink<Integer,contionLink>();
@@ -27,18 +29,19 @@ public class SelectSql
 	 * 用的是类名
 	 * @param ClassName
 	 */
-	public void AddTable(String ClassName)
+	public void AddTable(String ClassName,TopSpace ts)
 	{
 		ORMClassAttr a=jxORMobj.getClassAttr(ClassName);
-		if(a.DBTableName!=null&&!Tables.Exist(a.DBTableName))
+		if(a.getDBTableName(ts)!=null&&!Tables.Exist(a.getDBTableName(ts)))
 		{
-			Tables.addByRise(a.DBTableName, Tables.getCount()+1);
+			clsToDBTablename.addByRise(ClassName, a.getDBTableName(ts));
+			Tables.addByRise(a.getDBTableName(ts), Tables.getCount()+1);
 			ORMClassAttr p=jxORMobj.getClassAttr(a.SuperClassName);
 			if(p!=null)
 			{
-				AddTable(p.DBTableName);
+				AddTable(p.ClsName,ts);
 				//如果存在继承则必须只能有一个主键进行链接
-				selectContion sc=new selectContion(a.DBTableName,a.PrimaryKeys.get(0),p.DBTableName,p.PrimaryKeys.get(0));
+				selectContion sc=new selectContion(a.getDBTableName(ts),a.PrimaryKeys.get(0),p.getDBTableName(ts),p.PrimaryKeys.get(0));
 				AddContion(0,sc);
 			}
 		}
@@ -89,17 +92,17 @@ public class SelectSql
 	 * @return
 	 * @throws Exception 
 	 */
-	public String GetSql(String ClassName) throws Exception
+	public String GetSql(String ClassName,TopSpace ts) throws Exception
 	{
 		String select=null;
 		ORMClassAttr a=jxORMobj.getClassAttr(ClassName);
-		if(a.DBTableName!=null)
-			select=GetFullName(a.DBTableName,"*");
+		if(a.getDBTableName(ts)!=null)
+			select=GetFullName(a.getDBTableName(ts),"*");
 		ORMClassAttr p=jxORMobj.getSuperClassAttr(ClassName);
 		while(p!=null)
 		{
-			if(p.DBTableName!=null)
-				select=utils.StringAdd(select, ",",GetFullName(p.DBTableName,"*"));
+			if(p.getDBTableName(ts)!=null)
+				select=utils.StringAdd(select, ",",GetFullName(p.getDBTableName(ts),"*"));
 			p=jxORMobj.getSuperClassAttr(p.ClsName);
 		}
 		String sql="Select "+select+" From "+GetSql_From()+" Where "+GetSql_Where();		
@@ -137,11 +140,13 @@ public class SelectSql
 	
 	
 	
-	String GetTableAlias(String TableName) throws Exception
+	String GetTableAlias(String ClassName) throws Exception
 	{
-		Integer t=Tables.search(TableName);
+		String dt=clsToDBTablename.search(ClassName);
+		if(dt==null)return null;
+		Integer t=Tables.search(dt);
 		if(t==0)
-			throw new Exception("表名不存在："+TableName);
+			throw new Exception("表名不存在："+ClassName);
 		return "t"+t;
 	}
 	String GetFullName(String TableName,String ColName) throws Exception
@@ -152,35 +157,35 @@ public class SelectSql
 
 class selectContion
 {
-	String TableName=null;
+	String ClassName=null;
 	String ColName=null;
 	jxCompare cp=jxCompare.Equal;
 	boolean cpValue=true;
 	Object value=null;
-	String OtherTableName=null;
+	String OtherClassName=null;
 	String OtherColName=null;
 	
-	selectContion(String TableName,String ColName,jxCompare cp,Object value)
+	selectContion(String ClassName,String ColName,jxCompare cp,Object value)
 	{
-		this.TableName=TableName;
+		this.ClassName=ClassName;
 		this.ColName=ColName;
 		this.cp=cp;
 		this.value=value;
 	}
 //只能用于两表之间的链接
-selectContion(String TableName,String ColName,String OtherTableName,String OtherColName)
+selectContion(String ClassName,String ColName,String OtherClassName,String OtherColName)
 {
-	this.TableName=TableName;
+	this.ClassName=ClassName;
 	this.ColName=ColName;
 	this.cp=jxCompare.Equal;
 	this.cpValue=false;
-	this.OtherTableName=OtherTableName;
+	this.OtherClassName=OtherClassName;
 	this.OtherColName=OtherColName;
 }
 
 	String GetSql() throws Exception
 	{
-		String sc=GetFullName(TableName,ColName);
+		String sc=GetFullName(ClassName,ColName);
 		if(sc==null)
 			return null;
 		sc+=Trans.TransCompareToString(cp);
@@ -191,7 +196,7 @@ selectContion(String TableName,String ColName,String OtherTableName,String Other
 		}
 		else
 		{
-			String sco=GetFullName(OtherTableName,OtherColName);
+			String sco=GetFullName(OtherClassName,OtherColName);
 			if(sco==null)
 				return null;
 			sc += sco;

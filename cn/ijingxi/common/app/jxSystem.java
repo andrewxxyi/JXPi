@@ -8,28 +8,35 @@ import cn.ijingxi.common.orm.*;
 import cn.ijingxi.common.orm.ORM.KeyType;
 import cn.ijingxi.common.util.*;
 
+/**
+ * 全局的，所有topspace共享
+ * @author andrew
+ *
+ */
 public class jxSystem extends jxORMobj
 {	
 	public static final UUID zeroUUID=UUID.fromString("00000000-0000-0000-0000-000000000000");
 	public static final UUID broadUUID=UUID.fromString("11111111-1111-1111-1111-111111111111");
 
 	public static jxSystem System=null;
+	public static UUID SystemID=null;
 	public static void Init() throws Exception
 	{	
-		InitClass(jxSystem.class);
-		System=(jxSystem) GetByID(jxSystem.class,1);	
+		InitClass(ORMType.Container.ordinal(),jxSystem.class);
+		System=(jxSystem) GetByID(jxSystem.class,1,null);	
+		SystemID=System.SystemUUID;
 	}	
 	public static void CreateDB() throws Exception
 	{
-		CreateTableInDB(jxSystem.class);
-		CreateTableInDB(People.class);
+		CreateTableInDB(jxSystem.class,null);
+		CreateTableInDB(People.class,null);
 		jxSystem s=(jxSystem) jxORMobj.New(jxSystem.class);
 		s.SystemUUID=UUID.randomUUID();
-		s.Insert();
+		s.Insert(null);
 		People p=(People) jxORMobj.New(People.class);;
 		//1号是手机主人，但如果某人在两台手机上都装了，则会出现冲突，需要加以解决
 		p.UniqueID=s.SystemUUID;
-		p.Insert();
+		p.Insert(null);
 	}
 	
 	@ORM(keyType=KeyType.AutoDBGenerated)
@@ -57,7 +64,7 @@ public class jxSystem extends jxORMobj
 		MsgID++;
 		if(MsgID==Long.MAX_VALUE)
 			MsgID=1;
-		DelaySave();
+		DelaySave(null);
 		return MsgID;
 	}
 	
@@ -89,7 +96,7 @@ public class jxSystem extends jxORMobj
 			int num=Trans.TransToInteger(getExtendValue("Addition",ClsName));
 			num++;
 			setExtendValue("Addition",ClsName,num);
-			Update();
+			Update(null);
 			return num;
 		}
 	}

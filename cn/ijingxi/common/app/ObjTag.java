@@ -10,20 +10,22 @@ import cn.ijingxi.common.util.jxCompare;
 
 public class ObjTag extends jxORMobj
 {
-	public static void Init() throws Exception{	InitClass(ObjTag.class);}
-	public static void CreateDB() throws Exception
+	public static void Init() throws Exception{	InitClass(ORMType.ObjTag.ordinal(),ObjTag.class);}
+	public static void CreateDB(TopSpace ts) throws Exception
 	{
-		CreateTableInDB(ObjTag.class);
+		CreateTableInDB(ObjTag.class,ts);
 	}
 
 	@ORM(keyType=KeyType.AutoDBGenerated)
 	public int ID;
-	
-	@ORM(Index=1,Descr="对象一定都是容器")
+
+	@ORM(Index=1)
+	public int ObjTypeID;
+	@ORM(Index=1)
 	public int ObjID;
 
-	@ORM(Index=1,Encrypted=true)
-	public int TagID;
+	@ORM(Index=1)
+	public long TagID;
 	
 	@ORM
 	public String Descr;
@@ -46,21 +48,29 @@ public class ObjTag extends jxORMobj
 	@ORM(Descr="json格式的附加信息",Encrypted=true)
 	public String Addition;
 
-	public Queue<jxORMobj> List(int id,String TagName) throws Exception
+	private static Long TagIDMask=(long) 0x10000;
+	public Queue<jxORMobj> List(People Caller,int typeid,int id,Long TagID) throws Exception
 	{
 		SelectSql s=new SelectSql();
-		s.AddTable("ObjTag");
+		s.AddTable("ObjTag",Caller.CurrentTopSpace);
+		s.AddContion("ObjTag", "ObjTypeID", jxCompare.Equal, typeid);
 		s.AddContion("ObjTag", "ObjID", jxCompare.Equal, id);
-		s.AddContion("ObjTag", "TagName", jxCompare.Equal, TagName);
-		return Select(ObjTag.class,s);
+		if(TagID%TagIDMask==0)
+		{
+			//如果最后两个字节都为0，则代表是某一个类，如费用，下面再分打车等等
+			long start=TagID/TagIDMask;
+			long end=start+TagIDMask;
+			s.AddContion("ObjTag", "TagID", jxCompare.GreateEqual,start);
+			s.AddContion("ObjTag", "TagID", jxCompare.Less,end);
+		}
+		else
+			s.AddContion("ObjTag", "TagID", "Tag", "ID");
+		return Select(ObjTag.class,s,Caller.CurrentTopSpace);
 	}
-	public ObjTag Get(int id,String TagName) throws Exception
+	public Queue<jxORMobj> List(People Caller,int typeid,int id,String TagName) throws Exception
 	{
-		SelectSql s=new SelectSql();
-		s.AddTable("ObjTag");
-		s.AddContion("ObjTag", "ObjID", jxCompare.Equal, id);
-		s.AddContion("ObjTag", "TagName", jxCompare.Equal, TagName);
-		return (ObjTag) Get(ObjTag.class,s);
+		long tid=Tag.GetTagID(Caller, TagName);
+		return List(Caller,typeid,id,tid);
 	}
 	
 }

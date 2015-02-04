@@ -9,6 +9,8 @@ public enum jxMsgType implements IjxEnum
 	Text,
 	//带格式的文本
 	RichText,
+	//日志信息
+	Log,
 	//事件
 	Event,
 	//后加入空间者开始下载空间中的基本信息与设置

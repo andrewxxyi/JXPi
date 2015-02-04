@@ -29,6 +29,9 @@ public class jxJson implements Iterable<jxJson>
     private NodeType Type=NodeType.Undefined;
     
     private String Name=null;
+    
+    //如果父节点为数组，则保存本对象在父节点中的索引
+    private int ArrayIndex=0;
     /// <summary>
     /// 如果节点为数组，则保存各子元素
     /// </summary>
@@ -228,7 +231,18 @@ public class jxJson implements Iterable<jxJson>
     {
     	utils.Check(el==null, "不能添加空的子元素");
     	utils.Check(Type!=NodeType.Array, "只有数组节点才能添加子元素");
-    	Array.add(el);
+		synchronized (Array)
+        {
+	    	el.ArrayIndex=Array.size();
+	    	Array.add(el);    	
+        }
+    }
+    public void RemoveArrayElement(jxJson el) throws Exception
+    {
+		synchronized (Array)
+        {
+	    	Array.remove(el.ArrayIndex);    	
+        }
     }
 
     public String TransToString()

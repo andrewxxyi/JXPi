@@ -12,18 +12,19 @@ public class utils
 {
 	public static void Init() throws Exception
 	{
-		//初始化顺序不能发生改变，新增加的类只能在最后添加不能中间插入！！
+		TopSpace.Init();
+		Container.Init();
 		jxMsg.Init();
 		jxProcess.Init();
 		PI.Init();
 		PN.Init();		
-		Container.Init();
 		jxSystem.Init();
 		People.Init();
 		Role.Init();
 		Relation.Init();
 		Tag.Init();
 		jxLog.Init();
+		jxTask.Init();
 
 		Trans.AddEunmType(InstanceState.Doing);
 		Trans.AddEunmType(InstanceEvent.Touch);
@@ -32,25 +33,19 @@ public class utils
 		Trans.AddEunmType(jxCompare.Equal);
 		Trans.AddEunmType(jxMsgState.Posted);
 		Trans.AddEunmType(jxOP.Equal);
+		Trans.AddEunmType(Right.Read);
+		Trans.AddEunmType(TSEvent.Sync);
+		
 		
 		udpMsg.Init();
 	}
 	public static void CreateDBTable() throws Exception
 	{
 		jxMsg.CreateDB();
-		jxProcess.CreateDB();
-		PI.CreateDB();
-		PN.CreateDB();
-		
-		Container.CreateDB();
-		//People在jxSystem中已完成了创建与初始化
 		jxSystem.CreateDB();
-		//People.CreateDB();
-		Role.CreateDB();
-		Relation.CreateDB();
 		Tag.CreateDB();		
 		jxLog.CreateDB();
-	}
+	}	
 	
 	public static Calendar GetDate(Calendar t)
 	{
