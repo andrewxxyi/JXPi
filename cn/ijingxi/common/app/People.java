@@ -29,12 +29,7 @@ public class People extends jxORMobj implements IExecutor
 	{
 		CreateTableInDB(People.class,null);
 	}
-	@Override
-	protected boolean CheckForMsgRegister() throws Exception
-	{
-		//如果是在自己的手机上则接收消息
-		return jxSystem.System.SystemUUID.compareTo(UniqueID)==0;
-	}	
+
 	@Override
 	protected void myInit() throws Exception
 	{

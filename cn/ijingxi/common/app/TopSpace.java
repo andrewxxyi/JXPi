@@ -9,10 +9,10 @@ import java.util.UUID;
 import cn.ijingxi.common.Process.PI;
 import cn.ijingxi.common.Process.PN;
 import cn.ijingxi.common.Process.jxProcess;
+import cn.ijingxi.common.msg.jxMsg;
 import cn.ijingxi.common.orm.*;
 import cn.ijingxi.common.orm.ORM.KeyType;
 import cn.ijingxi.common.util.jxCompare;
-import cn.ijingxi.common.util.jxMsg;
 
 /**
  * 全局的，所有topspace共享
@@ -57,7 +57,7 @@ public class TopSpace extends jxORMobj
 	public String Descr;
 
 	//缓存顶层空间的uuid
-	private static Map<Integer,TopSpace> TopSpaceIDTree=new HashMap<Integer,TopSpace>();
+	private static Map<UUID,TopSpace> TopSpaceIDTree=new HashMap<UUID,TopSpace>();
 	
 	public static TopSpace getByName(String Name) throws Exception
 	{
@@ -66,25 +66,18 @@ public class TopSpace extends jxORMobj
 		s.AddContion("TopSpace", "Name", jxCompare.Equal, Name);
 		return (TopSpace) Get(TopSpace.class,s,null);
 	}
-	public static TopSpace getByUniqueD(UUID uuid) throws Exception
+	public static TopSpace getByUniqueID(UUID uuid) throws Exception
 	{
+		TopSpace ts=TopSpaceIDTree.get(uuid);
+		if(ts!=null)return ts;
 		SelectSql s=new SelectSql();
 		s.AddTable("TopSpace",null);
 		s.AddContion("TopSpace", "UniqueID", jxCompare.Equal, uuid);
-		return (TopSpace) Get(TopSpace.class,s,null);
-	}
-	public static UUID getUUIDOfTopSpace(Integer TopSpaceID) throws Exception
-	{
-		TopSpace ts=TopSpaceIDTree.get(TopSpaceID);
-		if(ts!=null)return ts.UniqueID;
-		SelectSql s=new SelectSql();
-		s.AddTable("TopSpace",null);
-		s.AddContion("TopSpace", "ID", jxCompare.Equal, TopSpaceID);
 		ts=(TopSpace) Get(TopSpace.class,s,null);
 		if(ts!=null)
 		{
-			TopSpaceIDTree.put(TopSpaceID, ts);
-			return ts.UniqueID;
+			TopSpaceIDTree.put(uuid, ts);
+			return ts;
 		}
 		return null;
 	}
@@ -188,12 +181,6 @@ public class TopSpace extends jxORMobj
 		return Select(Role.class,s,Caller.CurrentTopSpace);
 	}	
 
-	@Override
-	protected boolean CheckForMsgRegister() throws Exception
-	{
-		return true;
-	}
-
 	protected boolean DualEventMsg(jxMsg msg)
 	{
 		
@@ -203,7 +190,7 @@ public class TopSpace extends jxORMobj
 	//邀请加入时才广播
 	public void BroadCast() throws Exception
 	{
-		jxMsg msg=jxMsg.NewEventMsg(GetID(),jxSystem.broadUUID,null,TSEvent.BroadCast,null);
+		//jxMsg msg=jxMsg.NewEventMsg(GetID(),jxSystem.broadUUID,null,TSEvent.BroadCast,null);
 	}
 
 	//申请加入

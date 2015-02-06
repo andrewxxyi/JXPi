@@ -5,7 +5,11 @@ import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
+
 import cn.ijingxi.common.app.*;
+import cn.ijingxi.common.msg.MsgCenter;
+import cn.ijingxi.common.msg.jxMsg;
+import cn.ijingxi.common.msg.jxMsgType;
 import cn.ijingxi.common.orm.*;
 import cn.ijingxi.common.orm.ORM.KeyType;
 import cn.ijingxi.common.util.*;
@@ -37,6 +41,13 @@ public class jxTask extends Container
 		task.Insert(ts);
 	}
 	
+
+	
+	
+	
+	
+	
+	
 	@ORM(keyType=KeyType.AutoSystemGenerated)
 	public int ID;
 
@@ -51,16 +62,12 @@ public class jxTask extends Container
 	
 	@ORM(Descr="json格式的附加信息")
 	public String Info;	
-	
+
 	@ORM(Index=2)
-	public UUID CreaterID;
+	public UUID ParentOwnerID;
 	@ORM(Index=2)
 	public int ParentID;
 	
-	public String GetParenetName() throws Exception
-	{
-		return (String) GetParent("Name");
-	}
 	public void SetInfo(String Purpose,Object value) throws Exception
 	{
 		setExtendValue("Info",Purpose,value);
@@ -108,6 +115,16 @@ public class jxTask extends Container
     //
     //方法
     //
+	private TopSpace myTS=null;
+	public TopSpace getTopSpace()
+	{
+		return myTS;
+	}
+	public void setTopSpace(TopSpace ts)
+	{
+		myTS=ts;
+	}
+	
 	jxMsg ToTaskMsg(UUID Receiver) throws Exception
 	{
 		jxMsg msg=(jxMsg) jxMsg.New(jxMsg.class);
@@ -130,13 +147,12 @@ public class jxTask extends Container
 	public void CreateSub(People Caller,People Execer,String Name,String Descr) throws Exception
     {
 	   jxTask task=(jxTask) New(jxTask.class);
-	   task.CreaterID=Caller.UniqueID;
+	   task.ParentOwnerID=jxSystem.SystemID;
 	   task.ParentID=ID;
 	   task.CreateTime=new Date();
 	   task.Name=Name;
 	   task.Descr=Descr;
-	   task.Descr=Descr;
-	   task.SetInfo("CteaterID", Caller.UniqueID);
+	   task.setTopSpace(Caller.CurrentTopSpace);
 	   
 	   if(Caller.UniqueID.compareTo(Execer.UniqueID)==0)
 		   task.Insert(Caller.CurrentTopSpace);
@@ -195,7 +211,7 @@ class TaskClose implements IDoSomething
 		//第一个参数是任务
 		jxTask task= (jxTask)param.getParam();
 		String desc= (String)param.getMsg();
-		UUID cid=task.CreaterID;
+		UUID cid=task.ParentOwnerID;
 		jxLog log=jxLog.Log(jxSystem.System.SystemUUID, ORMType.jxTask.ordinal(), task.ID, task.Name, desc);
 		log.setInfo("Event",InstanceEvent.Close);
 		log.setInfo("State",InstanceState.Closed);
@@ -213,7 +229,7 @@ class TaskCancel implements IDoSomething
 		//第一个参数是任务
 		jxTask task= (jxTask)param.getParam();
 		String desc= (String)param.getMsg();
-		UUID cid=task.CreaterID;
+		UUID cid=task.ParentOwnerID;
 		jxLog log=jxLog.Log(jxSystem.System.SystemUUID, ORMType.jxTask.ordinal(), task.ID, task.Name, desc);
 		log.setInfo("Event",InstanceEvent.Cancel);
 		log.setInfo("State",InstanceState.Canceled);
@@ -230,7 +246,7 @@ class TaskPause implements IDoSomething
 		//第一个参数是任务
 		jxTask task= (jxTask)param.getParam();
 		String desc= (String)param.getMsg();
-		UUID cid=task.CreaterID;
+		UUID cid=task.ParentOwnerID;
 		jxLog log=jxLog.Log(jxSystem.System.SystemUUID, ORMType.jxTask.ordinal(), task.ID, task.Name, desc);
 		log.setInfo("Event",InstanceEvent.Pause);
 		log.setInfo("State",InstanceState.Paused);
@@ -247,7 +263,7 @@ class TaskRedo implements IDoSomething
 		//第一个参数是任务
 		jxTask task= (jxTask)param.getParam();
 		String desc= (String)param.getMsg();
-		UUID cid=task.CreaterID;
+		UUID cid=task.ParentOwnerID;
 		jxLog log=jxLog.Log(jxSystem.System.SystemUUID, ORMType.jxTask.ordinal(), task.ID, task.Name, desc);
 		log.setInfo("Event",InstanceEvent.Trigger);
 		log.setInfo("State",InstanceState.Doing);

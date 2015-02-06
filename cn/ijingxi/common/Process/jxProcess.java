@@ -15,6 +15,7 @@ import cn.ijingxi.common.app.Result;
 import cn.ijingxi.common.app.Role;
 import cn.ijingxi.common.app.TopSpace;
 import cn.ijingxi.common.app.jxSystem;
+import cn.ijingxi.common.msg.jxMsg;
 import cn.ijingxi.common.orm.*;
 import cn.ijingxi.common.orm.ORM.KeyType;
 import cn.ijingxi.common.util.*;
@@ -37,17 +38,46 @@ public class jxProcess extends Container
 		CreateTableInDB(jxProcess.class,ts);
 	}
 
-	//下一节点的执行者，可能还没有创建这个节点，所以消息是发给进程的，如果没创建则创建，然后再转交
-	@Override
-	protected boolean CheckForMsgRegister() throws Exception
+	protected boolean DualEventMsg(jxMsg msg) throws Exception
 	{
-		return true;
+		IjxEnum event = msg.getEvent();
+		if(event==null||!(event instanceof InstanceEvent))return false;
+		TopSpace ts=msg.getTopSpace();
+		if(ts==null)return false;
+		PN from=(PN) jxORMobj.GetFromJSONString(msg.GetParam("Node"));
+		String toname=msg.GetParam("To");
+		switch((InstanceEvent)event)
+		{
+		case Touch:
+			PN pn=getPN(ts,from.ParentID,toname);
+			if(pn==null)
+			{
+				pn=(PN) PN.New(PN.class);
+				pn.ParentOwnerID=msg.Receiver;
+				pn.ParentID=from.ParentID;
+				pn.ProcessID=from.ProcessID;
+				pn.Parent=from.Parent;
+				pn.Name=toname;
+				pn.Insert(ts);
+			}
+			pn.Touch(ts, msg.getMsg());
+				
+			
+			
+			return true;
+		default:
+			break;
+		}
+		return false;
+	
+	
+	
 	}
 	
 	@ORM(keyType=KeyType.PrimaryKey)
 	public int ID;
 
-	@ORM(Descr="流水号模板")
+	@ORM(Descr="流水号模板名称")
 	public String SNPurpose; 
 	
 	@ORM(Descr="版本号，用于同名进程模板之间的区分")
@@ -77,7 +107,7 @@ public class jxProcess extends Container
 	public PI StartNewInstance(People Caller, String Msg) throws Exception
 	{
 		PI p=(PI) New(PI.class);
-		p.CreaterID=Caller.UniqueID;
+		p.ParentOwnerID=Caller.UniqueID;
 		p.Name=jxSystem.System.GetSN(SNPurpose,Caller);
 		if(p.Name==null)
 			p.Name=Name;
@@ -86,8 +116,17 @@ public class jxProcess extends Container
 		p.Insert(Caller.CurrentTopSpace);
 		//启动流程
 		PN sn=new  PN(Caller,ID,p, PN.Node_Start);		
-		sn.Touch(Caller, null);
+		sn.Touch(Caller.CurrentTopSpace, null);
 		return p;
+	}
+	
+	public PN getPN(TopSpace ts, int PIID, String PNName) throws Exception
+	{
+		SelectSql s=new SelectSql();
+		s.AddTable("PN",ts);
+		s.AddContion("PN", "ParentID", jxCompare.Equal, PIID);
+		s.AddContion("PN", "Name", jxCompare.Equal, PNName);
+		return (PN) Get(PN.class,s,ts);
 	}
 	/**
 	 * 修改也是这个函数

@@ -8,20 +8,19 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.util.*;
 
+
 import cn.ijingxi.common.app.TopSpace;
 import cn.ijingxi.common.app.jxSystem;
+import cn.ijingxi.common.msg.jxMsg;
 import cn.ijingxi.common.orm.ORM.KeyType;
 import cn.ijingxi.common.util.Base64;
 import cn.ijingxi.common.util.CallParam;
 import cn.ijingxi.common.util.IDoSomething;
-import cn.ijingxi.common.util.IMsgHandle;
 import cn.ijingxi.common.util.LRU;
 import cn.ijingxi.common.util.LinkNode;
-import cn.ijingxi.common.util.MsgCenter;
 import cn.ijingxi.common.util.Trans;
 import cn.ijingxi.common.util.jxCompare;
 import cn.ijingxi.common.util.jxLink;
-import cn.ijingxi.common.util.jxMsg;
 import cn.ijingxi.common.util.jxTimer;
 import cn.ijingxi.common.util.utils;
 
@@ -55,7 +54,7 @@ public class jxORMobj
 	 * @param msg
 	 * @return 用于组织消息处理链条，返回true则已经处理完毕了，不必继续处理
 	 */
-	protected boolean DualMsg(jxMsg msg)
+	public boolean DualMsg(jxMsg msg) throws Exception
 	{
 		if(msg!=null)
 			switch(msg.MsgType)
@@ -77,17 +76,11 @@ public class jxORMobj
 			}
 		return false;
 	}
-	protected boolean DualTextMsg(jxMsg msg){return false;}
-	protected boolean DualRichTextMsg(jxMsg msg){return false;}
-	protected boolean DualEventMsg(jxMsg msg){return false;}
-	protected boolean DualSyncMsg(jxMsg msg){return false;}
-	protected boolean DualReportMsg(jxMsg msg){return false;}
-	
-	//检查是否需要注册消息接收条件，比如流程已经执行完毕了就不再接受消息
-	protected boolean CheckForMsgRegister() throws Exception
-	{
-		return false;
-	}
+	protected boolean DualTextMsg(jxMsg msg) throws Exception{return false;}
+	protected boolean DualRichTextMsg(jxMsg msg) throws Exception{return false;}
+	protected boolean DualEventMsg(jxMsg msg) throws Exception{return false;}
+	protected boolean DualSyncMsg(jxMsg msg) throws Exception{return false;}
+	protected boolean DualReportMsg(jxMsg msg) throws Exception{return false;}
 	
 	//加密处理，加密解密是发生在从数据库中读出与写入之时
 	static String Encrypt(String str) throws Exception
@@ -359,13 +352,6 @@ public class jxORMobj
 				//utils.P(cn+"：v:"+v+"，dv:"+dv+"，ev:"+ev);
 				
 				setFiledValue(obj, cn, ev);
-			}
-			try {
-				if(obj.CheckForMsgRegister())
-					MsgCenter.RegisterMsgHandle(obj.GetID(), new ForDualMsg(obj));
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
 			}
 			obj.myInit();
 			rs.offer(obj);
@@ -671,6 +657,11 @@ public class jxORMobj
 			setFiledValue(obj, sub.getName(), Trans.TransFromJSONToJava(fa.FieldType, sub.getValue()));
 		}
 		return obj;
+	}
+	public static jxORMobj GetFromJSONString(String json) throws Exception
+	{
+		if(json==null)return null;
+		return GetFromJSON(jxJson.JsonToObject(json));
 	}
 	
 	//扩展属性的处理，子对象是值对象
@@ -1034,19 +1025,5 @@ class ORMClassAttr
 		if(ts==null)return dbTableName;
 		return dbTableName+"_"+Trans.TransToString(ts.UniqueID);
 	}
-}
-
-class ForDualMsg implements IMsgHandle
-{
-	jxORMobj o=null;
-	ForDualMsg(jxORMobj obj)		
-	{
-		o=obj;
-	}
-	@Override
-	public void Do(jxMsg msg) 
-	{
-		o.DualMsg(msg);
-	}		
 }
 

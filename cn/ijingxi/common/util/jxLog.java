@@ -4,6 +4,8 @@ package cn.ijingxi.common.util;
 import java.util.*;
 
 import cn.ijingxi.common.app.jxSystem;
+import cn.ijingxi.common.msg.jxMsg;
+import cn.ijingxi.common.msg.jxMsgType;
 import cn.ijingxi.common.orm.*;
 
 /**

@@ -2,6 +2,7 @@
 package cn.ijingxi.common.Process;
 
 import cn.ijingxi.common.app.*;
+import cn.ijingxi.common.msg.jxMsg;
 import cn.ijingxi.common.orm.*;
 import cn.ijingxi.common.orm.ORM.KeyType;
 import cn.ijingxi.common.util.*;
@@ -27,11 +28,33 @@ public class PI extends jxTask
 	{
 		State=InstanceState.Doing;
 	}
-	@Override
-	protected boolean CheckForMsgRegister() throws Exception
+
+	protected boolean DualEventMsg(jxMsg msg) throws Exception
 	{
-		return true;
+		IjxEnum event = msg.getEvent();
+		if(event==null||!(event instanceof InstanceEvent))return false;
+		TopSpace ts=msg.getTopSpace();
+		if(ts==null)return false;
+		switch((InstanceEvent)event)
+		{
+		case Close:
+			   CallParam param=new CallParam(null,null,null);
+			   param.addParam(this);
+			   ProcessSM.Happen(this, "State", InstanceEvent.Close, param);
+			   Update(null);
+				
+			
+			
+			return true;
+		default:
+			break;
+		}
+		return false;
+	
+	
+	
 	}
+	
 	
 	@ORM(keyType=KeyType.PrimaryKey)
 	public int ID;
@@ -61,14 +84,20 @@ public class PI extends jxTask
     //
     //方法
     //
-   void Start(People Caller) throws Exception
+   /*
+   void Start(People Caller,String Msg) throws Exception
     {
-		jxMsg msg=jxMsg.NewEventMsg(Caller.GetID(),Caller.UniqueID,GetID(),InstanceEvent.Trigger,null);
+	   CallParam param=new CallParam(null,null,Msg);
+	   param.addParam(this);
+	   param.addParam(Caller.CurrentTopSpace);
+	   ProcessSM.Happen(this, "State", InstanceEvent.Touch, param);
+	   Update(null);
+	   
+		jxMsg msg=jxMsg.NewEventMsg(Caller.CurrentTopSpace,Caller.GetID(),Caller.UniqueID,GetID(),InstanceEvent.Trigger,null);
 		msg.SetParam("CallerTypeID", Caller.GetID().getTypeID().toString());
 		msg.SetParam("CallerID", Caller.GetID().getID().toString());
 		MsgCenter.Post(msg);
     }
-   /*
     public void Pause(People Caller,String Msg) throws Exception
     {
 		jxMsg msg=jxMsg.NewEventMsg(null,Caller.UniqueID,null,InstanceEvent.Pause,Msg);

@@ -6,6 +6,10 @@ import java.util.Date;
 
 import cn.ijingxi.common.Process.*;
 import cn.ijingxi.common.app.*;
+import cn.ijingxi.common.msg.jxMsg;
+import cn.ijingxi.common.msg.jxMsgState;
+import cn.ijingxi.common.msg.jxMsgType;
+import cn.ijingxi.common.msg.udpMsg;
 
 
 public class utils
