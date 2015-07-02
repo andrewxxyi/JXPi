@@ -1,8 +1,16 @@
 
 package cn.ijingxi.common.util;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import cn.ijingxi.common.Process.*;
 import cn.ijingxi.common.app.*;
@@ -24,9 +32,10 @@ public class utils
 		PN.Init();		
 		jxSystem.Init();
 		People.Init();
+		PeopleInTs.Init();
 		Role.Init();
 		Relation.Init();
-		Tag.Init();
+		ObjTag.Init();
 		jxLog.Init();
 		jxTask.Init();
 
@@ -39,6 +48,7 @@ public class utils
 		Trans.AddEunmType(jxOP.Equal);
 		Trans.AddEunmType(Right.Read);
 		Trans.AddEunmType(TSEvent.Sync);
+		Trans.AddEunmType(jxTaskType.Task);
 		
 		
 		udpMsg.Init();
@@ -47,10 +57,52 @@ public class utils
 	{
 		jxMsg.CreateDB();
 		jxSystem.CreateDB();
-		Tag.CreateDB();		
+		People.CreateDB();
+		TopSpace.CreateDB();
+		//ts外也可能会使用到关系和tag
+		Relation.CreateDB(null);
+		ObjTag.CreateDB(null);
+		//保存自己的信息及全局通讯录
 		jxLog.CreateDB();
 	}	
+	private static Map<String,Object> objCache=new HashMap<String,Object>();
+	public static void putCache(String key,Object obj)
+	{
+		objCache.put(key, obj);
+	}
+	public static Object getCache(String key)
+	{
+		return objCache.get(key);
+	}
+
 	
+
+	
+    private static String regSuffix = "(\\.[^\\.]+)$";
+    private static Pattern RegSuffix = Pattern.compile(regSuffix);
+    /**
+     * 获取文件名的后缀
+     * @param path
+     * @return
+     */
+	public static String getSuffix(String filename)
+	{			
+	    Matcher m = RegSuffix.matcher(filename);
+	    while(m.find())
+	    	return m.group(0);
+	    return null;
+	}
+	
+	public static Integer daysBetween(Date f,Date t)
+	{
+		Calendar cf=Calendar.getInstance();
+		cf.setTime(f);
+		Calendar cfd = utils.GetDate(cf);
+		Calendar ct=Calendar.getInstance();
+		ct.setTime(t);
+		Calendar ctd = utils.GetDate(ct);
+		return Trans.TransToInteger((ctd.getTimeInMillis()-cfd.getTimeInMillis())/1000*3600*24);
+	}
 	public static Calendar GetDate(Calendar t)
 	{
 		Calendar c=Calendar.getInstance();
@@ -117,9 +169,28 @@ public class utils
 			return str+split+WantAdd;
 	}
 
-	public static void P(Object msg)
+	private static ILog p=null;
+	public static void setLogger(ILog logger)
 	{
-		System.out.println(msg);
+		p=logger;
+	}
+	public static void P(String tag,String msg)
+	{
+		if(p!=null)
+			p.Log(tag, msg);
+		else
+			System.out.println(tag+"："+msg);
+	}
+	public static void LogException(String tag,Exception e)
+	{
+		String es=e.getLocalizedMessage()+e.getMessage()+"\n";
+		StackTraceElement[] ss = e.getStackTrace();
+		for(StackTraceElement s:ss)
+			es+="\n"+s.toString();
+		if(p!=null)
+			p.Log(tag, es);
+		else
+			System.out.println(tag+"："+es);
 	}
 	
 	public static void Check (boolean con,String msg) throws Exception
@@ -128,5 +199,45 @@ public class utils
 			throw new Exception(msg);
 	}
 	
+	public static void writeToFile(String filename,InputStream inStream) 
+	{
+		FileOutputStream fs=null;
+		try {
+			fs = new FileOutputStream(filename);
+	        byte[] buffer = new byte[2048]; 
+	        int readnum=0;
+	        while ( (readnum = inStream.read(buffer)) != -1) { 
+	            fs.write(buffer, 0, readnum); 
+	        } 
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} finally{
+	        try {
+	        	if(fs!=null)
+	        	{
+					fs.flush();
+			        fs.close();
+	        	}
+		        inStream.close(); 			
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	public static void checkFolderExists(String path)
+	{
+        File file = new File(path);
+        if (file.exists() && !file.isDirectory() || !file.exists()) {
+	        try {
+            file.mkdirs();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} 
+        }
+	}
 	
 }

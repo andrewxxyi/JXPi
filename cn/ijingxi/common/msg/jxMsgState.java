@@ -25,4 +25,27 @@ public enum jxMsgState implements IjxEnum
 	{
 		return jxMsgState.values()[param];
 	}
+
+	@Override
+	public String toChinese()
+	{
+		switch(this)
+		{
+		case New:
+			return "新建";
+		case Waiting:
+			return "等待";
+		case Sending:
+			return "发送中";
+		case Sended:
+			return "已发送";
+		case Received:
+			return "已接收";
+		case Posted:
+			return "已投递";
+		case Dualed:
+			return "已处理";
+		}
+		return "";
+	}
 }

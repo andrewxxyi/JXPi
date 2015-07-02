@@ -1,6 +1,8 @@
 
 package cn.ijingxi.common.Process;
 
+import java.util.UUID;
+
 import cn.ijingxi.common.app.*;
 import cn.ijingxi.common.msg.jxMsg;
 import cn.ijingxi.common.orm.*;
@@ -10,7 +12,7 @@ import cn.ijingxi.common.util.*;
 
 public class PI extends jxTask
 {		
-	public static ORMID GetORMID(Integer ID)
+	public static ORMID GetORMID(UUID ID)
 	{
 		return new ORMID(ORMType.PI.ordinal(),ID);
 	}	
@@ -24,11 +26,14 @@ public class PI extends jxTask
 		CreateTableInDB(PI.class,ts);
 	}	
 
-	public PI()
+	@Override
+	protected void Init_Create() throws Exception
 	{
+		ID=UUID.randomUUID();
+		TaskType=jxTaskType.ProcessInstance;
 		State=InstanceState.Doing;
 	}
-
+	
 	protected boolean DualEventMsg(jxMsg msg) throws Exception
 	{
 		IjxEnum event = msg.getEvent();
@@ -57,13 +62,13 @@ public class PI extends jxTask
 	
 	
 	@ORM(keyType=KeyType.PrimaryKey)
-	public int ID;
+	public UUID ID;
 	
 	@ORM(Index=1)
-	public int ProcessID;
-	public jxProcess GetProcess(People Caller) throws Exception
+	public UUID ProcessID;
+	public jxProcess GetProcess(TopSpace ts) throws Exception
 	{
-		return (jxProcess) GetByID(jxProcess.class, ProcessID,Caller.CurrentTopSpace);
+		return (jxProcess) GetByID(jxProcess.class, ProcessID,ts);
 	}
 
 	//
@@ -85,7 +90,7 @@ public class PI extends jxTask
     //方法
     //
    /*
-   void Start(People Caller,String Msg) throws Exception
+   void Start(PeopleInTs Caller,String Msg) throws Exception
     {
 	   CallParam param=new CallParam(null,null,Msg);
 	   param.addParam(this);
@@ -98,28 +103,28 @@ public class PI extends jxTask
 		msg.SetParam("CallerID", Caller.GetID().getID().toString());
 		MsgCenter.Post(msg);
     }
-    public void Pause(People Caller,String Msg) throws Exception
+    public void Pause(PeopleInTs Caller,String Msg) throws Exception
     {
 		jxMsg msg=jxMsg.NewEventMsg(null,Caller.UniqueID,null,InstanceEvent.Pause,Msg);
 		msg.SetParam("CallerTypeID", Caller.GetID().getTypeID().toString());
 		msg.SetParam("CallerID", Caller.GetID().getID().toString());
 		MsgCenter.Post(msg);
     }
-    public void ReDo(People Caller,String Msg) throws Exception
+    public void ReDo(PeopleInTs Caller,String Msg) throws Exception
     {
 		jxMsg msg=jxMsg.NewEventMsg(null,Caller.UniqueID,null,InstanceEvent.Trigger,Msg);
 		msg.SetParam("CallerTypeID", Caller.GetID().getTypeID().toString());
 		msg.SetParam("CallerID", Caller.GetID().getID().toString());
 		MsgCenter.Post(msg);
     }
-    public void Cancle(People Caller,String Msg) throws Exception
+    public void Cancle(PeopleInTs Caller,String Msg) throws Exception
     {
 		jxMsg msg=jxMsg.NewEventMsg(null,Caller.UniqueID,null,InstanceEvent.Cancel,Msg);
 		msg.SetParam("CallerTypeID", Caller.GetID().getTypeID().toString());
 		msg.SetParam("CallerID", Caller.GetID().getID().toString());
 		MsgCenter.Post(msg);
     }
-    public void Close(People Caller,String Msg) throws Exception
+    public void Close(PeopleInTs Caller,String Msg) throws Exception
     {
 		jxMsg msg=jxMsg.NewEventMsg(null,Caller.UniqueID,null,InstanceEvent.Close,Msg);
 		msg.SetParam("CallerTypeID", Caller.GetID().getTypeID().toString());

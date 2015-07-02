@@ -63,19 +63,20 @@ public class jxJson implements Iterable<jxJson>
     
     /// 键以及值，判断是否包含单,双引号
     //.对应浮点数，+-对应数值以及指数，空白符、:和-对应日期转成的字符串
-    private static String regKeyValue = "(%1$s[\\w\\.\\+\\-\\s:-]%2$s%1$s)";
+    private static String regKeyValue = "(%1$s([\\u4E00-\\u9FA5]|[\\w\\.\\+\\-\\s:]|[\\uFE30-\\uFFA0])%2$s%1$s)";
     
     /// 匹配元数据(不包含对象,数组)
     //.对应浮点数，+-对应数值以及指数，引号和单引号采用*是因为有可能是空值
+    //"([\\u4E00-\\u9FA5]|[\\w\\.\\+\\-\\s:]|[\\uFE30-\\uFFA0])+"分别是中文字符、英文字符等、中文标点符号
     private static String regOriginalValue = String.format("(%1$s|%2$s|%3$s)", String.format(regKeyValue, "'", "*"), 
-    		String.format(regKeyValue, "\"", "*"), "[\\w\\.\\+\\-\\s:-]+");
+    		String.format(regKeyValue, "\"", "*"), "([\\u4E00-\\u9FA5]|[\\w\\.\\+\\-\\s:]|[\\uFE30-\\uFFA0])+");
 
     /// 匹配value以及对象、数组
     private static String regValue = String.format("(%1$s|%2$s|%3$s)", regOriginalValue,
     		String.format(regTxt, "\\[", "\\]"), String.format(regTxt, "\\{", "\\}"));
 
     /// 匹配键值对
-    //注意：key是group（1），因为%1$s、%2$s、%3$s都带园括号，所以value是group（5）
+    //注意：key是group（1），因为%1$s、%2$s、%3$s都带园括号，所以value是group（7）
     private static String regKeyValuePair = String.format("\\s*(%1$s|%2$s|%3$s)\\s*:\\s*(%4$s)\\s*",
     		String.format(regKeyValue, "'", "+"), String.format(regKeyValue, "\"", "+"), "(\\w+)", regValue);
 
@@ -211,6 +212,16 @@ public class jxJson implements Iterable<jxJson>
 			return js.getValue();
 		return null;		
 	}
+	public void setSubObjectValue(String SubName,Object value) throws Exception 
+	{
+		jxJson sub=GetSubObject(SubName);
+		if(sub!=null)
+		{
+			sub.Value=value;
+			return;
+		}
+		AddValue(SubName,value);
+	}
     /**
      * 作为对象添加子对象
      * @param sub
@@ -244,6 +255,15 @@ public class jxJson implements Iterable<jxJson>
 	    	Array.remove(el.ArrayIndex);    	
         }
     }
+
+    public String TransToStringWithName()
+    {
+        StringBuilder jxJson = new StringBuilder();
+        jxJson.append("{\""+Name+"\":");
+        jxJson.append(TransToString());
+        return jxJson.toString() + "}";
+    }
+
 
     public String TransToString()
     {
@@ -306,9 +326,11 @@ public class jxJson implements Iterable<jxJson>
         public static jxJson JsonToObject(String jxJson)
         {
             if (jxJson == null) return null;
+            //utils.P("JsonToObject", jxJson);
             jxJson = jxJson.trim();
             jxJson = jxJson.replaceAll("[\r\n]", "");
             NodeType nodetype = MeasureType(jxJson);
+            //utils.P("nodetype", nodetype.toString());
             if (nodetype == NodeType.Undefined)
                 return NullJsonNode;
             jxJson newNode = new jxJson();
@@ -333,10 +355,12 @@ public class jxJson implements Iterable<jxJson>
                 {                
                 	//PrintMatcheroup(m);
                 	String key = m.group(1).replaceAll(RegJsonRemoveBlank, "");
-                	//utils.P("key:"+key);
+                	//utils.P("key",key);
                 	//从左到右去数该模式是所在的第几个“(”
-                	String v=m.group(5);
-                	//utils.P("value:"+v);
+                	//for(int i=0;i<m.groupCount();i++)
+                    //	utils.P("group "+i,m.group(i));
+                	String v=m.group(7);
+                	//utils.P("value",v);
                     jxJson subnode = JsonToObject(v);
                     subnode.Name = key;
                     newNode.SubObjectList.addByRise(key, subnode);                
@@ -416,7 +440,7 @@ public class jxJson implements Iterable<jxJson>
         {
         	int num=m.groupCount();
         	for(int i=1;i<=num;i++)
-        		utils.P(String.format("Group(%1$s):%2$s",i, m.group(i)));	
+        		utils.P("Json group",String.format("Group(%1$s):%2$s",i, m.group(i)));	
         }
         /** 
          * 实现Iterable接口中要求实现的方法 

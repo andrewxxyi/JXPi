@@ -1,17 +1,19 @@
 
 package cn.ijingxi.common.orm;
 
+import java.util.UUID;
+
 import cn.ijingxi.common.util.Trans;
 
 public class ORMID implements Comparable<ORMID>
 {
-	public static final ORMID SystemID=new ORMID(0,0);
+	public static final ORMID SystemID=new ORMID(0,(UUID)null);
 	
 	Integer TypeID;
 	public Integer getTypeID(){return TypeID;}
 	//public String getName(){return Name;}
-	Integer ID;
-	public Integer getID()
+	UUID ID;
+	public UUID getID()
     {
         return ID;
     }
@@ -21,9 +23,9 @@ public class ORMID implements Comparable<ORMID>
 		if(o==null)return 1;
 		if(TypeID<o.TypeID)return -1;
 		if(TypeID>o.TypeID)return 1;
-		return ID-o.ID;
+		return ID.compareTo(o.ID);
 	}	
-	public ORMID(Integer TypeID,Integer ID)
+	public ORMID(Integer TypeID,UUID ID)
 	{
 		this.TypeID=TypeID;
 		this.ID=ID;
@@ -41,14 +43,14 @@ public class ORMID implements Comparable<ORMID>
 	{
 		jxJson js=jxJson.GetObjectNode(Name!=null?Name:"ORMID");
 		js.AddValue("tyid", TypeID);
-		js.AddValue("id", ID);
+		js.AddValue("id", Trans.TransToString(ID));
 		return js;
 	}
 	public static ORMID GetFromJSON(jxJson js) throws Exception
 	{
 		if(js==null)return null;
 		int tyid=Trans.TransToInteger(js.getSubObjectValue("tyid"));
-		int id=Trans.TransToInteger(js.getSubObjectValue("id"));
+		UUID id=Trans.TransToUUID((String)js.getSubObjectValue("id"));
 		return new ORMID(tyid,id);
 	}
 	

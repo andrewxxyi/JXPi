@@ -8,4 +8,5 @@ package cn.ijingxi.common.util;
 public interface IjxEnum
 {
 	public Object TransToORMEnum(Integer param);
+	public String toChinese();
 }

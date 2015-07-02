@@ -5,10 +5,9 @@ import java.net.InetAddress;
 import java.util.*;
 
 import cn.ijingxi.common.app.jxSystem;
+import cn.ijingxi.common.orm.DB;
 import cn.ijingxi.common.orm.jxORMobj;
-import cn.ijingxi.common.util.CallParam;
-import cn.ijingxi.common.util.IDoSomething;
-import cn.ijingxi.common.util.jxSparseTable;
+import cn.ijingxi.common.util.IDo;
 import cn.ijingxi.common.util.jxTimer;
 
 public class MsgCenter
@@ -19,23 +18,28 @@ public class MsgCenter
 		dualReceiveMsg.start();
 	}
 	//缓存所有待发送消息，但必要性不强
-	static jxSparseTable<UUID,Long,jxMsg> Msgs=new jxSparseTable<UUID,Long,jxMsg>();	
+	static Map<UUID,jxMsg> Msgs=new HashMap<UUID,jxMsg>();	
 	public static void Post(jxMsg msg) throws Exception
 	{
 		if(msg.Receiver.compareTo(jxSystem.SystemID)==0)
 		{
 			//投递到本机
-			jxORMobj obj=jxORMobj.GetByID(msg.ReceiverID.getTypeID(), msg.ReceiverID.getID(), msg.getTopSpace());
+			jxORMobj obj=jxORMobj.GetByID(msg.RTypeID, msg.RID, msg.getTopSpace());
 			if(obj!=null)
 				obj.DualMsg(msg);
 		}
 		else if(LanServer!=null)
 		{
-			InetAddress ia=LanNeighbor.get(msg.ReceiverID);
+			InetAddress ia=LanNeighbor.get(msg.getReceiverID());
 			if(ia!=null)
 			{
 				//在邻居里
-				msg.mcTimer=jxTimer.DoAfter(jxMsg.AutoDeleteDelay, null, new MsgSendTimeOut(), msg);
+				msg.mcTimer=jxTimer.DoAfter(jxMsg.AutoDeleteDelay, new IDo(){
+					@Override
+					public void Do(Object param) throws Exception {
+						MsgCenter.WaitPostMsgs.offer((jxMsg)param);
+					}
+				}, msg);
 				udpMsg.send(ia,msg);
 				return;
 			}
@@ -48,7 +52,10 @@ public class MsgCenter
 			return;
 		}
 	}
-	
+	public static void Post(DB db,jxMsg msg) throws Exception
+	{
+		
+	}
 	//接收到等待投递到本机的消息，但超时未发送成功的消息也会再次加入进来
 	static Queue<jxMsg> WaitPostMsgs=new LinkedList<jxMsg>();
 	//接收外部发到本机的低优先级投递队列
@@ -100,12 +107,12 @@ public class MsgCenter
 			else if(msg.State==jxMsgState.Received)
 			{
 				//确认消息，收发是反过来的
-				jxMsg mo=Msgs.Search(msg.Receiver, msg.MsgID);
+				jxMsg mo=Msgs.get(msg.ID);
 				if(mo!=null)
 				{
 					mo.mcTimer.cancel();
 					mo.DelaySave(null);
-					MsgCenter.Msgs.Delete(mo.Sender, mo.MsgID);
+					MsgCenter.Msgs.remove(mo.ID);
 				}
 			}
 		}
@@ -117,12 +124,12 @@ public class MsgCenter
 	{
 		if(ReceivedMsg==null)
 		{
-			ReceivedMsg=(jxMsg) jxMsg.New(jxMsg.class);
+			ReceivedMsg=(jxMsg) jxMsg.Create(jxMsg.class);
 			ReceivedMsg.State=jxMsgState.Received;
 		}
 		ReceivedMsg.Sender=msg.Receiver;
 		ReceivedMsg.Receiver=msg.Sender;
-		ReceivedMsg.MsgID=msg.MsgID;
+		ReceivedMsg.ID=msg.ID;
 		return ReceivedMsg;
 	}
 	
@@ -139,17 +146,6 @@ public class MsgCenter
 			
 }
 
-class MsgSendTimeOut implements IDoSomething
-{
-	@Override
-	public void Do(CallParam param) throws Exception 
-	{
-		//第一个参数是msg
-		jxMsg msg= (jxMsg)param.getParam();
-		MsgCenter.WaitPostMsgs.offer(msg);
-		//MsgCenter.Msgs.Delete(msg.SenderID, msg.MsgID);
-	}
-}
 
 
 

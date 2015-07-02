@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
 
 import cn.ijingxi.common.app.Container;
 import cn.ijingxi.common.app.Organize;
-import cn.ijingxi.common.app.People;
+import cn.ijingxi.common.app.PeopleInTs;
 import cn.ijingxi.common.app.Result;
 import cn.ijingxi.common.app.Role;
 import cn.ijingxi.common.app.TopSpace;
@@ -27,7 +27,7 @@ import cn.ijingxi.common.util.*;
  */
 public class jxProcess extends Container
 {
-	public static ORMID GetORMID(Integer ID)
+	public static ORMID GetORMID(UUID ID)
 	{
 		return new ORMID(ORMType.jxProcess.ordinal(),ID);
 	}
@@ -38,6 +38,12 @@ public class jxProcess extends Container
 		CreateTableInDB(jxProcess.class,ts);
 	}
 
+	@Override
+	protected void Init_Create() throws Exception
+	{
+		ID=UUID.randomUUID();
+	}
+	
 	protected boolean DualEventMsg(jxMsg msg) throws Exception
 	{
 		IjxEnum event = msg.getEvent();
@@ -52,7 +58,7 @@ public class jxProcess extends Container
 			PN pn=getPN(ts,from.ParentID,toname);
 			if(pn==null)
 			{
-				pn=(PN) PN.New(PN.class);
+				pn=(PN) PN.Create(PN.class);
 				pn.ParentOwnerID=msg.Receiver;
 				pn.ParentID=from.ParentID;
 				pn.ProcessID=from.ProcessID;
@@ -75,7 +81,7 @@ public class jxProcess extends Container
 	}
 	
 	@ORM(keyType=KeyType.PrimaryKey)
-	public int ID;
+	public UUID ID;
 
 	@ORM(Descr="流水号模板名称")
 	public String SNPurpose; 
@@ -104,23 +110,24 @@ public class jxProcess extends Container
 	}
 	
 	//发起新流程时调用
-	public PI StartNewInstance(People Caller, String Msg) throws Exception
+	public PI StartNewInstance(TopSpace ts, PeopleInTs Caller,String Msg) throws Exception
 	{
-		PI p=(PI) New(PI.class);
-		p.ParentOwnerID=Caller.UniqueID;
+		PI p=(PI) Create(PI.class);
+		p.ParentOwnerID=Caller.ID;
 		p.Name=jxSystem.System.GetSN(SNPurpose,Caller);
 		if(p.Name==null)
 			p.Name=Name;
 		p.ProcessID=this.ID;
 		p.Descr=Msg;
-		p.Insert(Caller.CurrentTopSpace);
+		p.Insert(ts);
 		//启动流程
-		PN sn=new  PN(Caller,ID,p, PN.Node_Start);		
-		sn.Touch(Caller.CurrentTopSpace, null);
+		PN sn=(PN) Create(PN.class);
+		sn.setParam(Caller,ID,p, PN.Node_Start);		
+		sn.Touch(ts, null);
 		return p;
 	}
 	
-	public PN getPN(TopSpace ts, int PIID, String PNName) throws Exception
+	public PN getPN(TopSpace ts, UUID PIID, String PNName) throws Exception
 	{
 		SelectSql s=new SelectSql();
 		s.AddTable("PN",ts);
@@ -235,7 +242,7 @@ public class jxProcess extends Container
 	}
 
 	*/
-	public People getNode_RealExecer(People Caller,String NodeName) throws Exception
+	public PeopleInTs getNode_RealExecer(TopSpace ts,String NodeName) throws Exception
 	{
 		Map<String,String> ks=new HashMap<String,String>();
 		ks.put("NodeName", NodeName);
@@ -244,33 +251,33 @@ public class jxProcess extends Container
 		ORMID id=ORMID.GetFromJSON(rs.GetSubObject("ExecerID"));
 		if(id==null)return null;
 		if(id.getTypeID()==ORMType.People.ordinal())
-			return (People) GetByID(People.class,id.getID(),null);
+			return (PeopleInTs) GetByID(PeopleInTs.class,id.getID(),null);
 		if(id.getTypeID()==ORMType.Role.ordinal())
 		{
 			Role r=(Role) GetByID(Role.class,id.getID(),null);
 			if(r!=null)
-				return r.GetMapTo(Caller);
+				return r.GetMapTo(ts);
 		}
 		return null;
 	}
-	public void setNode_ExecerID(People Caller,String NodeName,ORMID ExecerID) throws Exception
+	public void setNode_ExecerID(String NodeName,ORMID ExecerID) throws Exception
 	{
 		Map<String,String> ks=new HashMap<String,String>();
 		ks.put("NodeName", NodeName);
 		setExtendArraySubNode("Nodes",ks,ExecerID.ToJSON("ExecerID"));
 	}
 	Organize myOrg=null;
-	public Organize GetOrganize(People Caller) throws Exception
+	public Organize GetOrganize(TopSpace ts) throws Exception
 	{
 		if(myOrg!=null)return myOrg;
 		SelectSql s=new SelectSql();
-		s.AddTable("Relation",Caller.CurrentTopSpace);
-		s.AddTable("Organize",Caller.CurrentTopSpace);
+		s.AddTable("Relation",ts);
+		s.AddTable("Organize",ts);
 		s.AddContion("Relation", "ObjTypeID", jxCompare.Equal, ORMType.Organize.ordinal());
 		s.AddContion("Relation", "ObjID", "Organize","ID");
 		s.AddContion("Relation", "TargetTypeID", jxCompare.Equal, ORMType.jxProcess.ordinal());
 		s.AddContion("Relation", "TargetID", jxCompare.Equal, ID);
-		myOrg=(Organize) Get(jxProcess.class,s,Caller.CurrentTopSpace);
+		myOrg=(Organize) Get(jxProcess.class,s,ts);
 		return myOrg;
 	}
 	

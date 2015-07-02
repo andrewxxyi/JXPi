@@ -3,10 +3,16 @@ package cn.ijingxi.common.util;
 
 import java.util.*;
 
-import cn.ijingxi.common.Process.IExecutor;
 
 public class jxTimer
 {
+	private  Timer myTimer=null;
+	private int secondNum=0;
+	private IDo dual=null;
+	private Object param=null;
+	public jxTimer(){
+		myTimer = new Timer(); 
+	}
 	/**
 	 * 多少秒以后开始执行
 	 * @param SecondNum
@@ -14,11 +20,14 @@ public class jxTimer
 	 * @param toDo
 	 * @param param
 	 */
-	public static Timer DoAfter(int SecondNum,IExecutor Execer,IDoSomething toDo,Object param)
+	public static jxTimer DoAfter(int SecondNum,IDo toDo,Object param)
 	{
-		 Timer timer = new Timer(); 
-	      timer.schedule(new myTask(Execer,toDo,param), SecondNum * 1000);		
-	      return timer;
+		  jxTimer t=new jxTimer();
+		  t.secondNum=SecondNum;
+		  t.dual=toDo;
+		  t.param=param;
+	      t.myTimer.schedule(new myTask(toDo,param), SecondNum * 1000);
+	      return t;
 	}
 
 	/**
@@ -28,11 +37,11 @@ public class jxTimer
 	 * @param toDo
 	 * @param param
 	 */
-	public static Timer DoAt(Calendar Time,IExecutor Execer,IDoSomething toDo,Object param)
+	public static jxTimer DoAt(Calendar Time,IDo toDo,Object param)
 	{
-		 Timer timer = new Timer(); 
-	      timer.schedule(new myTask(Execer,toDo,param), Time.getTime());		
-	      return timer;
+		  jxTimer t=new jxTimer();		
+		  t.myTimer.schedule(new myTask(toDo,param), Time.getTime());		
+	      return t;
 	}
 
 	/**
@@ -42,32 +51,43 @@ public class jxTimer
 	 * @param toDo
 	 * @param param
 	 */
-	public static Timer DoPeriod(int Period_Second,IExecutor Execer,IDoSomething toDo,Object param)
+	public static jxTimer DoPeriod(int Period_Second,IDo toDo,Object param)
 	{
-		 Timer timer = new Timer(); 
-	      timer.schedule(new myTask(Execer,toDo,param), Period_Second*1000,Period_Second*1000);	      
-	      return timer;
+		  jxTimer t=new jxTimer();
+		  t.myTimer.schedule(new myTask(toDo,param), Period_Second*1000,Period_Second*1000);	   
+	      return t;
 	}
+	
+	public void cancel()
+	{
+		myTimer.cancel();
+	}
+	public void reTick()
+	{
+		if(secondNum>0)
+		{
+			myTimer.cancel();
+			myTimer = new Timer(); 
+			myTimer.schedule(new myTask(dual,param), secondNum * 1000);			
+		}
+	}
+	
 }
 
 class myTask extends TimerTask 
 {
-	private IExecutor Execer=null;
-	private IDoSomething toDo=null;
+	private IDo toDo=null;
 	private Object param=null;
 	
-	myTask(IExecutor Execer,IDoSomething toDo,Object param)
+	myTask(IDo toDo,Object param)
 	{
-		this.Execer=Execer;
 		this.toDo=toDo;
 		this.param=param;
 	}
 	public void run()
 	{
 		try {
-			CallParam p=new CallParam(Execer,null,null);
-			p.addParam(param);			
-			toDo.Do(p);
+			toDo.Do(param);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

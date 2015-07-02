@@ -23,31 +23,33 @@ public class jxSystem extends jxORMobj
 	public static void Init() throws Exception
 	{	
 		InitClass(ORMType.Container.ordinal(),jxSystem.class);
-		System=(jxSystem) GetByID(jxSystem.class,1,null);	
-		SystemID=System.SystemUUID;
+		try
+		{
+			SelectSql s=new SelectSql();
+			s.AddTable("jxSystem",null);
+			System=(jxSystem) Get(jxSystem.class,s,null);	
+			SystemID=System.ID;
+		} catch (Exception e) {}
 	}	
+
+	@Override
+	protected void Init_Create() throws Exception
+	{
+		ID=UUID.randomUUID();
+	}
+	
 	public static void CreateDB() throws Exception
 	{
 		CreateTableInDB(jxSystem.class,null);
-		CreateTableInDB(People.class,null);
-		jxSystem s=(jxSystem) jxORMobj.New(jxSystem.class);
-		s.SystemUUID=UUID.randomUUID();
-		s.Insert(null);
-		People p=(People) jxORMobj.New(People.class);;
-		//1号是手机主人，但如果某人在两台手机上都装了，则会出现冲突，需要加以解决
-		p.UniqueID=s.SystemUUID;
-		p.Insert(null);
+		System=(jxSystem) jxORMobj.Create(jxSystem.class);
+		System.Insert(null);
+		SystemID=System.ID;
 	}
 	
-	@ORM(keyType=KeyType.AutoDBGenerated)
-	public int ID;
+	@ORM(keyType=KeyType.PrimaryKey)
+	public UUID ID;
 	
-	@ORM
-	public long MsgID;	
 	
-	@ORM
-	public UUID SystemUUID;
-
 	//用{}框起来的字符串Purpose（流水号用在哪，如流程名）、Name（当前请求者的姓名）YYYY、MM、DD或YYYYMMDD、SND4（4位日流水）、
 	//SNT8（8位总流水）之类
 	//如：{Purpose}-{Name}-{YYYYMMDD}-{SND3}，将产生：报销-徐晓轶-20150120-003
@@ -58,16 +60,7 @@ public class jxSystem extends jxORMobj
 	public String Addition;
 		
 	private static Map<String,SN> SNTree=new HashMap<String,SN>();
-	
-	public long GetMsgID()
-	{
-		MsgID++;
-		if(MsgID==Long.MAX_VALUE)
-			MsgID=1;
-		DelaySave(null);
-		return MsgID;
-	}
-	
+		
 	public String GetSN(String Purpose,IExecutor caller) throws Exception
 	{
 		SN sn=SNTree.get(Purpose);

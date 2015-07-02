@@ -2,6 +2,7 @@
 package cn.ijingxi.common.app;
 
 import java.util.Date;
+import java.util.UUID;
 
 import cn.ijingxi.common.orm.*;
 import cn.ijingxi.common.orm.ORM.KeyType;
@@ -9,26 +10,28 @@ import cn.ijingxi.common.orm.ORM.KeyType;
 public class Container extends jxORMobj
 {	
 	//圈子
-		
-	protected Container()
+
+	@Override
+	protected void Init_Create() throws Exception
 	{
-		super();
-		CreateTime=new Date();
+		   ID=UUID.randomUUID();
+			CreateTime=new Date();
 	}
+
 	public static void Init() throws Exception{	InitClass(ORMType.Container.ordinal(),Container.class);}
 	public static void CreateDB(TopSpace ts) throws Exception
 	{
 		CreateTableInDB(Container.class,ts);
 	}
 	
-	public static ORMID GetORMID(Integer ID)
+	public static ORMID GetORMID(UUID ID)
 	{
 		return new ORMID(ORMType.Container.ordinal(),ID);
 	}
 		
-	@ORM(keyType=KeyType.AutoSystemGenerated)
-	public int ID;
-
+	@ORM(keyType=KeyType.PrimaryKey)
+	public UUID ID;
+	
 	@ORM(Index=1,Encrypted=true)
 	public String Name;		
 	
@@ -39,15 +42,5 @@ public class Container extends jxORMobj
 	public Date CreateTime;
 
 	public TopSpace myTopSpace=null;
-	
-	public ObjTag Tag(long TagID) throws Exception
-	{
-		ObjTag ot=(ObjTag) ObjTag.New(ObjTag.class);
-		ot.ObjTypeID=getTypeID();
-		ot.ObjID=ID;
-		ot.TagID=TagID;
-		ot.TagTime=new Date();
-		return ot;
-	}
 	
 }

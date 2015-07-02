@@ -3,7 +3,6 @@ package cn.ijingxi.common.util;
 
 import java.util.*;
 
-import cn.ijingxi.common.Process.IExecutor;
 import cn.ijingxi.common.util.jxNumber.Carry;
 
 public class jxCron
@@ -211,11 +210,11 @@ public class jxCron
 				myDayOfWeek.AppendNumber(i);		
 	}
 	
-	public jxCron(IExecutor Execer,IDoSomething toDo,Object param) throws Exception
+	public jxCron(IDo toDo,Object param) throws Exception
 	{
 		setDate();
 		Calendar cal=GetNext();
-		jxTimer.DoAt(cal, Execer, toDo, param);
+		jxTimer.DoAt(cal, toDo, param);
 	}
 
 }

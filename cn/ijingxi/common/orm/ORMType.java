@@ -13,6 +13,7 @@ public enum ORMType
 	ObjTag,
 	Organize,
 	People,
+	PeopleInTs,
 	Relation,
 	Role,
 	Tag,

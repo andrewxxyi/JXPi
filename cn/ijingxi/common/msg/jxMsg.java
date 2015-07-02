@@ -11,11 +11,9 @@ import cn.ijingxi.common.orm.ORMID;
 import cn.ijingxi.common.orm.ORMType;
 import cn.ijingxi.common.orm.jxORMobj;
 import cn.ijingxi.common.orm.ORM.KeyType;
-import cn.ijingxi.common.util.CallParam;
-import cn.ijingxi.common.util.IDoSomething;
+import cn.ijingxi.common.util.IDo;
 import cn.ijingxi.common.util.IjxEnum;
 import cn.ijingxi.common.util.Trans;
-import cn.ijingxi.common.util.jxSparseTable;
 import cn.ijingxi.common.util.jxTimer;
 import cn.ijingxi.common.util.utils;
 
@@ -28,12 +26,7 @@ public class jxMsg extends jxORMobj implements Iterable<byte[]>
 {
     static final int Msg_Version = 1;
 	
-	
-	public static ORMID GetORMID(Integer ID)
-	{
-		return new ORMID(ORMType.jxMsg.ordinal(),ID);
-	}
-	
+		
 	public static void Init() throws Exception
 	{
 		InitClass(ORMType.jxMsg.ordinal(),jxMsg.class);
@@ -43,25 +36,53 @@ public class jxMsg extends jxORMobj implements Iterable<byte[]>
 		CreateTableInDB(jxMsg.class,null);
 	}
 
-	@ORM(keyType=KeyType.PrimaryKey)
-	public UUID Sender;
-	@ORM(Index=1)
-	public ORMID SenderID;
+	@Override
+	protected void Init_Create() throws Exception
+	{
+		ID=UUID.randomUUID();
+	}
 	//发送方的消息号
 	@ORM(keyType=KeyType.PrimaryKey)
-	public Long MsgID;
+	public UUID ID;
+	@ORM
+	public UUID Sender;
+	@ORM(Index=1)
+	public int STypeID;
+	@ORM(Index=1)
+	public UUID SID;
+	
+	public ORMID getSenderID()
+	{
+		return new ORMID(STypeID,SID);
+	}
+	public void setSenderID(ORMID SenderID)
+	{
+		STypeID=SenderID.getTypeID();
+		SID=SenderID.getID();
+	}
 
 	@ORM(Index=1)
 	public UUID Receiver;
 	@ORM(Index=1)
-	public ORMID ReceiverID;
+	public int RTypeID;
+	@ORM(Index=1)
+	public UUID RID;
+	public ORMID getReceiverID()
+	{
+		return new ORMID(RTypeID,RID);
+	}
+	public void setReceiverID(ORMID SenderID)
+	{
+		RTypeID=SenderID.getTypeID();
+		RID=SenderID.getID();
+	}
 
 	@ORM
 	public jxMsgType MsgType;
 	
 	//邮件状态，默认是在发送，主要用于消息确认，要注意是消息传递过程中的还是有不一样的
 	@ORM
-	public jxMsgState State=jxMsgState.Sending;
+	public jxMsgState State=jxMsgState.Waiting;
 	
 
 	
@@ -86,19 +107,32 @@ public class jxMsg extends jxORMobj implements Iterable<byte[]>
 	{
 		return GetParam("Msg");
 	}
+	public void setObj(jxORMobj obj) throws Exception
+	{
+		setObj("Info",obj);
+	}	
+	public jxORMobj getObj() throws Exception
+	{
+		return getObj("Info");
+	}
 	
-	Timer mcTimer=null;
+	jxTimer mcTimer=null;
 	
 
-	static jxSparseTable<UUID,Long,ReceiveBufferMsg> BlockBuffer=new jxSparseTable<UUID,Long,ReceiveBufferMsg>();
+	static Map<UUID,ReceiveBufferMsg> BlockBuffer=new HashMap<UUID,ReceiveBufferMsg>();
 	
 	
 	//@ORM(Descr="json格式的目标对象",Encrypted=true)
 	//public String Obj;
 	
-	public TopSpace getTopSpace() throws Exception
+	public TopSpace getTopSpace()
 	{
-		return TopSpace.getByUniqueID(Trans.TransToUUID(GetParam("TopSpaceID")));
+		try {
+			String str = GetParam("tsid");
+			if(str!=null)
+				return (TopSpace) TopSpace.GetByID(TopSpace.class, Trans.TransToUUID(GetParam("tsid")),null);
+		} catch (Exception e) {		}
+		return null;
 	}
 	public IjxEnum getEvent() throws Exception
 	{
@@ -111,32 +145,45 @@ public class jxMsg extends jxORMobj implements Iterable<byte[]>
 		}
 		return null;
 	}
-	
-	public static jxMsg NewRichMsg(TopSpace ts,ORMID SenderID,UUID Receiver,ORMID ReceiverID,String MSG) throws Exception
+
+	public static jxMsg NewMsg(jxMsgType MsgType,TopSpace ts,ORMID SenderID,UUID Receiver,ORMID ReceiverID,String MSG) throws Exception
 	{
-		jxMsg msg=(jxMsg) jxMsg.New(jxMsg.class);
-		msg.Sender=jxSystem.System.SystemUUID;
-		msg.SenderID=SenderID;
+		jxMsg msg=(jxMsg) jxMsg.Create(jxMsg.class);
+		msg.Sender=jxSystem.SystemID;
+		msg.setSenderID(SenderID);
 		msg.Receiver=Receiver;
-		msg.ReceiverID=ReceiverID;
-		msg.MsgID=jxSystem.System.GetMsgID();
-		msg.MsgType=jxMsgType.RichText;
-		msg.setMsg(MSG);
-		msg.SetParam("TopSpaceID",Trans.TransToString(ts.UniqueID));
+		if(ReceiverID!=null)
+			msg.setReceiverID(ReceiverID);
+		msg.MsgType=MsgType;
+		if(MSG!=null)
+			msg.setMsg(MSG);
+		if(ts!=null)
+			msg.SetParam("tsid",Trans.TransToString(ts.ID));
 		return msg;
 	}
-	public static jxMsg NewEventMsg(TopSpace ts,ORMID SenderID,UUID Receiver,ORMID ReceiverID,IjxEnum Event,String MSG) throws Exception
+	public static jxMsg NewRichMsg(TopSpace ts,ORMID SenderID,UUID Receiver,ORMID ReceiverID,String MSG) throws Exception
 	{
-		jxMsg msg=(jxMsg) jxMsg.New(jxMsg.class);
-		msg.Sender=jxSystem.System.SystemUUID;
-		msg.SenderID=SenderID;
+		jxMsg msg=(jxMsg) jxMsg.Create(jxMsg.class);
+		msg.Sender=jxSystem.System.ID;
+		msg.setSenderID(SenderID);
 		msg.Receiver=Receiver;
-		msg.ReceiverID=ReceiverID;
-		msg.MsgID=jxSystem.System.GetMsgID();
+		msg.setReceiverID(ReceiverID);
+		msg.MsgType=jxMsgType.RichText;
+		msg.setMsg(MSG);
+		msg.SetParam("tsid",Trans.TransToString(ts.ID));
+		return msg;
+	}
+	public static jxMsg NewEventMsg(TopSpace ts,UUID uuid,UUID Receiver,ORMID ReceiverID,IjxEnum Event,String MSG) throws Exception
+	{
+		jxMsg msg=(jxMsg) jxMsg.Create(jxMsg.class);
+		msg.Sender=jxSystem.System.ID;
+		//msg.setSenderID(uuid);
+		msg.Receiver=Receiver;
+		msg.setReceiverID(ReceiverID);
 		msg.MsgType=jxMsgType.Event;
 		if(MSG!=null)
 			msg.setMsg(MSG);
-		msg.SetParam("TopSpaceID",Trans.TransToString(ts.UniqueID));
+		msg.SetParam("tsid",Trans.TransToString(ts.ID));
 		msg.SetParam("EventType",utils.GetClassName(Event.getClass()));
 		msg.SetParam("Event",Trans.TransToInteger(Event));		
 		return msg;
@@ -148,13 +195,12 @@ public class jxMsg extends jxORMobj implements Iterable<byte[]>
 		int msgLength=Trans.TransToInteger(Block, jxMsg.BlockStart_MsgLength);
 		if(msgLength>jxMsg.Block_DataSize)
 		{
-	    	UUID uuid=Trans.TransToUUID(Block, jxMsg.BlockStart_Sender);
-	    	long mid=Trans.TransToLong(Block, jxMsg.BlockStart_MsgID);
-	    	rb=BlockBuffer.Search(uuid, mid);
+	    	UUID mid=Trans.TransToUUID(Block, jxMsg.BlockStart_MsgID);
+	    	rb=BlockBuffer.get(mid);
 	    	if(rb==null)
 	    	{
 	    		rb=new ReceiveBufferMsg(msgLength);
-				BlockBuffer.Add(uuid, mid, rb);
+				BlockBuffer.put(mid, rb);
 	    	}
 		}
 		else
@@ -167,12 +213,13 @@ public class jxMsg extends jxORMobj implements Iterable<byte[]>
     static final int BlockUUID_Size = 16;
     static final int BlockLong_Size = 8;
     static final int BlockInt_Size = 4;
+    static final int BlockORMID_Size = BlockInt_Size+BlockUUID_Size;
     static final int BlockStart_Sender = 0;
     static final int BlockStart_SenderID = BlockUUID_Size;
-    static final int BlockStart_Receiver = BlockStart_SenderID+BlockLong_Size;
-    static final int BlockStart_ReceiverID = BlockStart_Receiver+BlockLong_Size;
-    static final int BlockStart_MsgID = BlockStart_ReceiverID+BlockUUID_Size;
-    static final int BlockStart_Version = BlockStart_MsgID+BlockLong_Size;
+    static final int BlockStart_Receiver = BlockStart_SenderID+BlockORMID_Size;
+    static final int BlockStart_ReceiverID = BlockStart_Receiver+BlockUUID_Size;
+    static final int BlockStart_MsgID = BlockStart_ReceiverID+BlockORMID_Size;
+    static final int BlockStart_Version = BlockStart_MsgID+BlockUUID_Size;
     static final int BlockStart_MsgState = BlockStart_Version+BlockInt_Size;
     static final int BlockStart_MsgLength = BlockStart_MsgState+BlockInt_Size;
     static final int BlockStart_MsgType = BlockStart_MsgLength+BlockInt_Size;
@@ -226,10 +273,10 @@ public class jxMsg extends jxORMobj implements Iterable<byte[]>
 						BlockNum=msgLength/Block_DataSize+((msgLength%Block_DataSize==0)?0:1);
 					}
 					Trans.TransToByteArray(bs, BlockStart_Sender,Sender);
-					Trans.TransToByteArray(bs, BlockStart_SenderID,SenderID);
+					Trans.TransToByteArray(bs, BlockStart_SenderID,getSenderID());
 					Trans.TransToByteArray(bs, BlockStart_Receiver,Receiver);
-					Trans.TransToByteArray(bs, BlockStart_ReceiverID,ReceiverID);
-					Trans.TransToByteArray(bs, BlockStart_MsgID,MsgID);
+					Trans.TransToByteArray(bs, BlockStart_ReceiverID,getReceiverID());
+					Trans.TransToByteArray(bs, BlockStart_MsgID,ID);
 					Trans.TransToByteArray(bs, BlockStart_Version,Msg_Version);
 					//用于消息确认
 					Trans.TransToByteArray(bs, BlockStart_MsgState,State.ordinal());
@@ -285,7 +332,7 @@ class ReceiveBufferMsg
 {
 	jxMsg msg=null;
 	byte[] Data=null;
-	Timer autodelete=null;
+	jxTimer autodelete=null;
 	boolean[] received=null;
 	int msgLength=0;
 	int blockNum=0;
@@ -297,12 +344,12 @@ class ReceiveBufferMsg
 	{
 		if(msg==null)
 		{
-			msg=(jxMsg) jxMsg.New(jxMsg.class);
+			msg=(jxMsg) jxMsg.Create(jxMsg.class);
 			msg.Sender=Trans.TransToUUID(Block, jxMsg.BlockStart_Sender);
-			msg.SenderID=Trans.TransToORMID(Block, jxMsg.BlockStart_SenderID);
+			msg.setSenderID(Trans.TransToORMID(Block, jxMsg.BlockStart_SenderID));
 			msg.Receiver=Trans.TransToUUID(Block, jxMsg.BlockStart_Receiver);
-			msg.ReceiverID=Trans.TransToORMID(Block, jxMsg.BlockStart_ReceiverID);
-			msg.MsgID=Trans.TransToLong(Block, jxMsg.BlockStart_MsgID);
+			msg.setReceiverID(Trans.TransToORMID(Block, jxMsg.BlockStart_ReceiverID));
+			msg.ID=Trans.TransToUUID(Block, jxMsg.BlockStart_MsgID);
 			msg.State=(jxMsgState) Trans.TransTojxEunm(jxMsgState.class, Trans.TransToInteger(Block, jxMsg.BlockStart_MsgState));
 			msg.MsgType=(jxMsgType) Trans.TransTojxEunm(jxMsgType.class, Trans.TransToInteger(Block, jxMsg.BlockStart_MsgType));
 			if(msgLength==0)
@@ -316,9 +363,12 @@ class ReceiveBufferMsg
 			blockNum=msgLength/jxMsg.Block_DataSize+((msgLength%jxMsg.Block_DataSize==0)?0:1);
     		received=new boolean[blockNum];
 
-    		CallParam param=new CallParam(null, null, null);
-    		param.addParam(this);
-    		autodelete=jxTimer.DoAfter(jxMsg.AutoDeleteDelay, null, new AutoDeleteFromBuffer(), param);
+    		autodelete=jxTimer.DoAfter(jxMsg.AutoDeleteDelay, new IDo(){
+				@Override
+				public void Do(Object param) throws Exception {
+	    			jxMsg.BlockBuffer.remove(((ReceiveBufferMsg)param).msg.ID);
+				}
+    		}, this);
 		}    		
 		int blockid=Trans.TransToInteger(Block, jxMsg.BlockStart_BlockID);
 		int start=jxMsg.Block_DataSize*blockid;
@@ -331,19 +381,10 @@ class ReceiveBufferMsg
 			if(!received[i])
 				return null;
 		autodelete.cancel();
-		jxMsg.BlockBuffer.Delete(msg.Sender, msg.MsgID);
+		jxMsg.BlockBuffer.remove(msg.ID);
 		msg.Info=new String(Data,"UTF8");
 		return msg;
 	}
 }
 
-
-class AutoDeleteFromBuffer implements IDoSomething
-{
-	public void Do(CallParam param) throws Exception
-	{
-		ReceiveBufferMsg ib=(ReceiveBufferMsg)param.getParam();
-		jxMsg.BlockBuffer.Delete(ib.msg.Sender, ib.msg.MsgID);
-	}    	
-}
 

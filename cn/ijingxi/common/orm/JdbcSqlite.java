@@ -3,23 +3,32 @@ package cn.ijingxi.common.orm;
 
 import java.sql.*;
 import java.util.Date;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.UUID;
 
 import cn.ijingxi.common.util.Trans;
+import cn.ijingxi.common.util.jxCompare;
+import cn.ijingxi.common.util.jxLink;
 import cn.ijingxi.common.util.utils;
 
 public class JdbcSqlite implements DB
 {
-	private String DBName=null;
+	protected String DBName=null;
 	private Connection conn=null;
 	
 	public void SetURL(String url){}
-	public void SetDBName(String dbname){DBName=dbname;}
+	public void SetDBName(String dbname){}
 	public void SetUserID(String uid){}
 	public void SetPasswd(String pwd){}
 
-	public JdbcSqlite() throws Exception
+	public JdbcSqlite(boolean NoUsedForsoncall)
 	{
+	}
+	
+	public JdbcSqlite(String dbname) throws Exception
+	{
+		DBName=dbname;
 		if(conn==null)
 		{
 			Class.forName("org.sqlite.JDBC");
@@ -48,30 +57,111 @@ public class JdbcSqlite implements DB
 	}
 	public void ReleaseConnection(Connection conn) throws SQLException
 	{
-		conn.commit();
+		//conn.commit();
+	}
+	
+
+	@Override
+	public void Trans_Begin()
+	{
+		dbBackup.StartBuf();
 	}
 	@Override
-	public Object TransValueFromJavaToDB(Object value) 
+	public void Trans_Commit() 
 	{
-		if(value==null)return null;
-		Class<?> cls=value.getClass();
+		try {
+			conn.commit();
+			dbBackup.EndBuf();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}		
+	}
+	@Override
+	public void Trans_Cancel() 
+	{
+		try {
+			conn.rollback();
+			dbBackup.CancalBuf();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}		
+	}
+	
+	
+	@Override
+	public Object TransValueFromJavaToDB(FieldAttr fa,Object value) 
+	{
 		//先判断是否是枚举值
-		if(utils.JudgeIsEnum(cls))
+		if(utils.JudgeIsEnum(fa.FieldType))
+		{
+			if(value==null)return 0;
 			return ((Enum<?>)value).ordinal();
-		
-		String n=utils.GetClassName(cls);
+		}
+		String n=utils.GetClassName(fa.FieldType);
 		switch(n)
 		{
 		case "Date":
+			if(value==null)return null;
 			return Trans.TransToInteger((Date)value);
 		case "boolean":
 		case "Boolean":
-			return (boolean)value ? 1 :0; 
+			if(value==null)return 0;
+			return ((boolean)value) ? 1 :0; 
 		case "UUID":
-			return Trans.TransToByteArray((UUID) value);
+			if(value==null)return null;
+			return Trans.TransToString((UUID) value);
+		case "byte":
+		case "Byte":
+			if(value==null)return 0;
+			return value;
+		case "short":
+		case "Short":
+			if(value==null)return 0;
+			return value;
+		case "int":
+		case "Integer":
+			if(value==null)return 0;
+			return value;
+		case "long":
+		case "Long":
+			if(value==null)return 0L;
+			return value;
+		case "float":
+		case "Float":
+			if(value==null)return 0F;
+			return value;
+		case "double":	
+		case "Double":	
+			if(value==null)return 0D;
+			return value;
 		}
 		return value;
 	}
+	
+
+	@Override
+	public String TransCompareToString(jxCompare cp)
+	{
+		switch(cp)
+		{
+		case Equal:
+			return "=";
+		case NoEqual:
+			return "<>";
+		case Less:
+			return "<";
+		case LessEqual:
+			return "<=";
+		case Greate:
+			return ">";
+		case GreateEqual:
+			return ">=";
+		}
+		return null;
+	}
+	
 
 	@Override
 	public Object TransValueFromDBToJava(FieldAttr fa,Object value)
@@ -83,38 +173,49 @@ public class JdbcSqlite implements DB
 	}
 	Object TransValueFromDBToJava(String DestTypeName,Object value) 
 	{
-		if(value==null)return null;
 		switch(DestTypeName)
 		{
 		case "byte":
 		case "Byte":
+			if(value==null)return 0;
 			return Byte.parseByte(String.valueOf(value));
 		case "short":
 		case "Short":
+			if(value==null)return 0;
 			return Short.parseShort(String.valueOf(value));
 		case "int":
 		case "Integer":
+			if(value==null)return 0;
 			return (Integer)value;
 		case "long":
 		case "Long":
+			if(value==null)return 0L;
 			return Long.parseLong(String.valueOf(value));
 		case "float":
 		case "Float":
+			if(value==null)return 0F;
 			return Float.parseFloat(String.valueOf(value));
 		case "double":	
 		case "Double":	
+			if(value==null)return 0D;
 			return Double.parseDouble(String.valueOf(value));
 		case "String":	
+			if(value==null)return null;
 			return (String) value;
 		case "[B":	
+			if(value==null)return null;
 			return (byte[]) value;
 		case "Date":
+			if(value==null)return 0;
 			return Trans.TransToDate((Integer)value);
 		case "boolean":
 		case "Boolean":
+			if(value==null)return 0;
 			return (Integer)value !=0;
 		case "UUID":
-			return Trans.TransToUUID((byte[]) value,0);
+			if(value==null)return null;
+			return Trans.TransToUUID((String) value);
+			//return Trans.TransToUUID((byte[]) value,0);
 		}
 		return value;
 	}
@@ -147,8 +248,9 @@ public class JdbcSqlite implements DB
 		case "char":
 			return "TEXT";
 		case "[B":	
-		case "UUID":	
 			return "BLOB";
+		case "UUID":	
+			return "TEXT";
 		}
 		return null;
 	}
@@ -156,6 +258,68 @@ public class JdbcSqlite implements DB
 	public String GetDBGeneratedSQL() 
 	{
 		return " autoincrement";
+	}
+	@Override
+	public boolean Exec(String sql, Queue<Object> param) throws SQLException {
+		PreparedStatement ps = conn.prepareStatement(sql);
+		if(param!=null)
+		{
+			int len=param.size();
+			for(int i=1;i<=len;i++)
+			{
+				Object obj=param.poll();								
+				ps.setObject(i, obj);
+			}
+		}
+		return ps.execute();
+	}
+	@Override
+	public Queue<jxLink<String, Object>> Search(Class<?> cls, String sql, Queue<Object> param) throws Exception {
+		Queue<jxLink<String, Object>> rs=new LinkedList<jxLink<String, Object>>();
+
+		utils.P("Search",sql);
+		
+		PreparedStatement stmt = conn.prepareStatement(sql);
+		int len=param.size();
+		for(int i=1;i<=len;i++)
+		{
+			Object obj=param.poll();
+			utils.P("Search set param",i+":"+obj);
+			stmt.setObject(i, obj);
+		}
+		ResultSet result=stmt.executeQuery();
+		ResultSetMetaData rsMetaData = result.getMetaData();
+	    int numberOfColumns = rsMetaData.getColumnCount();
+		while(result.next())
+		{
+			jxLink<String, Object> map=new jxLink<String, Object>();
+			for(int i=1;i<=numberOfColumns;i++)
+			{
+				Object v =result.getObject(i);
+				String cn=rsMetaData.getColumnName(i);
+				map.offer(cn, v);
+			}
+			rs.offer(map);
+		}
+		utils.P("Search result size",rs.size()+"");
+		return rs;
+	}
+	@Override
+	public int GetRS_int(String sql, Queue<Object> param) throws Exception 
+	{
+		PreparedStatement stmt = conn.prepareStatement(sql);
+		int len=param.size();
+		for(int i=1;i<=len;i++)
+			stmt.setObject(i, param.poll());
+		ResultSet result=stmt.executeQuery();
+		while(result.next())
+		{
+			Object v =result.getObject(1);
+			if(v!=null)
+				return Trans.TransToInteger(v);
+			return 0;
+		}
+		return 0;
 	}
 
 	

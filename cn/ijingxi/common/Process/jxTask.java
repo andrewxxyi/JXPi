@@ -2,7 +2,7 @@
 package cn.ijingxi.common.Process;
 
 import java.util.Date;
-import java.util.List;
+import java.util.Queue;
 import java.util.UUID;
 
 
@@ -19,38 +19,75 @@ import cn.ijingxi.common.util.*;
  * @author andrew
  *
  */
-public class jxTask extends Container
+public class jxTask extends jxORMobj
 {		
-	public static ORMID GetORMID(Integer ID)
+	public static ORMID GetORMID(UUID ID)
 	{
 		return new ORMID(ORMType.jxTask.ordinal(),ID);
 	}	
 	
 	public static void Init() throws Exception
 	{	
-		InitClass(ORMType.jxTask.ordinal(),PI.class);
+		InitClass(ORMType.jxTask.ordinal(),jxTask.class);
 	}
 	public static void CreateDB(TopSpace ts) throws Exception
 	{
 		CreateTableInDB(jxTask.class,ts);
-		jxTask task=(jxTask) New(jxTask.class);
-		task.CreateTime=new Date();
-		task.Name="未完成子任务";
-		task.Descr="新创建的顶层任务的归口处";
-		task.State=InstanceState.NoActive;
-		task.Insert(ts);
+	}
+
+	@Override
+	protected void Init_Create() throws Exception
+	{
+		ID=UUID.randomUUID();
+		TaskType=jxTaskType.Task;
+	}
+
+
+	@Override
+	protected boolean DualEventMsg(jxMsg msg) throws Exception{
+		jxMsgType event = (jxMsgType) msg.getEvent();
+		if(event!=null)
+			switch(event)
+			{
+			case Report:
+				if(msg.GetParam("EventInfo").compareTo("Tag")==0)
+				{
+					DB db=JdbcUtils.GetDB();
+					db.Trans_Begin();
+						try{
+				        synchronized (db)
+				        {
+				        	TopSpace ts=msg.getTopSpace();
+				        	ObjTag tag=(ObjTag) msg.getObj();
+				        	//设置本tag为未查看/处理
+				        	tag.TagState=InstanceState.Waiting.ordinal();
+				        	tag.Insert(db, ts);
+				        }
+				        db.Trans_Commit();
+					}
+					catch(Exception e)
+					{
+						db.Trans_Cancel();
+					}
+					return true;
+				}
+				break;
+			default:
+				break;
+			}
+		return false;
 	}
 	
-
 	
 	
 	
 	
+	@ORM(keyType=KeyType.PrimaryKey)
+	public UUID ID;
 	
+	@ORM
+	public jxTaskType TaskType;
 	
-	@ORM(keyType=KeyType.AutoSystemGenerated)
-	public int ID;
-
 	@ORM
 	public String Name;		
 	
@@ -63,10 +100,20 @@ public class jxTask extends Container
 	@ORM(Descr="json格式的附加信息")
 	public String Info;	
 
+	@ORM(Index=3,Descr="创建者的typeID，可以是外部人员创建")
+	public int CreatorTypeID;
+	@ORM(Index=3,Descr="创建者的ID")
+	public UUID CreatorID;
+	public jxORMobj getCreator(TopSpace ts) throws Exception
+	{
+		return jxORMobj.GetByID(CreatorTypeID, CreatorID, ts);
+	}
+	
+	
 	@ORM(Index=2)
 	public UUID ParentOwnerID;
 	@ORM(Index=2)
-	public int ParentID;
+	public UUID ParentID;
 	
 	public void SetInfo(String Purpose,Object value) throws Exception
 	{
@@ -104,99 +151,297 @@ public class jxTask extends Container
 		TaskSM.AddTrans(InstanceState.Doing, InstanceEvent.Pause, InstanceState.Paused, new TaskPause());
 		TaskSM.AddTrans(InstanceState.Paused, InstanceEvent.Trigger, InstanceState.Doing, new TaskRedo());
 	}
-	//如果是新创建一个任务，则放到此
-	private static jxTask myIncompleteSubTask=null;
-	static jxTask getIncompleteSubTask(TopSpace ts) throws Exception
-	{
-		if(myIncompleteSubTask==null)
-			myIncompleteSubTask=(jxTask) GetByID(jxTask.class,1,ts);
-		return myIncompleteSubTask;
-	}
     //
     //方法
     //
-	private TopSpace myTS=null;
-	public TopSpace getTopSpace()
+	/**
+	 * 
+	 * @param ts
+	 * @param rt Main or Slave分别为列表主负责人与参与者，None则列表全体
+	 * @return
+	 * @throws Exception
+	 */
+	public Queue<jxORMobj> ListExecer(TopSpace ts,RelationType rt) throws Exception
 	{
-		return myTS;
+		SelectSql s=new SelectSql();
+		s.AddTable("Relation",ts);
+		s.AddTable("PeopleInTs",ts);
+		s.AddContion("Relation", "ObjTypeID", jxCompare.Equal, ORMType.jxTask.ordinal());
+		s.AddContion("Relation", "ObjID", jxCompare.Equal, ID);
+		s.AddContion("Relation", "TargetTypeID", jxCompare.Equal, ORMType.PeopleInTs.ordinal());
+		s.AddContion("Relation", "TargetID", "PeopleInTs","ID");
+		if(rt!=RelationType.None)
+			s.AddContion("Relation", "RelType", jxCompare.Equal, rt);
+		return Select(PeopleInTs.class,s,ts);
 	}
-	public void setTopSpace(TopSpace ts)
+
+	public PeopleInTs GetExecer(TopSpace ts) throws Exception
 	{
-		myTS=ts;
+		Queue<jxORMobj> el=ListExecer(ts,RelationType.Main);
+		for(jxORMobj obj:el)
+		{
+			PeopleInTs p=(PeopleInTs)obj;
+			return p;
+		}
+		return null;
 	}
 	
-	jxMsg ToTaskMsg(UUID Receiver) throws Exception
+	public void AddExecer(DB db,TopSpace ts,PeopleInTs p,RelationType rt) throws Exception
 	{
-		jxMsg msg=(jxMsg) jxMsg.New(jxMsg.class);
-		msg.Sender=jxSystem.System.SystemUUID;
-		msg.SenderID=ORMID.SystemID;
+		if(rt==RelationType.Main)
+			ChangeMainExecer(db,ts,p);
+		else
+		{
+		        	Relation rl=(Relation)Create(Relation.class);
+		        	rl.ObjTypeID=ORMType.jxTask.ordinal();
+		        	rl.ObjID=ID;
+		        	rl.TargetTypeID=ORMType.PeopleInTs.ordinal();
+		        	rl.TargetID=p.ID;
+		        	rl.RelType=RelationType.Slave;
+		        	rl.Insert(db,ts);
+
+		        	/*
+		    		jxMsg msg=jxMsg.NewMsg(jxMsgType.Event, ts, GetID(), null, GetID(), null);
+		    		msg.SetParam("EventInfo","Relation");
+		    		msg.SetParam("EventType",utils.GetClassName(jxMsgType.class));
+		    		msg.SetParam("Event",Trans.TransToInteger(jxMsgType.Report));
+		    		msg.setObj(rl);
+    				MsgCenter.Post(msg);				
+		    		Queue<jxORMobj> el = ListExecer(ts,RelationType.None);
+		    		for(jxORMobj obj:el)
+		    		{
+		    			PeopleInTs pe=(PeopleInTs)obj;
+		    			if(p!=null&&p.ID.compareTo(jxSystem.SystemID)!=0)
+		    			{
+		    				msg.Receiver=pe.ID;
+		    			}
+		    		}
+		    		*/
+		    }
+	}
+
+	public void ChangeMainExecer(DB db,TopSpace ts,PeopleInTs p) throws Exception
+	{
+		//原参与者改负责人未考虑
+			SelectSql s=new SelectSql();
+			s.AddTable("Relation",ts);
+			s.AddContion("Relation", "ObjTypeID", jxCompare.Equal, ORMType.jxTask.ordinal());
+			s.AddContion("Relation", "ObjID", jxCompare.Equal, ID);
+			s.AddContion("Relation", "RelType", jxCompare.Equal, RelationType.Main);
+			Queue<jxORMobj> rlist=Select(db,Relation.class,s,ts);
+			for(jxORMobj obj:rlist)
+			{
+				Relation rl=(Relation)obj;
+				rl.RelType=RelationType.Slave;
+				rl.Update(db,ts);
+				break;
+			}
+        	Relation rl=(Relation)Create(Relation.class);
+        	rl.ObjTypeID=ORMType.jxTask.ordinal();
+        	rl.ObjID=ID;
+        	rl.TargetTypeID=ORMType.PeopleInTs.ordinal();
+        	rl.TargetID=p.ID;
+        	rl.RelType=RelationType.Main;
+        	rl.Insert(db,ts);
+	}
+	/*
+	jxMsg ToTaskMsg(TopSpace ts,UUID Receiver,ORMID ReceiverID) throws Exception
+	{
+		jxMsg msg=(jxMsg) jxMsg.Create(jxMsg.class);
+		msg.Sender=jxSystem.System.ID;
+		msg.setSenderID(this.GetID());
 		msg.Receiver=Receiver;
-		msg.ReceiverID=ORMID.SystemID;
-		msg.MsgID=jxSystem.System.GetMsgID();
+		msg.setReceiverID(ReceiverID);
 		msg.MsgType=jxMsgType.Event;
-		msg.setMsg(ToJSONString());
+		msg.SetParam("EventInfo","CreateTaskFromPlan");
 		msg.SetParam("EventType",utils.GetClassName(InstanceEvent.class));
-		msg.SetParam("Event",Trans.TransToInteger(InstanceEvent.Touch));		
+		msg.SetParam("Event",Trans.TransToInteger(InstanceEvent.Create));
+		msg.SetParam("TopSpaceID",ts.ID);
 		return msg;
 	}
+	*/
 	public void AddSubTask(jxTask st) throws Exception
 	{
 		st.Parent=ToJSONString();
 		addExtendArraySubNode("SubTask",st.ToJSON());
 	}
-	public void CreateSub(People Caller,People Execer,String Name,String Descr) throws Exception
+	public void CreateSub(TopSpace ts,PeopleInTs Caller,PeopleInTs Execer,String Name,String Descr) throws Exception
     {
-	   jxTask task=(jxTask) New(jxTask.class);
-	   task.ParentOwnerID=jxSystem.SystemID;
-	   task.ParentID=ID;
-	   task.CreateTime=new Date();
-	   task.Name=Name;
-	   task.Descr=Descr;
-	   task.setTopSpace(Caller.CurrentTopSpace);
-	   
-	   if(Caller.UniqueID.compareTo(Execer.UniqueID)==0)
-		   task.Insert(Caller.CurrentTopSpace);
+		DB db=JdbcUtils.GetDB();
+		db.Trans_Begin();
+		try{
+	        synchronized (db)
+	        {
+			   jxTask task=(jxTask) Create(jxTask.class);
+			   task.CreatorTypeID=Caller.getTypeID();
+			   task.CreatorID=Caller.ID;
+			   task.ParentOwnerID=jxSystem.SystemID;
+			   task.ParentID=ID;
+			   task.CreateTime=new Date();
+			   task.Name=Name;
+			   task.Descr=Descr;
+			   task.Insert(db, ts);
+		
+		      	Relation rl=(Relation)Create(Relation.class);
+		      	rl.ObjTypeID=ORMType.jxTask.ordinal();
+		      	rl.ObjID=ID;
+		      	rl.TargetTypeID=ORMType.jxTask.ordinal();
+		      	rl.TargetID=task.ID;
+		      	rl.RelType=RelationType.OneToMulti;
+		      	rl.Insert(db,ts);	
+
+		      	if(Execer==null)
+		      		Execer=Caller;
+		      	this.AddExecer(db,ts, Execer, RelationType.Main);
+		      	if(Execer.ID.compareTo(jxSystem.SystemID)!=0)
+		      	{
+		      		/*
+					jxMsg msg=jxMsg.NewMsg(jxMsgType.Event, ts, GetID(), Execer.ID, Execer.GetID(), null);
+					msg.SetParam("EventInfo","Task");
+					msg.SetParam("EventType",utils.GetClassName(InstanceEvent.class));
+					msg.SetParam("Event",Trans.TransToInteger(InstanceEvent.Create));
+					msg.setObj(task);
+					MsgCenter.Post(db,msg);
+					*/
+		      	}
+	        }
+	        db.Trans_Commit();
+		}
+		catch(Exception e)
+		{
+			db.Trans_Cancel();
+		}
+		
+		
+	   /*
+	   if(Caller.PeopleID==Execer.PeopleID)
+		   task.Insert(ts);
 	   else
 	   {
-		   jxMsg msg=task.ToTaskMsg(Execer.UniqueID);
+		   jxMsg msg=task.ToTaskMsg(Execer.Real.UniqueID);
 		   MsgCenter.Post(msg);
 	   }
-	   
-	   AddSubTask(task);
+	   */
+	   //AddSubTask(task);
     }
-	public static void CreateTask(People Caller,People Execer,String Name,String Descr) throws Exception
-    {
-		jxTask task=getIncompleteSubTask(Caller.CurrentTopSpace);
-		task.CreateSub(Caller, Execer, Name, Descr);
-    }
-	public List<jxJson> ListSubTask(People Caller) throws Exception
+
+	public Queue<jxORMobj> ListSubTask(TopSpace ts) throws Exception
 	{
-		return getExtendArrayList("SubTask",null);
+		SelectSql s=new SelectSql();
+		s.AddTable("Relation",ts);
+		s.AddTable("jxTask",ts);
+		s.AddContion("Relation", "ObjTypeID", jxCompare.Equal, ORMType.jxTask.ordinal());
+		s.AddContion("Relation", "ObjID", jxCompare.Equal, ID);
+		s.AddContion("Relation", "TargetTypeID", jxCompare.Equal, ORMType.jxTask.ordinal());
+		s.AddContion("Relation", "TargetID", "jxTask","ID");
+		s.AddContion("Relation", "RelType", jxCompare.Equal, RelationType.OneToMulti);
+		return Select(jxTask.class,s,ts);
+	}
+	
+	
+	public static jxTask CreateTask(DB db,TopSpace ts,PeopleInTs Caller,Date doAt,String Name,String Descr) throws Exception
+    {
+		 jxTask task=(jxTask) Create(jxTask.class);
+			   task.CreatorTypeID=Caller.getTypeID();
+			   task.CreatorID=Caller.ID;
+			   task.CreateTime=new Date();
+			   task.Name=Name;
+			   task.Descr=Descr;
+			   task.Insert(db, ts);
+			   if(doAt!=null)
+				   task.AddTag(db,ts, ObjTag.Tag_System_LastTime, doAt, null);
+     
+			return task;
+    }
+
+	/**
+	 * 向所有参与方播报一条tag
+	 * @param ts
+	 * @param Receiver
+	 * @param ReceiverID
+	 * @param tag
+	 * @throws Exception
+	 */
+	private void ReportTag(TopSpace ts,ObjTag tag) throws Exception
+	{
+		/*
+		jxMsg msg=jxMsg.NewMsg(jxMsgType.Event, ts, GetID(), null, GetID(), null);
+		msg.SetParam("EventInfo","Tag");
+		msg.SetParam("EventType",utils.GetClassName(jxMsgType.class));
+		msg.SetParam("Event",Trans.TransToInteger(jxMsgType.Report));
+		msg.setObj(tag);
+		Queue<jxORMobj> el = ListExecer(ts,RelationType.None);
+		for(jxORMobj obj:el)
+		{
+			PeopleInTs p=(PeopleInTs)obj;
+			if(p!=null&&p.ID.compareTo(jxSystem.SystemID)!=0)
+			{
+				msg.Receiver=p.ID;
+				MsgCenter.Post(msg);				
+			}
+		}
+		*/
+	}
+	/**
+	 * 为本任务添加一条计划
+	 * @param ts
+	 * @param Caller 只有本任务的执行者才能为其添加计划
+	 * @param order 应以100为单位分开，便于插入等调整
+	 * @param doAt
+	 * @param execer 为null则指定给创建者，即本任务执行者
+	 * @param plan
+	 * @return
+	 * @throws Exception
+	 */
+	public ObjTag AddPlan(TopSpace ts,PeopleInTs Caller,int order,Date doAt,PeopleInTs execer,String plan) throws Exception
+	{
+		PeopleInTs pe=GetExecer(ts);
+		if(pe!=null&&pe.ID==Caller.ID)
+		{
+			ObjTag tag=AddTag(ts,ObjTag.Tag_System_Plan,doAt,plan);
+			tag.setExtendValue("Addition", "CallerID", Trans.TransToString(Caller.ID));
+			tag.setExtendValue("Addition", "CallerName", Caller.Real.Name);
+			tag.Number=(float) order;
+			tag.Update(ts);
+			ReportTag(ts,tag);
+			return tag;
+		}
+		return null;
+	}
+	
+	public void InformToAll()
+	{
+		
 	}
 
-	public void Pause(People Caller,String Msg) throws Exception
+
+	public void Pause(TopSpace ts,PeopleInTs Caller,String Msg) throws Exception
     {
     	CallParam param = new CallParam(Caller,Caller,Msg);
     	param.addParam(this);
     	jxTask.TaskSM.Happen(this, "State", InstanceEvent.Pause, param);
+		ObjTag.AddTag(ts, ObjTag.Tag_System_StateChange, getTypeID(), ID, 0f, "Pause");
     }
-    public void ReDo(People Caller,String Msg) throws Exception
+    public void ReDo(TopSpace ts,PeopleInTs Caller,String Msg) throws Exception
     {
     	CallParam param = new CallParam(Caller,Caller,Msg);
     	param.addParam(this);
     	jxTask.TaskSM.Happen(this, "State", InstanceEvent.Trigger, param);
+		ObjTag.AddTag(ts, ObjTag.Tag_System_StateChange, getTypeID(), ID, 0f, "Trigger");
     }
-    public void Cancle(People Caller,String Msg) throws Exception
+    public void Cancle(TopSpace ts,PeopleInTs Caller,String Msg) throws Exception
     {
     	CallParam param = new CallParam(Caller,Caller,Msg);
     	param.addParam(this);
     	jxTask.TaskSM.Happen(this, "State", InstanceEvent.Cancel, param);
+		ObjTag.AddTag(ts, ObjTag.Tag_System_StateChange, getTypeID(), ID, 0f, "Cancel");
     }
-    public void Close(People Caller,String Msg) throws Exception
+    public void Close(TopSpace ts,PeopleInTs Caller,String Msg) throws Exception
     {
     	CallParam param = new CallParam(Caller,Caller,Msg);
     	param.addParam(this);
     	jxTask.TaskSM.Happen(this, "State", InstanceEvent.Close, param);
+		ObjTag.AddTag(ts, ObjTag.Tag_System_StateChange, getTypeID(), ID, 0f, "Close");
     }
 
     
@@ -212,7 +457,9 @@ class TaskClose implements IDoSomething
 		jxTask task= (jxTask)param.getParam();
 		String desc= (String)param.getMsg();
 		UUID cid=task.ParentOwnerID;
-		jxLog log=jxLog.Log(jxSystem.System.SystemUUID, ORMType.jxTask.ordinal(), task.ID, task.Name, desc);
+		
+		
+		jxLog log=jxLog.Log(jxSystem.System.ID, ORMType.jxTask.ordinal(), task.ID, task.Name, desc);
 		log.setInfo("Event",InstanceEvent.Close);
 		log.setInfo("State",InstanceState.Closed);
 		log.Insert(null);
@@ -230,7 +477,7 @@ class TaskCancel implements IDoSomething
 		jxTask task= (jxTask)param.getParam();
 		String desc= (String)param.getMsg();
 		UUID cid=task.ParentOwnerID;
-		jxLog log=jxLog.Log(jxSystem.System.SystemUUID, ORMType.jxTask.ordinal(), task.ID, task.Name, desc);
+		jxLog log=jxLog.Log(jxSystem.System.ID, ORMType.jxTask.ordinal(), task.ID, task.Name, desc);
 		log.setInfo("Event",InstanceEvent.Cancel);
 		log.setInfo("State",InstanceState.Canceled);
 		log.Insert(null);
@@ -247,7 +494,7 @@ class TaskPause implements IDoSomething
 		jxTask task= (jxTask)param.getParam();
 		String desc= (String)param.getMsg();
 		UUID cid=task.ParentOwnerID;
-		jxLog log=jxLog.Log(jxSystem.System.SystemUUID, ORMType.jxTask.ordinal(), task.ID, task.Name, desc);
+		jxLog log=jxLog.Log(jxSystem.System.ID, ORMType.jxTask.ordinal(), task.ID, task.Name, desc);
 		log.setInfo("Event",InstanceEvent.Pause);
 		log.setInfo("State",InstanceState.Paused);
 		log.Insert(null);
@@ -264,7 +511,7 @@ class TaskRedo implements IDoSomething
 		jxTask task= (jxTask)param.getParam();
 		String desc= (String)param.getMsg();
 		UUID cid=task.ParentOwnerID;
-		jxLog log=jxLog.Log(jxSystem.System.SystemUUID, ORMType.jxTask.ordinal(), task.ID, task.Name, desc);
+		jxLog log=jxLog.Log(jxSystem.System.ID, ORMType.jxTask.ordinal(), task.ID, task.Name, desc);
 		log.setInfo("Event",InstanceEvent.Trigger);
 		log.setInfo("State",InstanceState.Doing);
 		log.Insert(null);

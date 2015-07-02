@@ -7,7 +7,7 @@ public enum Result implements IjxEnum
 {
 	None,
 	OK,
-	Erroy,
+	Error,
 	Reject,
 	Accept,
 	Success,
@@ -21,6 +21,33 @@ public enum Result implements IjxEnum
 	public Object TransToORMEnum(Integer param) 
 	{
 		return Result.values()[param];
+	}
+
+	@Override
+	public String toChinese()
+	{
+		switch(this)
+		{
+		case None:
+			return "空";
+		case OK:
+			return "正确";
+		case Error:
+			return "错误";
+		case Reject:
+			return "拒绝";
+		case Accept:
+			return "接受";
+		case Success:
+			return "成功";
+		case Fail:
+			return "失败";
+		case GiveUp:
+			return "放弃";
+		case Part:
+			return "部分完成";
+		}
+		return "";
 	}
 	
 }

@@ -57,5 +57,9 @@ public class jxSparseTable<TKey1 extends Comparable<TKey1>, TKey2 extends Compar
     		return tree.get(k2);
     	return null;
     }
+    public Map<TKey2,TValue> Get(TKey1 k1)
+    {
+    	return m_List.get(k1);
+    }
     
 }

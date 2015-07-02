@@ -3,11 +3,12 @@ package cn.ijingxi.common.util;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import cn.ijingxi.common.orm.*;
    
 /**  
- * B+树  
+ * 对象缓存
  * @author Andrew Xu  
  */   
 public class LRU
@@ -18,24 +19,24 @@ public class LRU
     {
 		MaxSize=size;
     }
-	private jxLink<ORMID,jxORMobj> link=new jxLink<ORMID,jxORMobj>();
-	private Map<ORMID,jxORMobj> tree=new HashMap<ORMID,jxORMobj>();
+	private jxLink<UUID,jxORMobj> link=new jxLink<UUID,jxORMobj>();
+	private Map<UUID,jxORMobj> tree=new HashMap<UUID,jxORMobj>();
 	
 	public void add(jxORMobj obj) throws Exception
 	{		
 		if(obj!=null)
 			synchronized (this)
 			{
-				link.offer(obj.GetID(),obj);
-				tree.put(obj.GetID(), obj);
+				link.offer(obj.getID(),obj);
+				tree.put(obj.getID(), obj);
 				if(link.getCount()>MaxSize)
 				{
 					jxORMobj o=link.poll();
-					tree.remove(o.GetID());
+					tree.remove(o.getID());
 				}
 			}
 	}
-	public void delete(ORMID id)
+	public void delete(UUID id)
 	{
 		synchronized (this)
 		{
@@ -43,16 +44,16 @@ public class LRU
 			link.delete(id);
 		}
 	}
-	public jxORMobj get(ORMID id) throws Exception
+	public jxORMobj get(UUID id) throws Exception
 	{
 		synchronized (this)
 		{
 			jxORMobj obj=tree.get(id);
 			if(obj!=null)
 			{
-				LinkNode<ORMID, jxORMobj> node = link.searchNode(id);
+				LinkNode<UUID, jxORMobj> node = link.searchNode(id);
 				link.delete(node);
-				link.offer(obj.GetID(),obj);			
+				link.offer(obj.getID(),obj);			
 			}
 			return obj;
 		}

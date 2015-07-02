@@ -8,6 +8,7 @@ import java.util.UUID;
 
 
 import cn.ijingxi.common.app.People;
+import cn.ijingxi.common.app.PeopleInTs;
 import cn.ijingxi.common.app.TopSpace;
 import cn.ijingxi.common.app.jxSystem;
 import cn.ijingxi.common.msg.MsgCenter;
@@ -30,9 +31,17 @@ public class PN extends jxTask
 	public static String Node_Accept = "同意";
 	public static String Node_Reject = "拒绝";  
 	
-	public static ORMID GetORMID(Integer ID)
+	public static ORMID GetORMID(UUID ID)
 	{
 		return new ORMID(ORMType.PN.ordinal(),ID);
+	}
+
+	@Override
+	protected void Init_Create() throws Exception
+	{
+		ID=UUID.randomUUID();
+		TaskType=jxTaskType.ProcessNodeInstance;
+		State=InstanceState.Doing;
 	}
 	
 	public static void Init() throws Exception
@@ -88,10 +97,10 @@ public class PN extends jxTask
 	
 	
 	@ORM(keyType=KeyType.PrimaryKey)
-	public Integer ID;
+	public UUID ID;
 
 	@ORM(Index=1)
-	public Integer ProcessID;
+	public UUID ProcessID;
 	public jxProcess getProcess(TopSpace ts) throws Exception
 	{
 		return (jxProcess) GetByID(jxProcess.class,ProcessID,ts);
@@ -111,8 +120,7 @@ public class PN extends jxTask
 	{
 		State=InstanceState.Waiting;
 	}
-	
-	PN(People Caller,int ProcessID,PI pi,String NodeName) throws Exception 
+	void setParam(PeopleInTs Caller,UUID ProcessID,PI pi,String NodeName) throws Exception 
 	{
 		this.ParentOwnerID=jxSystem.SystemID;
 		this.ParentID=pi.ID;
@@ -124,10 +132,10 @@ public class PN extends jxTask
 	jxMsg GetEvnetMsg(TopSpace ts,UUID Receiver,ORMID ReceiverID,IjxEnum Event,String Msg,String FromName,String ExportName,String ToName) throws Exception
 	{
 		//消息一定是发给pi，但由于pi也有相同的事件，所有要加以区分
-		ORMID pid=new ORMID(ORMType.PI.ordinal(),Trans.TransToInteger(GetParent("ID")));
-		jxMsg msg=jxMsg.NewEventMsg(ts,GetID(),Receiver,pid,Event,Msg);
+		ORMID pid=new ORMID(ORMType.PI.ordinal(),Trans.TransToUUID((String)GetParent("ID")));
+		jxMsg msg=jxMsg.NewEventMsg(ts,getID(),Receiver,pid,Event,Msg);
 		msg.SetParam("Node",this.ToJSONString());
-		msg.SetParam("TopSpaceID",Trans.TransToString(ts.UniqueID));
+		msg.SetParam("tsid",Trans.TransToString(ts.ID));
 		setMsgParam(msg,FromName,ExportName,ToName);
 		return msg;
 	}
@@ -147,7 +155,7 @@ public class PN extends jxTask
 		msg.SetParam("From",FromName);
 		msg.SetParam("Export", ExportName);
 		msg.SetParam("To", ToName);
-		TopSpace ts=TopSpace.getByUniqueID(Trans.TransToUUID(msg.GetParam("TopSpaceID")));
+		//TopSpace ts=(TopSpace) TopSpace.GetByID(TopSpace.class, Trans.TransToUUID(msg.GetParam("tsid")),null);
 	}
 
 	//第一个参数是节点，第二个参数是From节点名，第三个参数是出口名
@@ -290,15 +298,15 @@ class NodeDual implements IDoSomething
 	{
 		//第一个参数是节点，第二个参数是From节点名，第三个参数是出口名
 		PN node= (PN)param.getParam();
-		People caller=(People) param.getCaller();
+		PeopleInTs caller=(PeopleInTs) param.getCaller();
 		String fromname=(String) param.getParam();
 		String exportname=(String) param.getParam();
 		TopSpace ts=(TopSpace) param.getParam();
 		jxProcess process=node.getProcess(ts);
-		IExecutor execer=process.getNode_RealExecer(caller,node.Name);
+		IExecutor execer=process.getNode_RealExecer(ts,node.Name);
 		if(node.Name==PN.Node_End)
 		{			
-			jxMsg msg=jxMsg.NewEventMsg(ts,node.GetID(),node.ParentOwnerID,PI.GetORMID(node.ParentID),InstanceEvent.Close,null);
+			jxMsg msg=jxMsg.NewEventMsg(ts,node.getID(),node.ParentOwnerID,PI.GetORMID(node.ParentID),InstanceEvent.Close,null);
 			msg.SetParam("NodeName", node.Name);
 			MsgCenter.Post(msg);
 		}
@@ -307,10 +315,12 @@ class NodeDual implements IDoSomething
 			PN.NodeSM.Happen(node, "State", InstanceEvent.Close, param);
 		else if(execer!=null)
 		{
+			/*
 			String m=String.format("<a>流程：%s的任务%s已流转到您，请尽快处理</a>", node.GetParent("Name"),node.Name);
-			jxMsg msg=jxMsg.NewRichMsg(ts,node.GetID(),execer.getUniqueID(),execer.GetID(),m);
+			jxMsg msg=jxMsg.NewRichMsg(ts,node.getID(),execer.getUniqueID(),execer.getID(),m);
 			node.setMsgParam(msg,fromname,exportname,node.Name);
 			MsgCenter.Post(msg);
+			*/
 		}
 	}
 }
@@ -322,7 +332,7 @@ class NodeClose implements IDoSomething
 	{
 		//第一个参数是节点，第二个参数是From节点名，第三个参数是出口名
 		PN node= (PN)param.getParam();
-		People caller=(People) param.getCaller();
+		PeopleInTs caller=(PeopleInTs) param.getCaller();
 		String fromname=(String) param.getParam();
 		String exportname=(String) param.getParam();
 		TopSpace ts=(TopSpace) param.getParam();
@@ -335,7 +345,7 @@ class NodeClose implements IDoSomething
 				String tn=process.getTrans_To(node.Name, e);
 				UUID epid=null;
 				ORMID eid=null;
-				People execer=process.getNode_RealExecer(caller,tn);
+				PeopleInTs execer=process.getNode_RealExecer(ts,tn);
 		    	if(execer==null)
 		    	{
 		    		//没有具体的执行者，可能是自动执行的系统节点，所以发给流程实例的创建者那里执行
@@ -345,7 +355,7 @@ class NodeClose implements IDoSomething
 		    	else
 		    	{
 		    		//下一节点的执行者，可能还没有创建这个节点，所以消息是发给进程的，如果没创建则创建，然后再转交
-		    		epid=execer.UniqueID;
+		    		epid=execer.ID;
 		    		eid=jxProcess.GetORMID(node.ProcessID);
 		    	}
 				jxMsg msg=node.GetEvnetMsg(ts,epid,eid,InstanceEvent.Touch,null,node.Name,e,tn);
@@ -363,7 +373,7 @@ class NodeClose implements IDoSomething
 				if(abe)
 				{
 					String tn=process.getTrans_To(node.Name, e);
-					People execer=process.getNode_RealExecer(caller,tn);
+					PeopleInTs execer=process.getNode_RealExecer(ts,tn);
 			    	if(execer!=null)
 			    	{
 			    		ename=e;
@@ -397,7 +407,7 @@ class NodeClose implements IDoSomething
 			String tn=process.getTrans_To(node.Name, ename);
 			UUID epid=null;
 			ORMID eid=null;
-			People execer=process.getNode_RealExecer(caller,tn);
+			PeopleInTs execer=process.getNode_RealExecer(ts,tn);
 	    	if(execer==null)
 	    	{
 	    		//没有具体的执行者，可能是自动执行的系统节点，所以发给流程实例的创建者那里执行
@@ -407,7 +417,7 @@ class NodeClose implements IDoSomething
 	    	else
 	    	{
 	    		//下一节点的执行者，可能还没有创建这个节点，所以消息是发给进程的，如果没创建则创建，然后再转交
-	    		epid=execer.UniqueID;
+	    		epid=execer.ID;
 	    		eid=jxProcess.GetORMID(node.ProcessID);
 	    	}
 			jxMsg msg=node.GetEvnetMsg(ts,epid,eid,InstanceEvent.Touch,null,node.Name,ename,tn);
@@ -417,7 +427,7 @@ class NodeClose implements IDoSomething
 		{
 			//param.Trans是用户指定的
 			String tn=process.getTrans_To(node.Name, exportname);
-	    	People execer=process.getNode_RealExecer(caller, tn);
+			PeopleInTs execer=process.getNode_RealExecer(ts, tn);
 			UUID epid=null;
 			ORMID eid=null;
 	    	if(execer==null)
@@ -429,7 +439,7 @@ class NodeClose implements IDoSomething
 	    	else
 	    	{
 	    		//下一节点的执行者，可能还没有创建这个节点，所以消息是发给进程的，如果没创建则创建，然后再转交
-	    		epid=execer.UniqueID;
+	    		epid=execer.ID;
 	    		eid=jxProcess.GetORMID(node.ProcessID);
 	    	}
 			jxMsg msg=node.GetEvnetMsg(ts,epid,eid,InstanceEvent.Touch,null,node.Name,exportname,tn);

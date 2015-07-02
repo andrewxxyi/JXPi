@@ -11,4 +11,15 @@ public enum jxOP implements IjxEnum
 	{
 		return jxOP.values()[param];
 	}
+
+	@Override
+	public String toChinese()
+	{
+		switch(this)
+		{
+		case Equal:
+			return "等于";
+		}
+		return "";
+	}
 }

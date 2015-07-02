@@ -17,10 +17,22 @@ public class jxLink<TKey extends Comparable<TKey>, TValue> implements Iterable<L
 			return SonNodeList.getKey();
         return null;
     }
+	public TValue FirstValue()
+    {
+		if(SonNodeList!=null)
+			return SonNodeList.getValue();
+        return null;
+    }
 	public TKey LastKey()
     {
 		if(LastSonNode!=null)
 			return LastSonNode.getKey();
+        return null;
+    }
+	public TValue LastValue()
+    {
+		if(LastSonNode!=null)
+			return LastSonNode.getValue();
         return null;
     }
 		

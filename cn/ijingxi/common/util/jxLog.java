@@ -31,7 +31,7 @@ public class jxLog extends jxORMobj
 	@ORM(Index=2)
 	public int TypeID;
 	@ORM(Index=2)
-	public int ID;
+	public UUID ID;
 	
 	@ORM
 	public String Name;
@@ -56,9 +56,9 @@ public class jxLog extends jxORMobj
 	 * @return
 	 * @throws Exception
 	 */
-	public static jxLog Log(UUID OwnerID,int TypeID,int ID,String Name,String Descr) throws Exception
+	public static jxLog Log(UUID OwnerID,int TypeID,UUID ID,String Name,String Descr) throws Exception
 	{
-		jxLog log=(jxLog) jxLog.New(jxLog.class);
+		jxLog log=(jxLog) jxLog.Create(jxLog.class);
 		log.OwnerID=OwnerID;
 		log.TypeID=TypeID;
 		log.ID=ID;
@@ -74,12 +74,11 @@ public class jxLog extends jxORMobj
 	
 	public static jxMsg NewLogMsg(jxLog log,UUID Receiver) throws Exception
 	{
-		jxMsg msg=(jxMsg) jxMsg.New(jxMsg.class);
-		msg.Sender=jxSystem.System.SystemUUID;
-		msg.SenderID=ORMID.SystemID;
+		jxMsg msg=(jxMsg) jxMsg.Create(jxMsg.class);
+		msg.Sender=jxSystem.System.ID;
+		msg.setSenderID(ORMID.SystemID);
 		msg.Receiver=Receiver;
-		msg.ReceiverID=ORMID.SystemID;
-		msg.MsgID=jxSystem.System.GetMsgID();
+		msg.setReceiverID(ORMID.SystemID);
 		msg.MsgType=jxMsgType.Log;
 		msg.setMsg(log.ToJSONString());
 		return msg;

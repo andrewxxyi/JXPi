@@ -18,7 +18,7 @@ public class Role extends Container
 	public static final String RoleName_Manager="经理";
 	public static final String RoleName_Agency="代理人";
 	
-	public static ORMID GetORMID(Integer ID)
+	public static ORMID GetORMID(UUID ID)
 	{
 		return new ORMID(ORMType.Role.ordinal(),ID);
 	}
@@ -38,82 +38,89 @@ public class Role extends Container
 	//public int ID;
 	
 	//设置人员映射
-	public void SetMapTo(People Caller,People p) throws Exception
+	public void SetMapTo(TopSpace ts,PeopleInTs Caller,PeopleInTs p) throws Exception
 	{
-		if(!Caller.CheckRight(GetTopSpace(Caller), Role.RoleName_Admin, false))
+		if(!Caller.CheckRight(ts,Caller, Role.RoleName_Admin, false))
 			throw new Exception(String.format("您没有权限执行该操作%s:%s","Role","SetMapTo"));
 		DB db=JdbcUtils.GetDB();
+		db.Trans_Begin();
+		try{
         synchronized (db)
         {
-        	Relation rl=(Relation)New(Relation.class);
+        	Relation rl=(Relation)Create(Relation.class);
         	rl.ObjTypeID=ORMType.Role.ordinal();
         	rl.ObjID=ID;
-        	rl.TargetTypeID=ORMType.People.ordinal();
+        	rl.TargetTypeID=ORMType.PeopleInTs.ordinal();
         	rl.TargetID=p.ID;
-        	rl.RelationType=RelationType.OneToMulti.ordinal();
-        	rl.Insert(db,Caller.CurrentTopSpace);
-        	db.Release();
+        	rl.RelType=RelationType.OneToMulti;
+        	rl.Insert(db,ts);
         }
+        db.Trans_Commit();
 	}
-	void SetMapToNotCheckRight(People Caller,People p) throws Exception
+	catch(Exception e)
+	{
+		db.Trans_Cancel();
+	}
+	}
+	void SetMapToNotCheckRight(TopSpace ts,PeopleInTs p) throws Exception
 	{
 		DB db=JdbcUtils.GetDB();
+		db.Trans_Begin();
+		try{
         synchronized (db)
         {
-        	Relation rl=(Relation)New(Relation.class);
+        	Relation rl=(Relation)Create(Relation.class);
         	rl.ObjTypeID=ORMType.Role.ordinal();
         	rl.ObjID=ID;
-        	rl.TargetTypeID=ORMType.People.ordinal();
+        	rl.TargetTypeID=ORMType.PeopleInTs.ordinal();
         	rl.TargetID=p.ID;
-        	rl.RelationType=RelationType.OneToMulti.ordinal();
-        	rl.Insert(db,Caller.CurrentTopSpace);
-        	db.Release();
+        	rl.RelType=RelationType.OneToMulti;
+        	rl.Insert(db,ts);
         }
+        db.Trans_Commit();
+	}
+	catch(Exception e)
+	{
+		db.Trans_Cancel();
+	}
 	}
 	
-	public TopSpace GetTopSpace(People Caller) throws Exception
-	{
-		Organize org=getOrganize(Caller);
-		if(org!=null)
-			return org.GetTopSpace(Caller);
-		return null;
-	}
-	public Organize getOrganize(People Caller) throws Exception
+	public Organize getOrganize(TopSpace ts) throws Exception
 	{
 		SelectSql s=new SelectSql();
-		s.AddTable("Relation",Caller.CurrentTopSpace);
-		s.AddTable("Organize",Caller.CurrentTopSpace);
+		s.AddTable("Relation",ts);
+		s.AddTable("Organize",ts);
 		s.AddContion("Relation", "ObjTypeID", jxCompare.Equal, ORMType.Organize.ordinal());
 		s.AddContion("Relation", "ObjID", "Organize", "ID");
 		s.AddContion("Relation", "TargetTypeID", jxCompare.Equal, ORMType.Role.ordinal());
 		s.AddContion("Relation", "TargetID", jxCompare.Equal, ID);
-		return (Organize) Get(Organize.class,s,Caller.CurrentTopSpace);
+		return (Organize) Get(Organize.class,s,ts);
 	}	
 
 	//某岗位如果对应了多人则返回第一个（不能确定谁是第一个），有岗位直接对应的一定是真实角色，虚拟角色一般需要和某部门结合才能
 	//确定相应的真实角色，但其永远不应有人员对应
-	public People GetMapTo(People Caller) throws Exception
+	public PeopleInTs GetMapTo(TopSpace ts) throws Exception
 	{
 		SelectSql s=new SelectSql();
-		s.AddTable("Relation",Caller.CurrentTopSpace);
-		s.AddTable("People",Caller.CurrentTopSpace);
+		s.AddTable("Relation",ts);
+		s.AddTable("PeopleInTs",ts);
 		s.AddContion("Relation", "ObjTypeID", jxCompare.Equal, ORMType.Role.ordinal());
 		s.AddContion("Relation", "ObjID", jxCompare.Equal,ID);
-		s.AddContion("Relation", "TargetTypeID", jxCompare.Equal, ORMType.People.ordinal());
-		s.AddContion("Relation", "TargetID",  "People","ID");
-		return (People) Get(People.class,s,Caller.CurrentTopSpace);
+		s.AddContion("Relation", "TargetTypeID", jxCompare.Equal, ORMType.PeopleInTs.ordinal());
+		s.AddContion("Relation", "TargetID",  "PeopleInTs","ID");
+		return (PeopleInTs) Get(PeopleInTs.class,s,ts);
 	}
 	//某岗位可能对应了多个人
-	public Queue<jxORMobj> ListMapTo(People Caller) throws Exception
+	public Queue<jxORMobj> ListMapTo(TopSpace ts) throws Exception
 	{
 		SelectSql s=new SelectSql();
-		s.AddTable("Relation",Caller.CurrentTopSpace);
-		s.AddTable("People",Caller.CurrentTopSpace);
+		s.AddTable("Relation",ts);
+		s.AddTable("PeopleInTs",ts);
 		s.AddContion("Relation", "ObjTypeID", jxCompare.Equal, ORMType.Role.ordinal());
 		s.AddContion("Relation", "ObjID", jxCompare.Equal,ID);
-		s.AddContion("Relation", "TargetTypeID", jxCompare.Equal, ORMType.People.ordinal());
-		s.AddContion("Relation", "TargetID",  "People","ID");
-		return Select(People.class,s,Caller.CurrentTopSpace);
+		s.AddContion("Relation", "TargetTypeID", jxCompare.Equal, ORMType.PeopleInTs.ordinal());
+		s.AddContion("Relation", "TargetID",  "PeopleInTs","ID");
+		return Select(PeopleInTs.class,s,ts);
 	}
 
 	/**
@@ -124,16 +131,16 @@ public class Role extends Container
 	 * @return
 	 * @throws Exception
 	 */
-	public Queue<jxORMobj> ListContainRole(People Caller) throws Exception
+	public Queue<jxORMobj> ListContainRole(TopSpace ts) throws Exception
 	{
 		SelectSql s=new SelectSql();
-		s.AddTable("Relation",Caller.CurrentTopSpace);
-		s.AddTable("Role",Caller.CurrentTopSpace);
+		s.AddTable("Relation",ts);
+		s.AddTable("Role",ts);
 		s.AddContion("Relation", "ObjTypeID", jxCompare.Equal, ORMType.Role.ordinal());
 		s.AddContion("Relation", "ObjID", jxCompare.Equal,ID);
 		s.AddContion("Relation", "TargetTypeID", jxCompare.Equal, ORMType.Role.ordinal());
 		s.AddContion("Relation", "TargetID",  "Role","ID");
-		return Select(Role.class,s,Caller.CurrentTopSpace);
+		return Select(Role.class,s,ts);
 	}
 
 }
