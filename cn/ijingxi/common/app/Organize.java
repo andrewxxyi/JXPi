@@ -1,13 +1,13 @@
 
 package cn.ijingxi.common.app;
 
-import java.util.*;
-
 import cn.ijingxi.common.Process.InstanceState;
 import cn.ijingxi.common.Process.PI;
 import cn.ijingxi.common.Process.jxProcess;
 import cn.ijingxi.common.orm.*;
 import cn.ijingxi.common.util.jxCompare;
+
+import java.util.*;
 
 //容器和角色的关系是一一映射
 //角色和角色之间的关系是组成关系Contain，即技术部经理由二级经理、技术审核等多个不具体映射到人员的角色组成

@@ -1,10 +1,10 @@
 package cn.ijingxi.common.orm;
 
-import java.sql.*;
-import java.util.Queue;
-
 import cn.ijingxi.common.util.jxCompare;
 import cn.ijingxi.common.util.jxLink;
+
+import java.sql.*;
+import java.util.*;
 
 public interface DB
 {

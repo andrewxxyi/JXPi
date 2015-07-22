@@ -1,11 +1,11 @@
 
 package cn.ijingxi.common.app;
 
-import java.util.*;
-
 import cn.ijingxi.common.orm.*;
 import cn.ijingxi.common.orm.ORM.KeyType;
 import cn.ijingxi.common.util.Trans;
+
+import java.util.*;
 
 /**
  * 全局的，所有topspace共享
@@ -23,7 +23,7 @@ public class People extends jxORMobj
 	@Override
 	protected void Init_Create() throws Exception
 	{
-		ID=UUID.randomUUID();
+		ID= UUID.randomUUID();
 		CreateTime=new Date();
 	}
 	/**

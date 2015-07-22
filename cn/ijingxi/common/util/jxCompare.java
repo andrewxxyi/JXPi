@@ -1,8 +1,6 @@
 
 package cn.ijingxi.common.util;
 
-import cn.ijingxi.common.util.IjxEnum;
-
 public enum jxCompare implements IjxEnum
 {
 	Equal,

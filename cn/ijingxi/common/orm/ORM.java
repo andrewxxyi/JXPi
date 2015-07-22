@@ -4,7 +4,7 @@ package cn.ijingxi.common.orm;
 import java.lang.annotation.*;
 
 @Retention(RetentionPolicy.RUNTIME)
-@Target( { ElementType.FIELD })  
+@Target( { ElementType.FIELD })
 public @interface ORM 
 {  
 	public enum KeyType {None, PrimaryKey, AutoDBGenerated, AutoSystemGenerated};

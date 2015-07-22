@@ -1,14 +1,14 @@
 package cn.ijingxi.common.orm;
 
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.Queue;
-
 import cn.ijingxi.common.app.TopSpace;
 import cn.ijingxi.common.util.LinkNode;
 import cn.ijingxi.common.util.jxCompare;
 import cn.ijingxi.common.util.jxLink;
 import cn.ijingxi.common.util.utils;
+
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.Queue;
 
 /**
  * 多表联合查询条件，目前还不支持or连接

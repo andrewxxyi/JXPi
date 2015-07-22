@@ -1,7 +1,7 @@
 
 package cn.ijingxi.common.util;
 
-import java.util.*; 
+import java.util.Iterator;
 
 public class jxLink<TKey extends Comparable<TKey>, TValue> implements Iterable<LinkNode<TKey, TValue>>
 {
@@ -199,7 +199,7 @@ public class jxLink<TKey extends Comparable<TKey>, TValue> implements Iterable<L
      * 实现Iterable接口中要求实现的方法 
      */  
     @Override  
-    public Iterator<LinkNode<TKey, TValue>> iterator() 
+    public Iterator<LinkNode<TKey, TValue>> iterator()
     {  
         return new MyIterator();//返回一个MyIterator实例对象  
     }        

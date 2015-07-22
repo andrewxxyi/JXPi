@@ -1,11 +1,11 @@
   
-package cn.ijingxi.common.util;   
+package cn.ijingxi.common.util;
+
+import cn.ijingxi.common.orm.jxORMobj;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-
-import cn.ijingxi.common.orm.*;
    
 /**  
  * 对象缓存

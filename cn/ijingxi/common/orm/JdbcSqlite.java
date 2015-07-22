@@ -1,16 +1,16 @@
 
 package cn.ijingxi.common.orm;
 
+import cn.ijingxi.common.util.Trans;
+import cn.ijingxi.common.util.jxCompare;
+import cn.ijingxi.common.util.jxLink;
+import cn.ijingxi.common.util.utils;
+
 import java.sql.*;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.UUID;
-
-import cn.ijingxi.common.util.Trans;
-import cn.ijingxi.common.util.jxCompare;
-import cn.ijingxi.common.util.jxLink;
-import cn.ijingxi.common.util.utils;
 
 public class JdbcSqlite implements DB
 {

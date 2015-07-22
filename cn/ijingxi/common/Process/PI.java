@@ -1,16 +1,23 @@
 
 package cn.ijingxi.common.Process;
 
+import cn.ijingxi.common.app.TopSpace;
+import cn.ijingxi.common.app.jxSystem;
+import cn.ijingxi.common.msg.jxMsg;
+import cn.ijingxi.common.orm.ORM;
+import cn.ijingxi.common.orm.ORM.KeyType;
+import cn.ijingxi.common.orm.ORMID;
+import cn.ijingxi.common.orm.ORMType;
+import cn.ijingxi.common.orm.jxORMSM;
+import cn.ijingxi.common.util.CallParam;
+import cn.ijingxi.common.util.IDoSomething;
+import cn.ijingxi.common.util.IjxEnum;
+import cn.ijingxi.common.util.jxLog;
+
 import java.util.UUID;
 
-import cn.ijingxi.common.app.*;
-import cn.ijingxi.common.msg.jxMsg;
-import cn.ijingxi.common.orm.*;
-import cn.ijingxi.common.orm.ORM.KeyType;
-import cn.ijingxi.common.util.*;
 
-
-public class PI extends jxTask
+public class PI extends WorkNode
 {		
 	public static ORMID GetORMID(UUID ID)
 	{
@@ -30,7 +37,7 @@ public class PI extends jxTask
 	protected void Init_Create() throws Exception
 	{
 		ID=UUID.randomUUID();
-		TaskType=jxTaskType.ProcessInstance;
+		Type=NodeType.ProcessInstance;
 		State=InstanceState.Doing;
 	}
 	
@@ -69,6 +76,11 @@ public class PI extends jxTask
 	public jxProcess GetProcess(TopSpace ts) throws Exception
 	{
 		return (jxProcess) GetByID(jxProcess.class, ProcessID,ts);
+	}
+	public static jxProcess getProcess(UUID PIID,TopSpace ts)
+	{
+		//return (jxProcess) GetByID(jxProcess.class, ProcessID,ts);
+		return null;
 	}
 
 	//

@@ -1,10 +1,10 @@
 
 package cn.ijingxi.common.util;
 
+import cn.ijingxi.common.Process.IExecutor;
+
 import java.util.LinkedList;
 import java.util.Queue;
-
-import cn.ijingxi.common.Process.IExecutor;
 
 public class CallParam
 {

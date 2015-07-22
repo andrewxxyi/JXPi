@@ -1,9 +1,9 @@
   
-package cn.ijingxi.common.util;   
+package cn.ijingxi.common.util;
 
 import java.util.*;
 
-/**  
+/**
  * B+树  
  * @author Andrew Xu  
  */   

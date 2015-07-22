@@ -3,10 +3,9 @@ package cn.ijingxi.common.util;
 
 import java.util.*;
 
-
 public class jxTimer
 {
-	private  Timer myTimer=null;
+	private Timer myTimer=null;
 	private int secondNum=0;
 	private IDo dual=null;
 	private Object param=null;

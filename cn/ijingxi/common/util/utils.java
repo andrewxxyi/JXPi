@@ -1,23 +1,26 @@
 
 package cn.ijingxi.common.util;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import cn.ijingxi.common.Process.*;
 import cn.ijingxi.common.app.*;
 import cn.ijingxi.common.msg.jxMsg;
 import cn.ijingxi.common.msg.jxMsgState;
 import cn.ijingxi.common.msg.jxMsgType;
 import cn.ijingxi.common.msg.udpMsg;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.channels.FileChannel;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 
 public class utils
@@ -29,7 +32,7 @@ public class utils
 		jxMsg.Init();
 		jxProcess.Init();
 		PI.Init();
-		PN.Init();		
+		WorkNode.Init();		
 		jxSystem.Init();
 		People.Init();
 		PeopleInTs.Init();
@@ -48,7 +51,7 @@ public class utils
 		Trans.AddEunmType(jxOP.Equal);
 		Trans.AddEunmType(Right.Read);
 		Trans.AddEunmType(TSEvent.Sync);
-		Trans.AddEunmType(jxTaskType.Task);
+		Trans.AddEunmType(NodeType.Task);
 		
 		
 		udpMsg.Init();
@@ -131,7 +134,7 @@ public class utils
 	public static Calendar GetCalendar(int year,int month,int day)
 	{
 		Calendar c=Calendar.getInstance();
-		c.set(year, month-1, day);
+		c.set(year, month - 1, day);
 		return c;
 	}
 	public static Calendar GetDate()
@@ -199,19 +202,25 @@ public class utils
 			throw new Exception(msg);
 	}
 	
-	public static void writeToFile(String filename,InputStream inStream) 
+	public static void writeToFile(String filename,InputStream inStream) throws IOException
 	{
+		utils.P("writeToFile",filename);
 		FileOutputStream fs=null;
 		try {
+			File f = new File(filename);
+			if (f.exists()) {
+				utils.P("file exist,deleted:",filename);
+				f.delete();
+			}
 			fs = new FileOutputStream(filename);
-	        byte[] buffer = new byte[2048]; 
-	        int readnum=0;
-	        while ( (readnum = inStream.read(buffer)) != -1) { 
-	            fs.write(buffer, 0, readnum); 
-	        } 
+			byte[] buffer = new byte[1024];
+	        int readnum=inStream.read(buffer);
+	        while ( readnum >0 ) {
+				fs.write(buffer, 0, readnum);
+				readnum=inStream.read(buffer);
+			}
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			throw e;
 		} finally{
 	        try {
 	        	if(fs!=null)
@@ -221,23 +230,83 @@ public class utils
 	        	}
 		        inStream.close(); 			
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
 	}
-	
-	public static void checkFolderExists(String path)
-	{
-        File file = new File(path);
-        if (file.exists() && !file.isDirectory() || !file.exists()) {
-	        try {
-            file.mkdirs();
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} 
-        }
+
+	public static void unzipFile(String targetPath, InputStream zipFileStream) {
+
+		try {
+			ZipInputStream zis = new ZipInputStream(zipFileStream);
+			ZipEntry entry = null;
+			P("unzipFile","开始解压到:" + targetPath + "...");
+			while ((entry = zis.getNextEntry()) != null) {
+				String zipPath = entry.getName();
+				try {
+					if (entry.isDirectory()) {
+						File zipFolder = new File(targetPath + File.separator
+								+ zipPath);
+						if (!zipFolder.exists()) {
+							zipFolder.mkdirs();
+						}
+					} else {
+						File file = new File(targetPath + File.separator
+								+ zipPath);
+						if (!file.exists()) {
+							File pathDir = file.getParentFile();
+							pathDir.mkdirs();
+							file.createNewFile();
+						}
+
+						FileOutputStream fos = new FileOutputStream(file);
+						int bread;
+						while ((bread = zis.read()) != -1) {
+							fos.write(bread);
+						}
+						fos.close();
+
+					}
+					P("unzipFile", "成功解压:" + zipPath);
+
+				} catch (Exception e) {
+					P("unzipFile", "解压" + zipPath + "失败");
+					continue;
+				}
+			}
+			zis.close();
+			zipFileStream.close();
+			System.out.println("解压结束");
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
 	}
-	
+
+	public static void checkFolderExists(String path) {
+		checkFolderExists(path,true);
+	}
+	public static void checkFolderExists(String path,boolean pathisdir) {
+		File file = new File(path);
+		if (!file.exists()) {
+			utils.P("checkFolderExists", path);
+			String[] ds=path.split("/");
+			int len=ds.length;
+			if(len==0)return;
+			String dir="";
+			int dirlen=pathisdir?len:len-1;
+			for(int i=1;i<dirlen;i++) {
+				String sd=ds[i];
+				if (sd != null && sd != "") {
+					dir += "/" + sd;
+					utils.P("Dir", dir);
+					file = new File(dir);
+					if (!file.exists()) {
+						utils.P("mkdir", dir);
+						file.mkdirs();
+					}
+				}
+			}
+		}
+	}
 }

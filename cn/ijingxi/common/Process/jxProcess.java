@@ -1,24 +1,15 @@
 
 package cn.ijingxi.common.Process;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.regex.Pattern;
-
-import cn.ijingxi.common.app.Container;
-import cn.ijingxi.common.app.Organize;
-import cn.ijingxi.common.app.PeopleInTs;
-import cn.ijingxi.common.app.Result;
-import cn.ijingxi.common.app.Role;
-import cn.ijingxi.common.app.TopSpace;
-import cn.ijingxi.common.app.jxSystem;
-import cn.ijingxi.common.msg.jxMsg;
+import cn.ijingxi.common.app.*;
 import cn.ijingxi.common.orm.*;
 import cn.ijingxi.common.orm.ORM.KeyType;
-import cn.ijingxi.common.util.*;
+import cn.ijingxi.common.util.Trans;
+import cn.ijingxi.common.util.jxCompare;
+import cn.ijingxi.common.util.jxOP;
+
+import java.util.*;
+import java.util.regex.Pattern;
 
 /**
  * 流程的数据存储，其实就是流程的模板
@@ -43,30 +34,30 @@ public class jxProcess extends Container
 	{
 		ID=UUID.randomUUID();
 	}
-	
+	/*
 	protected boolean DualEventMsg(jxMsg msg) throws Exception
 	{
 		IjxEnum event = msg.getEvent();
 		if(event==null||!(event instanceof InstanceEvent))return false;
 		TopSpace ts=msg.getTopSpace();
 		if(ts==null)return false;
-		PN from=(PN) jxORMobj.GetFromJSONString(msg.GetParam("Node"));
+		WorkNode from=(WorkNode) jxORMobj.GetFromJSONString(msg.GetParam("Node"));
 		String toname=msg.GetParam("To");
 		switch((InstanceEvent)event)
 		{
 		case Touch:
-			PN pn=getPN(ts,from.ParentID,toname);
-			if(pn==null)
+			WorkNode WorkNode=getPN(ts,from.ParentID,toname);
+			if(WorkNode==null)
 			{
-				pn=(PN) PN.Create(PN.class);
-				pn.ParentOwnerID=msg.Receiver;
-				pn.ParentID=from.ParentID;
-				pn.ProcessID=from.ProcessID;
-				pn.Parent=from.Parent;
-				pn.Name=toname;
-				pn.Insert(ts);
+				WorkNode=(WorkNode) WorkNode.Create(WorkNode.class);
+				WorkNode.ParentOwnerID=msg.Receiver;
+				WorkNode.ParentID=from.ParentID;
+				WorkNode.ProcessID=from.ProcessID;
+				WorkNode.Parent=from.Parent;
+				WorkNode.Name=toname;
+				WorkNode.Insert(ts);
 			}
-			pn.Touch(ts, msg.getMsg());
+			WorkNode.Touch(ts, msg.getMsg());
 				
 			
 			
@@ -79,7 +70,7 @@ public class jxProcess extends Container
 	
 	
 	}
-	
+*/	
 	@ORM(keyType=KeyType.PrimaryKey)
 	public UUID ID;
 
@@ -113,7 +104,7 @@ public class jxProcess extends Container
 	public PI StartNewInstance(TopSpace ts, PeopleInTs Caller,String Msg) throws Exception
 	{
 		PI p=(PI) Create(PI.class);
-		p.ParentOwnerID=Caller.ID;
+		//p.ParentOwnerID=Caller.ID;
 		p.Name=jxSystem.System.GetSN(SNPurpose,Caller);
 		if(p.Name==null)
 			p.Name=Name;
@@ -121,19 +112,19 @@ public class jxProcess extends Container
 		p.Descr=Msg;
 		p.Insert(ts);
 		//启动流程
-		PN sn=(PN) Create(PN.class);
-		sn.setParam(Caller,ID,p, PN.Node_Start);		
+		WorkNode sn=(WorkNode) Create(WorkNode.class);
+		//sn.setParam(Caller,ID,p, WorkNode.Node_Start);		
 		sn.Touch(ts, null);
 		return p;
 	}
 	
-	public PN getPN(TopSpace ts, UUID PIID, String PNName) throws Exception
+	public WorkNode getPN(TopSpace ts, UUID PIID, String PNName) throws Exception
 	{
 		SelectSql s=new SelectSql();
-		s.AddTable("PN",ts);
-		s.AddContion("PN", "ParentID", jxCompare.Equal, PIID);
-		s.AddContion("PN", "Name", jxCompare.Equal, PNName);
-		return (PN) Get(PN.class,s,ts);
+		s.AddTable("WorkNode",ts);
+		s.AddContion("WorkNode", "ParentID", jxCompare.Equal, PIID);
+		s.AddContion("WorkNode", "Name", jxCompare.Equal, PNName);
+		return (WorkNode) Get(WorkNode.class,s,ts);
 	}
 	/**
 	 * 修改也是这个函数
@@ -369,24 +360,24 @@ public class jxProcess extends Container
 	 */
     public void G5_Init() throws Exception
     {
-    	setNode(PN.Node_Start,false,false,true,null);
-    	setNode_AutoByExecer(PN.Node_Start,true);
-    	setNode(PN.Node_End,false,false,true,null);
-    	setNode_AutoByExecer(PN.Node_End,true);
+    	setNode(WorkNode.Node_Start,false,false,true,null);
+    	setNode_AutoByExecer(WorkNode.Node_Start,true);
+    	setNode(WorkNode.Node_End,false,false,true,null);
+    	setNode_AutoByExecer(WorkNode.Node_End,true);
     	
-    	setNode(PN.Node_Accept,false,false,true,null);
-    	setNode_AutoByExecer(PN.Node_Accept,true);
-    	//setNode_AutoResult(PN.Node_Accept,Result.Accept);
+    	setNode(WorkNode.Node_Accept,false,false,true,null);
+    	setNode_AutoByExecer(WorkNode.Node_Accept,true);
+    	//setNode_AutoResult(WorkNode.Node_Accept,Result.Accept);
     	OPLink ol=new OPLink();
     	ol.AddOP("Result", null, jxOP.Equal, Result.Accept);
-    	setNodeOP(PN.Node_Accept,ol);
+    	setNodeOP(WorkNode.Node_Accept,ol);
     	
-    	setNode(PN.Node_Reject,false,false,true,null);
-    	setNode_AutoByExecer(PN.Node_Reject,true);
-    	//setNode_AutoResult(PN.Node_Reject,Result.Reject);
+    	setNode(WorkNode.Node_Reject,false,false,true,null);
+    	setNode_AutoByExecer(WorkNode.Node_Reject,true);
+    	//setNode_AutoResult(WorkNode.Node_Reject,Result.Reject);
     	ol=new OPLink();
     	ol.AddOP("Result", null, jxOP.Equal, Result.Reject);
-    	setNodeOP(PN.Node_Reject,ol);
+    	setNodeOP(WorkNode.Node_Reject,ol);
     	
     	setNode("申请",false,false,false,null);
     	setNode("第一级审核",false,false,false,null);
@@ -403,29 +394,29 @@ public class jxProcess extends Container
     	setNode_AutoByExecer("第四级已同意",true);
     	setNode("第五级审核",false,false,false,null);
 
-    	setTrans("自动",PN.Node_Start,"申请");
+    	setTrans("自动",WorkNode.Node_Start,"申请");
     	setTrans("申请","申请","第一级审核");
-    	setTrans("拒绝","第一级审核",PN.Node_Reject);
+    	setTrans("拒绝","第一级审核",WorkNode.Node_Reject);
     	setTrans("同意","第一级审核","第一级已同意");
     	setTrans("后继节点有人执行","第一级已同意","第二级审核");
-    	setTrans("后继节点无人执行","第一级已同意",PN.Node_Accept);
-    	setTrans("拒绝","第二级审核",PN.Node_Reject);
+    	setTrans("后继节点无人执行","第一级已同意",WorkNode.Node_Accept);
+    	setTrans("拒绝","第二级审核",WorkNode.Node_Reject);
     	setTrans("同意","第二级审核","第二级已同意");
     	setTrans("后继节点有人执行","第二级已同意","第三级审核");
-    	setTrans("后继节点无人执行","第二级已同意",PN.Node_Accept);
-    	setTrans("拒绝","第三级审核",PN.Node_Reject);
+    	setTrans("后继节点无人执行","第二级已同意",WorkNode.Node_Accept);
+    	setTrans("拒绝","第三级审核",WorkNode.Node_Reject);
     	setTrans("同意","第三级审核","第三级已同意");
     	setTrans("后继节点有人执行","第三级已同意","第四级审核");
-    	setTrans("后继节点无人执行","第三级已同意",PN.Node_Accept);
-    	setTrans("拒绝","第四级审核",PN.Node_Reject);
+    	setTrans("后继节点无人执行","第三级已同意",WorkNode.Node_Accept);
+    	setTrans("拒绝","第四级审核",WorkNode.Node_Reject);
     	setTrans("同意","第四级审核","第四级已同意");
     	setTrans("后继节点有人执行","第四级已同意","第五级审核");
-    	setTrans("后继节点无人执行","第四级已同意",PN.Node_Accept);
-    	setTrans("拒绝","第五级审核",PN.Node_Reject);
-    	setTrans("同意","第五级审核",PN.Node_Accept);
+    	setTrans("后继节点无人执行","第四级已同意",WorkNode.Node_Accept);
+    	setTrans("拒绝","第五级审核",WorkNode.Node_Reject);
+    	setTrans("同意","第五级审核",WorkNode.Node_Accept);
     	
-    	setTrans("自动",PN.Node_Reject,PN.Node_End);
-    	setTrans("自动",PN.Node_Accept,PN.Node_End);    	
+    	setTrans("自动",WorkNode.Node_Reject,WorkNode.Node_End);
+    	setTrans("自动",WorkNode.Node_Accept,WorkNode.Node_End);    	
     }
     
 

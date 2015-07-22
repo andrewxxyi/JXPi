@@ -1,7 +1,9 @@
 
 package cn.ijingxi.common.orm;
 
-import cn.ijingxi.common.util.*;
+import cn.ijingxi.common.util.CallParam;
+import cn.ijingxi.common.util.IDoSomething;
+import cn.ijingxi.common.util.jxStateMachine;
 
 public class jxORMSM<TState extends Enum<?>,TEvent extends Enum<?>>
 {

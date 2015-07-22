@@ -1,25 +1,21 @@
 
 package cn.ijingxi.common.Process;
 
-import java.util.Date;
-import java.util.Queue;
-import java.util.UUID;
-
-
 import cn.ijingxi.common.app.*;
-import cn.ijingxi.common.msg.MsgCenter;
-import cn.ijingxi.common.msg.jxMsg;
-import cn.ijingxi.common.msg.jxMsgType;
 import cn.ijingxi.common.orm.*;
 import cn.ijingxi.common.orm.ORM.KeyType;
 import cn.ijingxi.common.util.*;
+
+import java.util.Date;
+import java.util.Queue;
+import java.util.UUID;
 
 /**
  * 任务在发布者哪里进行记录，记录到父任务那里，如果没有则，统一记录到“我的未完成子任务”任务中哪里
  * @author andrew
  *
  */
-public class jxTask extends jxORMobj
+public class jxTask extends WorkNode
 {		
 	public static ORMID GetORMID(UUID ID)
 	{
@@ -39,9 +35,10 @@ public class jxTask extends jxORMobj
 	protected void Init_Create() throws Exception
 	{
 		ID=UUID.randomUUID();
-		TaskType=jxTaskType.Task;
+		Type=NodeType.Task;
 	}
 
+	/*
 
 	@Override
 	protected boolean DualEventMsg(jxMsg msg) throws Exception{
@@ -78,66 +75,13 @@ public class jxTask extends jxORMobj
 		return false;
 	}
 	
-	
+	*/
 	
 	
 	
 	@ORM(keyType=KeyType.PrimaryKey)
 	public UUID ID;
-	
-	@ORM
-	public jxTaskType TaskType;
-	
-	@ORM
-	public String Name;		
-	
-	@ORM(Descr="说明信息",Encrypted=true)
-	public String Descr;
-	
-	@ORM(Index=1,Descr="用于两者之间的同步")
-	public Date CreateTime;
-	
-	@ORM(Descr="json格式的附加信息")
-	public String Info;	
-
-	@ORM(Index=3,Descr="创建者的typeID，可以是外部人员创建")
-	public int CreatorTypeID;
-	@ORM(Index=3,Descr="创建者的ID")
-	public UUID CreatorID;
-	public jxORMobj getCreator(TopSpace ts) throws Exception
-	{
-		return jxORMobj.GetByID(CreatorTypeID, CreatorID, ts);
-	}
-	
-	
-	@ORM(Index=2)
-	public UUID ParentOwnerID;
-	@ORM(Index=2)
-	public UUID ParentID;
-	
-	public void SetInfo(String Purpose,Object value) throws Exception
-	{
-		setExtendValue("Info",Purpose,value);
-	}
-	
-	@ORM(Descr="json格式的父任务")
-	public String Parent;	
-	protected Object GetParent(String Purpose) throws Exception
-	{
-		if(Parent!=null)
-			return getExtendValue("Parent",Purpose);
-		return null;
-	}
-	
-	@ORM(Descr="json格式的子任务列表")
-	public String SubTask;
-	
-	@ORM(Descr="流程的当前状态，创建就是在运行中")
-	public InstanceState State=InstanceState.Doing;
-
-	@ORM
-	public Result Result;
-
+			
 	//
 	//静态变量与构造函数
 	//
@@ -262,7 +206,7 @@ public class jxTask extends jxORMobj
 	*/
 	public void AddSubTask(jxTask st) throws Exception
 	{
-		st.Parent=ToJSONString();
+		//st.Parent=ToJSONString();
 		addExtendArraySubNode("SubTask",st.ToJSON());
 	}
 	public void CreateSub(TopSpace ts,PeopleInTs Caller,PeopleInTs Execer,String Name,String Descr) throws Exception
@@ -275,8 +219,8 @@ public class jxTask extends jxORMobj
 			   jxTask task=(jxTask) Create(jxTask.class);
 			   task.CreatorTypeID=Caller.getTypeID();
 			   task.CreatorID=Caller.ID;
-			   task.ParentOwnerID=jxSystem.SystemID;
-			   task.ParentID=ID;
+			   //task.ParentOwnerID=jxSystem.SystemID;
+			   //task.ParentID=ID;
 			   task.CreateTime=new Date();
 			   task.Name=Name;
 			   task.Descr=Descr;
@@ -456,15 +400,15 @@ class TaskClose implements IDoSomething
 		//第一个参数是任务
 		jxTask task= (jxTask)param.getParam();
 		String desc= (String)param.getMsg();
-		UUID cid=task.ParentOwnerID;
+		//UUID cid=task.ParentOwnerID;
 		
 		
 		jxLog log=jxLog.Log(jxSystem.System.ID, ORMType.jxTask.ordinal(), task.ID, task.Name, desc);
 		log.setInfo("Event",InstanceEvent.Close);
 		log.setInfo("State",InstanceState.Closed);
 		log.Insert(null);
-		if(cid.compareTo(jxSystem.SystemID)!=0)
-			MsgCenter.Post(jxLog.NewLogMsg(log, cid));
+		//if(cid.compareTo(jxSystem.SystemID)!=0)
+		//	MsgCenter.Post(jxLog.NewLogMsg(log, cid));
 	}
 }
 
@@ -476,13 +420,13 @@ class TaskCancel implements IDoSomething
 		//第一个参数是任务
 		jxTask task= (jxTask)param.getParam();
 		String desc= (String)param.getMsg();
-		UUID cid=task.ParentOwnerID;
+		//UUID cid=task.ParentOwnerID;
 		jxLog log=jxLog.Log(jxSystem.System.ID, ORMType.jxTask.ordinal(), task.ID, task.Name, desc);
 		log.setInfo("Event",InstanceEvent.Cancel);
 		log.setInfo("State",InstanceState.Canceled);
 		log.Insert(null);
-		if(cid.compareTo(jxSystem.SystemID)!=0)
-			MsgCenter.Post(jxLog.NewLogMsg(log, cid));
+		//if(cid.compareTo(jxSystem.SystemID)!=0)
+		//	MsgCenter.Post(jxLog.NewLogMsg(log, cid));
 	}
 }
 class TaskPause implements IDoSomething
@@ -493,13 +437,13 @@ class TaskPause implements IDoSomething
 		//第一个参数是任务
 		jxTask task= (jxTask)param.getParam();
 		String desc= (String)param.getMsg();
-		UUID cid=task.ParentOwnerID;
+		//UUID cid=task.ParentOwnerID;
 		jxLog log=jxLog.Log(jxSystem.System.ID, ORMType.jxTask.ordinal(), task.ID, task.Name, desc);
 		log.setInfo("Event",InstanceEvent.Pause);
 		log.setInfo("State",InstanceState.Paused);
 		log.Insert(null);
-		if(cid.compareTo(jxSystem.SystemID)!=0)
-			MsgCenter.Post(jxLog.NewLogMsg(log, cid));
+		//if(cid.compareTo(jxSystem.SystemID)!=0)
+		//	MsgCenter.Post(jxLog.NewLogMsg(log, cid));
 	}
 }
 class TaskRedo implements IDoSomething
@@ -510,13 +454,13 @@ class TaskRedo implements IDoSomething
 		//第一个参数是任务
 		jxTask task= (jxTask)param.getParam();
 		String desc= (String)param.getMsg();
-		UUID cid=task.ParentOwnerID;
+		//UUID cid=task.ParentOwnerID;
 		jxLog log=jxLog.Log(jxSystem.System.ID, ORMType.jxTask.ordinal(), task.ID, task.Name, desc);
 		log.setInfo("Event",InstanceEvent.Trigger);
 		log.setInfo("State",InstanceState.Doing);
 		log.Insert(null);
-		if(cid.compareTo(jxSystem.SystemID)!=0)
-			MsgCenter.Post(jxLog.NewLogMsg(log, cid));
+		//if(cid.compareTo(jxSystem.SystemID)!=0)
+		//	MsgCenter.Post(jxLog.NewLogMsg(log, cid));
 	}
 }
 

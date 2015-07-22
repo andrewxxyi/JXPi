@@ -1,10 +1,13 @@
 
 package cn.ijingxi.common.app;
 
-import java.util.UUID;
-
-import cn.ijingxi.common.orm.*;
+import cn.ijingxi.common.orm.DB;
+import cn.ijingxi.common.orm.ORM;
 import cn.ijingxi.common.orm.ORM.KeyType;
+import cn.ijingxi.common.orm.ORMType;
+import cn.ijingxi.common.orm.jxORMobj;
+
+import java.util.UUID;
 
 public class Relation extends jxORMobj
 {

@@ -1,8 +1,6 @@
 
 package cn.ijingxi.common.app;
 
-import java.util.*;
-
 import cn.ijingxi.common.Process.IExecutor;
 import cn.ijingxi.common.Process.InstanceEvent;
 import cn.ijingxi.common.Process.InstanceState;
@@ -11,6 +9,8 @@ import cn.ijingxi.common.msg.jxMsg;
 import cn.ijingxi.common.orm.*;
 import cn.ijingxi.common.orm.ORM.KeyType;
 import cn.ijingxi.common.util.jxCompare;
+
+import java.util.*;
 
 /**
  * 全局的，所有topspace共享

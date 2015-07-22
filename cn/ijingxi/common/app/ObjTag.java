@@ -1,14 +1,14 @@
 
 package cn.ijingxi.common.app;
 
+import cn.ijingxi.common.orm.*;
+import cn.ijingxi.common.util.Trans;
+import cn.ijingxi.common.util.jxCompare;
+
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.UUID;
-
-import cn.ijingxi.common.orm.*;
-import cn.ijingxi.common.util.Trans;
-import cn.ijingxi.common.util.jxCompare;
 
 public class ObjTag extends jxORMobj
 {

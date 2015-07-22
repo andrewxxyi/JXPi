@@ -1,18 +1,14 @@
 
 package cn.ijingxi.common.app;
 
-import java.util.Queue;
-import java.util.UUID;
-
-import cn.ijingxi.common.Process.InstanceState;
-import cn.ijingxi.common.Process.PI;
-import cn.ijingxi.common.Process.PN;
-import cn.ijingxi.common.Process.jxProcess;
-import cn.ijingxi.common.Process.jxTask;
+import cn.ijingxi.common.Process.*;
 import cn.ijingxi.common.msg.jxMsg;
 import cn.ijingxi.common.orm.*;
 import cn.ijingxi.common.orm.ORM.KeyType;
 import cn.ijingxi.common.util.jxCompare;
+
+import java.util.Queue;
+import java.util.UUID;
 
 /**
  * 全局的，所有topspace共享
@@ -34,7 +30,7 @@ public class TopSpace extends jxORMobj
 		jxProcess.CreateDB(ts);
 		jxTask.CreateDB(ts);
 		PI.CreateDB(ts);
-		PN.CreateDB(ts);
+		WorkNode.CreateDB(ts);
 		Role.CreateDB(ts);
 		Relation.CreateDB(ts);
 		PeopleInTs.CreateDB(ts);

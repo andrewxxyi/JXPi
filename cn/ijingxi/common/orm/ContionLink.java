@@ -1,9 +1,10 @@
 
 package cn.ijingxi.common.orm;
 
-import java.util.ArrayList;
 import cn.ijingxi.common.util.Trans;
 import cn.ijingxi.common.util.jxCompare;
+
+import java.util.ArrayList;
 
 
 //与连接的条件

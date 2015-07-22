@@ -1,10 +1,11 @@
 
 package cn.ijingxi.common.orm;
 
-import java.util.ArrayList;
 import cn.ijingxi.common.util.Trans;
 import cn.ijingxi.common.util.jxOP;
 import cn.ijingxi.common.util.utils;
+
+import java.util.ArrayList;
 
 
 //设置结果

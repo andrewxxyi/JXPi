@@ -1,9 +1,9 @@
 
 package cn.ijingxi.common.orm;
 
-import java.util.UUID;
-
 import cn.ijingxi.common.util.Trans;
+
+import java.util.UUID;
 
 public class ORMID implements Comparable<ORMID>
 {

@@ -1,21 +1,17 @@
 
 package cn.ijingxi.common.msg;
 
-import java.io.UnsupportedEncodingException;
-import java.util.*;
-
 import cn.ijingxi.common.app.TopSpace;
 import cn.ijingxi.common.app.jxSystem;
 import cn.ijingxi.common.orm.ORM;
+import cn.ijingxi.common.orm.ORM.KeyType;
 import cn.ijingxi.common.orm.ORMID;
 import cn.ijingxi.common.orm.ORMType;
 import cn.ijingxi.common.orm.jxORMobj;
-import cn.ijingxi.common.orm.ORM.KeyType;
-import cn.ijingxi.common.util.IDo;
-import cn.ijingxi.common.util.IjxEnum;
-import cn.ijingxi.common.util.Trans;
-import cn.ijingxi.common.util.jxTimer;
-import cn.ijingxi.common.util.utils;
+import cn.ijingxi.common.util.*;
+
+import java.io.UnsupportedEncodingException;
+import java.util.*;
 
 /**
  * 带确认的消息传递，全局

@@ -25,7 +25,7 @@ public enum ORMType
 	//流程的实例
 	PI,
 	//流程中的各任务节点的实例
-	PN,
+	WorkNode,
 	jxMsg,
 	jxLog
 	

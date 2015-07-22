@@ -1,12 +1,15 @@
 
 package cn.ijingxi.common.app;
 
-import java.util.*;
-
-import cn.ijingxi.common.Process.*;
-import cn.ijingxi.common.orm.*;
+import cn.ijingxi.common.Process.IExecutor;
+import cn.ijingxi.common.orm.ORM;
 import cn.ijingxi.common.orm.ORM.KeyType;
-import cn.ijingxi.common.util.*;
+import cn.ijingxi.common.orm.ORMType;
+import cn.ijingxi.common.orm.SelectSql;
+import cn.ijingxi.common.orm.jxORMobj;
+import cn.ijingxi.common.util.Trans;
+
+import java.util.*;
 
 /**
  * 全局的，所有topspace共享
@@ -57,7 +60,7 @@ public class jxSystem extends jxORMobj
 	public String SN;
 
 	@ORM(Descr="json格式的附加信息")
-	public String Addition;
+	public String Info;
 		
 	private static Map<String,SN> SNTree=new HashMap<String,SN>();
 		
@@ -86,9 +89,9 @@ public class jxSystem extends jxORMobj
 	{
 		synchronized (this)
 		{
-			int num=Trans.TransToInteger(getExtendValue("Addition",ClsName));
+			int num=Trans.TransToInteger(getExtendValue("Info",ClsName));
 			num++;
-			setExtendValue("Addition",ClsName,num);
+			setExtendValue("Info",ClsName,num);
 			Update(null);
 			return num;
 		}

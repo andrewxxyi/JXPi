@@ -1,12 +1,18 @@
 
 package cn.ijingxi.common.util;
 
-import java.util.*;
-
 import cn.ijingxi.common.app.jxSystem;
 import cn.ijingxi.common.msg.jxMsg;
 import cn.ijingxi.common.msg.jxMsgType;
-import cn.ijingxi.common.orm.*;
+import cn.ijingxi.common.orm.ORM;
+import cn.ijingxi.common.orm.ORMID;
+import cn.ijingxi.common.orm.ORMType;
+import cn.ijingxi.common.orm.jxORMobj;
+
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.*;
 
 /**
  * 只在全局中有，
@@ -26,7 +32,7 @@ public class jxLog extends jxORMobj
 	}
 
 	@ORM(Index=1)
-	public UUID OwnerID;	
+	public UUID OwnerID;
 	
 	@ORM(Index=2)
 	public int TypeID;
@@ -86,6 +92,22 @@ public class jxLog extends jxORMobj
 	public static jxLog GetFromMsg(jxMsg msg) throws Exception
 	{
 		return (jxLog) Trans.TransFromJSONToJava(jxLog.class, msg.getMsg());
+	}
+
+	private static FileOutputStream logWriter=null;
+	public static void setLogger(FileOutputStream logger) {
+		logWriter=logger;
+	}
+	public static void Log(String tag,String msg) {
+		if(logWriter!=null) {
+			String str=(new Date()).toString()+"\t"+tag+"\t"+msg+"\n";
+			try {
+				byte [] bs = str.getBytes();
+				logWriter.write(bs);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 	
 }
