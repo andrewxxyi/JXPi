@@ -20,28 +20,31 @@ public class ObjTag extends jxORMobj
 
 	@ORM
 	public int ObjTypeID;
-	@ORM(Index=1)
+	@ORM(keyType= ORM.KeyType.PrimaryKey)
 	public UUID ObjID;
 
 	//@ORM(Index=2)
 	//public String Name;
 	
-	@ORM(Index=3)
+	@ORM(keyType= ORM.KeyType.PrimaryKey)
 	public int TagID;
-	
+
+	@ORM(keyType= ORM.KeyType.PrimaryKey,Descr="如果某一对象打了同样的多个tag则必须进行设置")
+	public int TagOrder;
+
 	@ORM
 	public String Descr;
 	
 	@ORM(Descr="标记是可以带有状态的")
 	public int TagState;
 	
-	@ORM(Index=4,Descr="标记时的时间")
+	@ORM(Index=1,Descr="标记时的时间")
 	public Date TagTime;	
 
 	@ORM
 	public Float Number;	
 
-	@ORM(Index=5,Descr="时间点信息，如todo的发生时间，两个时间点Tag可以组成时间段")
+	@ORM(Index=2,Descr="时间点信息，如todo的发生时间，两个时间点Tag可以组成时间段")
 	public Date Time;
 
 	//@ORM(Index=3,Descr="时间段信息，和Time组合使用，Time是起点，如日程安排")
@@ -95,57 +98,73 @@ public class ObjTag extends jxORMobj
 		s.AddContion("ObjTag", "TagID", jxCompare.Less, endid);
 		return Select(ObjTag.class,s,ts);
 	}
-	public static ObjTag AddTag(TopSpace ts,int TagID,int ObjTypeID,UUID ObjID,Float TagValue,String Descr) throws Exception
-	{
+	public static ObjTag AddTag(TopSpace ts,int TagID,int ObjTypeID,int TagOrder,UUID ObjID,Float TagValue,String Descr) throws Exception{
 		ObjTag tag=(ObjTag) ObjTag.Create(ObjTag.class);
 		//tag.Name=getTagName(TagID);
 		tag.TagID=TagID;
 		tag.ObjTypeID=ObjTypeID;
+		tag.TagOrder=TagOrder;
 		tag.ObjID=ObjID;
 		tag.Number=TagValue;
 		tag.Descr=Descr;
 		tag.TagTime=new Date();
 		tag.Insert(ts);
+		return tag;
+	}
+	public static ObjTag AddTag(TopSpace ts,int TagID,int ObjTypeID,UUID ObjID,Float TagValue,String Descr) throws Exception
+	{
+		return AddTag(ts,TagID,ObjTypeID,1,ObjID,TagValue,Descr);
+	}
+	public static ObjTag AddTag(DB db,TopSpace ts,int TagID,int ObjTypeID,int TagOrder,UUID ObjID,Float TagValue,String Descr) throws Exception{
+		ObjTag tag=(ObjTag) ObjTag.Create(ObjTag.class);
+		//tag.Name=getTagName(TagID);
+		tag.TagID=TagID;
+		tag.ObjTypeID=ObjTypeID;
+		tag.ObjID=ObjID;
+		tag.TagOrder=TagOrder;
+		tag.Number=TagValue;
+		tag.Descr=Descr;
+		tag.TagTime=new Date();
+		tag.Insert(db, ts);
 		return tag;
 	}
 	public static ObjTag AddTag(DB db,TopSpace ts,int TagID,int ObjTypeID,UUID ObjID,Float TagValue,String Descr) throws Exception
 	{
-		ObjTag tag=(ObjTag) ObjTag.Create(ObjTag.class);
-		//tag.Name=getTagName(TagID);
-		tag.TagID=TagID;
-		tag.ObjTypeID=ObjTypeID;
-		tag.ObjID=ObjID;
-		tag.Number=TagValue;
-		tag.Descr=Descr;
-		tag.TagTime=new Date();
-		tag.Insert(db, ts);
-		return tag;
+		return AddTag(db,ts,TagID,ObjTypeID,1,ObjID,TagValue,Descr);
 	}
-	public static ObjTag AddTag(TopSpace ts,int TagID,int ObjTypeID,UUID ObjID,Date time,String Descr) throws Exception
-	{
+	public static ObjTag AddTag(TopSpace ts,int TagID,int ObjTypeID,int TagOrder,UUID ObjID,Date time,String Descr) throws Exception{
 		ObjTag tag=(ObjTag) ObjTag.Create(ObjTag.class);
 		//tag.Name=getTagName(TagID);
 		tag.TagID=TagID;
 		tag.ObjTypeID=ObjTypeID;
 		tag.ObjID=ObjID;
+		tag.TagOrder=TagOrder;
 		tag.Time=time;
 		tag.Descr=Descr;
 		tag.TagTime=new Date();
 		tag.Insert(ts);
 		return tag;
 	}
-	public static ObjTag AddTag(DB db,TopSpace ts,int TagID,int ObjTypeID,UUID ObjID,Date time,String Descr) throws Exception
+	public static ObjTag AddTag(TopSpace ts,int TagID,int ObjTypeID,UUID ObjID,Date time,String Descr) throws Exception
 	{
+		return AddTag(ts,TagID,ObjTypeID,1,ObjID,time,Descr);
+	}
+	public static ObjTag AddTag(DB db,TopSpace ts,int TagID,int ObjTypeID,int TagOrder,UUID ObjID,Date time,String Descr) throws Exception{
 		ObjTag tag=(ObjTag) ObjTag.Create(ObjTag.class);
 		//tag.Name=getTagName(TagID);
 		tag.TagID=TagID;
 		tag.ObjTypeID=ObjTypeID;
 		tag.ObjID=ObjID;
+		tag.TagOrder=TagOrder;
 		tag.Time=time;
 		tag.Descr=Descr;
 		tag.TagTime=new Date();
 		tag.Insert(db, ts);
 		return tag;
+	}
+	public static ObjTag AddTag(DB db,TopSpace ts,int TagID,int ObjTypeID,UUID ObjID,Date time,String Descr) throws Exception
+	{
+		return AddTag(db,ts,TagID,ObjTypeID,1,ObjID,time,Descr);
 	}
 	
 

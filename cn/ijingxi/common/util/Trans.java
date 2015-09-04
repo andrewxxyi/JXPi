@@ -328,7 +328,7 @@ public class Trans
 		}
 		if(n1>0)
 			rs+=getChineseUnit(n1);
-		if(rs!="") rs="零";
+		if(rs=="") rs="零";
 		return rs;
 	}
 	//最后一位数字

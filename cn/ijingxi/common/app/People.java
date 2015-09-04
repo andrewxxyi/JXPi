@@ -68,8 +68,8 @@ public class People extends jxORMobj
 	@ORM(Descr="json格式信息保存字段，如联系方式，包括但不限于Mail、Tel、Mobile、Fax、Address、国家等等")
 	public String Info;
 
-	@ORM(Descr="girl:true")
-	public Boolean Sex;
+	@ORM(Descr="male:true")
+	public Boolean IsMale;
 	
 	@ORM
 	public Boolean NoUsed;

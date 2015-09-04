@@ -148,11 +148,11 @@ public class jxORMobj
 	}
 	public ObjTag AddTag(TopSpace ts,int TagID,Float TagValue,String Descr) throws Exception
 	{
-		return ObjTag.AddTag(ts, TagID, getTypeID(),(UUID) getFiledValue(this, "ID"), TagValue, Descr);
+		return ObjTag.AddTag(ts, TagID, getTypeID(), (UUID) getFiledValue(this, "ID"), TagValue, Descr);
 	}
 	public ObjTag AddTag(DB db,TopSpace ts,int TagID,Float TagValue,String Descr) throws Exception
 	{
-		return ObjTag.AddTag(db,ts, TagID, getTypeID(),(UUID) getFiledValue(this, "ID"), TagValue, Descr);
+		return ObjTag.AddTag(db, ts, TagID, getTypeID(), (UUID) getFiledValue(this, "ID"), TagValue, Descr);
 	}
 	public ObjTag AddTag(TopSpace ts,int TagID,Date time,String Descr) throws Exception
 	{
@@ -384,7 +384,14 @@ public class jxORMobj
 			w=utils.StringAdd(w, " And ", s+"=?");
 			FieldAttr fa = myClassAttr.Fields.get(s);
 			Object ov=getFiledValue(this, s);
-			params.offer(db.TransValueFromJavaToDB(fa,jxORMobj.Encrypte(myClassAttr.ClsName, s, ov)));	
+
+
+			Object odb=db.TransValueFromJavaToDB(fa, jxORMobj.Encrypte(myClassAttr.ClsName, s, ov));
+			if(odb!=null)
+				utils.P("GetWherePrimaryKey",s+":"+odb.toString());
+			else
+				utils.P("GetWherePrimaryKey",s+":null");
+			params.offer(odb);
 			if(dbBackup.needBackup())
 				backupparams.put(s, ov);		
 		}
@@ -458,6 +465,10 @@ public class jxORMobj
 				{
 					String ks=(String) node.getKey();
 					FieldAttr fa = getFieldAttr(clsName,ks);
+					if(fa==null){
+						utils.P("属性不存在",clsName+":"+ks);
+						continue;
+					}
 					Object dv=db.TransValueFromDBToJava(fa, ov);
 					Object ev=DeEncryptField(fa, dv);
 					setFiledValue(obj, ks, ev);					
@@ -809,10 +820,17 @@ public class jxORMobj
 				Object ov=getFiledValue(this, fn);
 				Object odb=db.TransValueFromJavaToDB(fa,jxORMobj.Encrypte(attr.ClsName, fn, ov));
 				params.offer(odb);
+				if(odb!=null)
+					utils.P("update",fn+":"+odb.toString());
+				else
+					utils.P("update",fn+":null");
+
 				if(dbBackup.needBackup())
 					backupparams.put(fn, ov);
 			}
 		}
+		/*
+		//优化时由于GetWherePrimaryKey会设置参数，所以这里是不能缓存的
 		if(attr.sql_Update==null)
 		{
 			sql+=v+" Where "+GetWherePrimaryKey(db);
@@ -820,7 +838,9 @@ public class jxORMobj
 		}
 		else
 			sql=attr.sql_Update;
-			
+		*/
+		sql+=v+" Where "+GetWherePrimaryKey(db);
+
 		Exec(db,sql,params);
 		dbBackup.backup(attr.ClsName, sql, backupparams);
 	}
@@ -854,6 +874,8 @@ public class jxORMobj
 		if(dbBackup.needBackup())
 			backupparams=new HashMap<String,Object>();
 		String sql=null;
+		sql="Delete From "+attr.getDBTableName(ts)+" Where "+GetWherePrimaryKey(db);
+		/* 缓存还需设置参数
 		if(attr.sql_Delete==null)
 		{
 			sql="Delete From "+attr.getDBTableName(ts)+" Where "+GetWherePrimaryKey(db);
@@ -861,7 +883,7 @@ public class jxORMobj
 		}
 		else
 			sql=attr.sql_Delete;
-		
+		*/
 		Exec(db,sql,params);
 		dbBackup.backup(attr.ClsName, sql, backupparams);
 	}
@@ -981,13 +1003,20 @@ public class jxORMobj
 			Object v=getFiledValue(this, s);
 			Object ev=Encrypte(attr.ClsName, s, v);
 			Object dv=db.TransValueFromJavaToDB(fa,ev);
-			
+
+			if(dv!=null)
+				utils.P("Param",dv.toString());
+			else
+				utils.P("Param", "null");
+
 			params.offer(dv);
 			if(dbBackup.needBackup())
 				backupparams.put(s, v);
 		}
 				
 		String sql=null;
+		sql="Insert Into "+attr.getDBTableName(ts)+"("+cl+") Values ("+vl+")";
+		/*
 		if(attr.sql_Insert==null)
 		{
 			sql="Insert Into "+attr.getDBTableName(ts)+"("+cl+") Values ("+vl+")";
@@ -995,6 +1024,7 @@ public class jxORMobj
 		}
 		else
 			sql=attr.sql_Insert;
+		*/
 		Exec(db,sql,params);
 		dbBackup.backup(attr.ClsName, sql, backupparams);
 		/*
