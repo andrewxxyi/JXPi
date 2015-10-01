@@ -21,7 +21,7 @@ public class People extends jxORMobj
 	}
 
 	@Override
-	protected void Init_Create() throws Exception
+	protected void Init_Create(DB db) throws Exception
 	{
 		ID= UUID.randomUUID();
 		CreateTime=new Date();

@@ -4,7 +4,9 @@ package cn.ijingxi.common.orm;
 import cn.ijingxi.common.app.ObjTag;
 import cn.ijingxi.common.app.TopSpace;
 import cn.ijingxi.common.app.jxSystem;
-import cn.ijingxi.common.msg.jxMsg;
+import cn.ijingxi.common.msg.IMsgDual;
+import cn.ijingxi.common.msg.IObjDualMsg;
+import cn.ijingxi.common.msg.Message;
 import cn.ijingxi.common.orm.ORM.KeyType;
 import cn.ijingxi.common.util.*;
 
@@ -12,12 +14,13 @@ import java.lang.reflect.Field;
 import java.util.*;
 
 
-public class jxORMobj
+public class jxORMobj implements IMsgDual
 {
 	//延迟5s保存，延迟保存只是在突发密集操作时才有效，必然设置用户个人属性等
 	private static final int DelaySaveSecond=5;
 	private static Map<String,ORMClassAttr> ClassAttrTree=new HashMap<String,ORMClassAttr>();
 	private static Map<Integer,ORMClassAttr> ClassAttrTreeByTypeID=new HashMap<Integer,ORMClassAttr>();
+
 
 	private ORMClassAttr myClassAttr=null;
 	private Queue<Object> params=null;
@@ -31,21 +34,52 @@ public class jxORMobj
 	private UUID OwnerID=null;
 	public void isetOwnerID(UUID OwnerID){this.OwnerID=OwnerID;}
 	*/
-	private static byte[] bs=null;
+	//private static byte[] bs=null;
 
+	/**
+	 * 当对象被重建后被调用，如果一个对象创建后需要立刻被使用（而不是被保存到数据库中），则需要显示调用本函数
+	 * @param db
+	 * @throws Exception
+	 */
+	public void initInObjRebuild(DB db) throws Exception {
+		registerMsg();
+		myInit(db);
+	}
 	
 	//从数据库中读出后的初始化，对象的初始化通过其构造函数进行即可
 	protected void myInit(DB db) throws Exception{}
 	/**
-	 * 初始化时被调用
+	 * 初始化时被调用，如果该函数需要操作数据库则db一定不能为空，否则如果在一个事务中创建函数则可能会引起死锁
 	 * @throws Exception
 	 */
-	protected void Init_Create() throws Exception{}
+	protected void Init_Create(DB db) throws Exception{}
+
+	public void DualMsg(Message msg) {
+		if(myClassAttr.msgDual!=null)
+			for (IObjDualMsg dual:myClassAttr.msgDual)
+				if(dual.Dual(this, msg))
+					return;
+	}
+	public void registerMsg(){
+		if(myClassAttr.msgDual!=null)
+			for (IObjDualMsg dual:myClassAttr.msgDual)
+				dual.Register(this);
+	}
+	public static void setDualMsg(Class<?> cls,IObjDualMsg dual){
+		ORMClassAttr attr=getClassAttr(cls);
+		if(attr!=null) {
+			if(attr.msgDual==null)
+				attr.msgDual = new LinkedList<>();
+			attr.msgDual.offer(dual);
+			utils.P("setDualMsg", "Set done");
+		}
+		else
+			utils.P("setDualMsg", "class Not Init:" + cls.getName());
+	}
 	/**
 	 * 系统消息分发
 	 * @param msg
 	 * @return 用于组织消息处理链条，返回true则已经处理完毕了，不必继续处理
-	 */
 	public boolean DualMsg(jxMsg msg) throws Exception
 	{
 		if(msg!=null)
@@ -73,7 +107,8 @@ public class jxORMobj
 	protected boolean DualEventMsg(jxMsg msg) throws Exception{return false;}
 	protected boolean DualSyncMsg(jxMsg msg) throws Exception{return false;}
 	protected boolean DualReportMsg(jxMsg msg) throws Exception{return false;}
-	
+	 */
+
 	//加密处理，加密解密是发生在从数据库中读出与写入之时
 	static String Encrypt(String str) throws Exception
 	{
@@ -131,7 +166,7 @@ public class jxORMobj
 	static Object DeEncrypte(String className, String colName, Object value) throws Exception
 	{
 		FieldAttr fa=getFieldAttr(className,colName);
-		return DeEncryptField(fa,value);
+		return DeEncryptField(fa, value);
 	}
 
 	public ObjTag getTag(TopSpace ts,String Name) throws Exception
@@ -146,21 +181,21 @@ public class jxORMobj
 	{
 		return ObjTag.ListTag(ts, (UUID) getFiledValue(this, "ID"), Name);
 	}
-	public ObjTag AddTag(TopSpace ts,int TagID,Float TagValue,String Descr) throws Exception
+	public ObjTag AddTag(TopSpace ts,int TagID,Float TagValue,String Category,String Descr) throws Exception
 	{
-		return ObjTag.AddTag(ts, TagID, getTypeID(), (UUID) getFiledValue(this, "ID"), TagValue, Descr);
+		return ObjTag.AddTag(ts, TagID, getTypeID(), (UUID) getFiledValue(this, "ID"), TagValue, Category, Descr);
 	}
-	public ObjTag AddTag(DB db,TopSpace ts,int TagID,Float TagValue,String Descr) throws Exception
+	public ObjTag AddTag(DB db,TopSpace ts,int TagID,Float TagValue,String Category,String Descr) throws Exception
 	{
-		return ObjTag.AddTag(db, ts, TagID, getTypeID(), (UUID) getFiledValue(this, "ID"), TagValue, Descr);
+		return ObjTag.AddTag(db, ts, TagID, getTypeID(), (UUID) getFiledValue(this, "ID"), TagValue, Category,Descr);
 	}
-	public ObjTag AddTag(TopSpace ts,int TagID,Date time,String Descr) throws Exception
+	public ObjTag AddTag(TopSpace ts,int TagID,Date time,String Category,String Descr) throws Exception
 	{
-		return ObjTag.AddTag(ts, TagID, getTypeID(),(UUID)getFiledValue(this, "ID"), time, Descr);
+		return ObjTag.AddTag(ts, TagID, getTypeID(),(UUID)getFiledValue(this, "ID"), time, Category,Descr);
 	}
-	public ObjTag AddTag(DB db,TopSpace ts,int TagID,Date time,String Descr) throws Exception
+	public ObjTag AddTag(DB db,TopSpace ts,int TagID,Date time,String Category,String Descr) throws Exception
 	{
-		return ObjTag.AddTag(db,ts, TagID, getTypeID(),(UUID)getFiledValue(this, "ID"), time, Descr);
+		return ObjTag.AddTag(db,ts, TagID, getTypeID(),(UUID)getFiledValue(this, "ID"), time, Category,Descr);
 	}
 	
 	public void setObj(String FieldName,jxORMobj obj) throws Exception
@@ -187,6 +222,7 @@ public class jxORMobj
 		}
 		return null;
 	}
+
 	public int getTypeID()
 	{
 		return myClassAttr.TypeID;
@@ -203,7 +239,7 @@ public class jxORMobj
 	{
 		return getTypeID(utils.GetClassName(cls));
 	}
-	
+
 	public static void InitClass(int Typeid,Class<?> cls) throws Exception
 	{
 		Field[] fs = cls.getDeclaredFields();
@@ -223,8 +259,8 @@ public class jxORMobj
 			ORM ann = f.getAnnotation(ORM.class);
 			if(ann!=null)
 			{
-				if(bs==null)
-					bs=",PRIMARY KEY(".getBytes("UTF8");
+				//if(bs==null)
+				//	bs=",PRIMARY KEY(".getBytes("UTF8");
 				attr.dbTableName=Encrypt(classname);
 				FieldAttr fa=new FieldAttr();
 				fa.FieldType=f.getType();
@@ -281,10 +317,17 @@ public class jxORMobj
 	}
 	//jxORMobj对象只能通过本函数生成，该函数所生成的都是正常对象，但如果是非拥有者所
 	//建立的对象，则通过另外的函数来生成，如申请者发起申请流程，该流程流转到其它人那时就是非拥有者的
+	public static jxORMobj Create(DB db,Class<?> cls) throws Exception
+	{
+		jxORMobj obj=New(cls);
+		obj.Init_Create(db);
+		return obj;
+	}
+	//只有明确知道自己的创建函数不需要操作数据库才能使用本函数
 	public static jxORMobj Create(Class<?> cls) throws Exception
 	{
 		jxORMobj obj=New(cls);
-		obj.Init_Create();
+		obj.Init_Create(null);
 		return obj;
 	}
 	private static jxORMobj New(Class<?> cls) throws Exception
@@ -370,8 +413,8 @@ public class jxORMobj
 			db.Release();		
         }
 	}
-	
-	
+
+
 	//读写删插
 	String GetWherePrimaryKey(DB db) throws Exception
 	{
@@ -410,11 +453,41 @@ public class jxORMobj
 			return rs;
         }
 	}
+
+	/**
+	 * 默认只是读取数据进行处理，而不是取出对象保存到LRU中
+	 * @param db
+	 * @param cls
+	 * @param s
+	 * @param ts
+	 * @return
+	 * @throws Exception
+	 */
 	public static Queue<jxORMobj> Select(DB db,Class<?> cls,SelectSql s,TopSpace ts) throws Exception
 	{
-		return Select(db,cls,s,true,ts);
-	}	
-	static Queue<jxORMobj> Select(DB db,Class<?> cls,SelectSql s,boolean Cache,TopSpace ts) throws Exception
+		return Select(db,cls,s,false,ts);
+	}
+	public static Queue<jxORMobj> Select(Class<?> cls,SelectSql s,boolean Cache, TopSpace ts) throws Exception
+	{
+		DB db=JdbcUtils.GetDB();
+		synchronized (db)
+		{
+			Queue<jxORMobj> rs=Select(db,cls,s,Cache,ts);
+			db.Release();
+			return rs;
+		}
+	}
+	/**
+	 *
+	 * @param db
+	 * @param cls
+	 * @param s
+	 * @param Cache 如果为true则读取对象后需进行初始化并进行缓存，否则只是读取对象后进行数据处理
+	 * @param ts
+	 * @return
+	 * @throws Exception
+	 */
+	public static Queue<jxORMobj> Select(DB db,Class<?> cls,SelectSql s,boolean Cache,TopSpace ts) throws Exception
 	{
 		Queue<jxORMobj> rs=new LinkedList<jxORMobj>();
 		String clsName=utils.GetClassName(cls);
@@ -425,7 +498,8 @@ public class jxORMobj
 		for(jxLink<String, Object> map:dbrs)
 		{
 			jxORMobj obj=New(cls);
-			obj.myInit(db);
+			if(Cache)
+				obj.initInObjRebuild(db);
 			for(LinkNode<String, Object> node:map)
 			{
 				Object ov=node.getValue();
@@ -457,7 +531,8 @@ public class jxORMobj
 		for(jxLink<String, Object> map:dbrs)
 		{
 			jxORMobj obj=New(cls);
-			obj.myInit(db);
+			if(Cache)
+				obj.initInObjRebuild(db);
 			for(LinkNode<String, Object> node:map)
 			{
 				Object ov=node.getValue();
@@ -805,8 +880,8 @@ public class jxORMobj
 		if(attr.getDBTableName(ts)==null)return;
 		params=new LinkedList<Object>();
 		String sql=null;
-		if(attr.sql_Update==null)
-			sql="Update "+attr.getDBTableName(ts)+" Set ";
+		//if(attr.sql_Update==null)
+		//	sql="Update "+attr.getDBTableName(ts)+" Set ";
 		if(dbBackup.needBackup())
 			backupparams=new HashMap<String,Object>();
 		String v=null;
@@ -815,8 +890,8 @@ public class jxORMobj
 			FieldAttr fa = attr.Fields.get(fn);
 			if(fa!=null&&fa.keyType==KeyType.None)
 			{
-				if(attr.sql_Update==null)
-					v=utils.StringAdd(v, ",", fn+"=?");
+				//if(attr.sql_Update==null)
+				v=utils.StringAdd(v, ",", fn+"=?");
 				Object ov=getFiledValue(this, fn);
 				Object odb=db.TransValueFromJavaToDB(fa,jxORMobj.Encrypte(attr.ClsName, fn, ov));
 				params.offer(odb);
@@ -873,8 +948,7 @@ public class jxORMobj
 		params=new LinkedList<Object>();
 		if(dbBackup.needBackup())
 			backupparams=new HashMap<String,Object>();
-		String sql=null;
-		sql="Delete From "+attr.getDBTableName(ts)+" Where "+GetWherePrimaryKey(db);
+		String sql="Delete From "+attr.getDBTableName(ts)+" Where "+GetWherePrimaryKey(db);
 		/* 缓存还需设置参数
 		if(attr.sql_Delete==null)
 		{
@@ -1014,8 +1088,7 @@ public class jxORMobj
 				backupparams.put(s, v);
 		}
 				
-		String sql=null;
-		sql="Insert Into "+attr.getDBTableName(ts)+"("+cl+") Values ("+vl+")";
+		String sql="Insert Into "+attr.getDBTableName(ts)+"("+cl+") Values ("+vl+")";
 		/*
 		if(attr.sql_Insert==null)
 		{
@@ -1139,8 +1212,6 @@ public class jxORMobj
 	/**
 	 * 扩展属性的处理，读取某扩展属性的值
 	 * @param FieldName 扩展属性所对应的列，其类型是String，该属性列为json对象数组，每个json对象是的子对象为值对象
-	 * @param KeyName 数组中各子对象的键名
-	 * @param KeyValue 数组中各子对象的键值
 	 * @param Purpose 想查询的该子对象的某列值
 	 * @return
 	 * @throws Exception
@@ -1163,7 +1234,7 @@ public class jxORMobj
 	}
 	public List<jxJson> getExtendArrayList(String FieldName,Map<String,String> Keys) throws Exception
 	{
-		return getExtendArrayList(FieldName,"Array",Keys);
+		return getExtendArrayList(FieldName, "Array", Keys);
 	}
 	public List<jxJson> getExtendArrayList(String FieldName,String ArrayName,Map<String,String> Keys) throws Exception
 	{
@@ -1226,7 +1297,7 @@ public class jxORMobj
 	 */
 	public void setExtendArrayValue(String FieldName,Map<String,String> Keys,String Purpose,Object value) throws Exception
 	{
-		setExtendArrayValue(FieldName,"Array",Keys,Purpose,value);
+		setExtendArrayValue(FieldName, "Array", Keys, Purpose, value);
 	}
 	public void setExtendArrayValue(String FieldName,String ArrayName,Map<String,String> Keys,String Purpose,Object value) throws Exception
 	{
@@ -1301,7 +1372,7 @@ public class jxORMobj
 		}
 		jarr.AddSubObjNode(subNode);
 		CachedExtend.put(FieldName, js);
-		setFiledValue(this, FieldName,js.TransToString());
+		setFiledValue(this, FieldName, js.TransToString());
 	}
 	/**
 	 * 多行（数组对象，每行为一个对象）给行增加一个子节点，调用后要注意手动保存
@@ -1405,7 +1476,7 @@ public class jxORMobj
 	//获取通用信息
 	public static String getFieldType(String ClassName, String FieldName)
 	{
-		FieldAttr fa = getFieldAttr(ClassName,FieldName);
+		FieldAttr fa = getFieldAttr(ClassName, FieldName);
 		if(fa!=null)
 			return utils.GetClassName(fa.FieldType);
 		return null;
@@ -1449,6 +1520,13 @@ public class jxORMobj
 		if(p!=null)
 			return p.ClsName;
 		utils.P("GetClassName Null:",ClassName+"->"+ColName);
+		return null;
+	}
+	public static String getClassName(int typeid)
+	{
+		ORMClassAttr attr=getClassAttr(typeid);
+		if(attr!=null)
+			return attr.ClsName;
 		return null;
 	}
 	static ORMClassAttr getClassAttr(int typeid)
@@ -1524,6 +1602,8 @@ class ORMClassAttr
 	boolean canCache=false;
 	jxLink<Integer,ArrayList<String>> Indexs=null;
 	Map<String,FieldAttr> Fields=new HashMap<String,FieldAttr>();
+
+	Queue<IObjDualMsg> msgDual=null;
 		
 	String sql_Insert=null;
 	String sql_Update=null;

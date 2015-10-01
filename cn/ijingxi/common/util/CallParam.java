@@ -3,43 +3,34 @@ package cn.ijingxi.common.util;
 
 import cn.ijingxi.common.Process.IExecutor;
 
+import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Queue;
 
 public class CallParam
 {
-	IExecutor Execer=null;
-	public IExecutor getExecer()
-    {
-        return Execer;
-    }    	
-	IExecutor Caller=null;
-	public IExecutor getCaller()
-    {
-        return Caller;
-    }    	
-	String Msg=null;
-	public String getMsg()
-    {
-        return Msg;
-    }    	
-	Queue<Object> Param=null;
+	public IExecutor Execer=null;
+	public IExecutor Caller=null;
+	public String Msg=null;
+
+	Map<String,Object> Param=null;
 	public CallParam(IExecutor Caller,IExecutor Execer,String Msg)
 	{
 		this.Execer=Execer;
 		this.Caller=Caller;
 		this.Msg=Msg;		
 	}
-	public void addParam(Object param)
+	public void addParam(String paramName,Object param)
 	{
 		if(Param==null)
-			Param=new LinkedList<Object>();
-		Param.offer(param);
+			Param=new HashMap<>();
+		Param.put(paramName,param);
 	}
-	public Object getParam()
+	public Object getParam(String paramName)
 	{
 		if(Param!=null)
-			return Param.poll();
+			return Param.get(paramName);
 		return null;
 	}
 }

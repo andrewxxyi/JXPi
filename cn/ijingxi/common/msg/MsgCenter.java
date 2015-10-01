@@ -25,8 +25,8 @@ public class MsgCenter
 		{
 			//投递到本机
 			jxORMobj obj=jxORMobj.GetByID(msg.RTypeID, msg.RID, msg.getTopSpace());
-			if(obj!=null)
-				obj.DualMsg(msg);
+			//if(obj!=null)
+			//	obj.DualMsg(msg);
 		}
 		else if(LanServer!=null)
 		{

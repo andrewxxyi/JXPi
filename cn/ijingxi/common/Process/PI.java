@@ -4,11 +4,8 @@ package cn.ijingxi.common.Process;
 import cn.ijingxi.common.app.TopSpace;
 import cn.ijingxi.common.app.jxSystem;
 import cn.ijingxi.common.msg.jxMsg;
-import cn.ijingxi.common.orm.ORM;
+import cn.ijingxi.common.orm.*;
 import cn.ijingxi.common.orm.ORM.KeyType;
-import cn.ijingxi.common.orm.ORMID;
-import cn.ijingxi.common.orm.ORMType;
-import cn.ijingxi.common.orm.jxORMSM;
 import cn.ijingxi.common.util.CallParam;
 import cn.ijingxi.common.util.IDoSomething;
 import cn.ijingxi.common.util.IjxEnum;
@@ -34,7 +31,7 @@ public class PI extends WorkNode
 	}	
 
 	@Override
-	protected void Init_Create() throws Exception
+	protected void Init_Create(DB db) throws Exception
 	{
 		ID=UUID.randomUUID();
 		Type=NodeType.ProcessInstance;

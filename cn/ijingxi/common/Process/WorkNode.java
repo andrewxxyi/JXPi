@@ -37,12 +37,11 @@ public class WorkNode extends jxORMobj
 	}
 
 	@Override
-	protected void Init_Create() throws Exception
+	protected void Init_Create(DB db) throws Exception
 	{
 		ID=UUID.randomUUID();
 		CreateTime=new Date();
-		Type=NodeType.WorkSpace;
-		State=InstanceState.Doing;
+		State=InstanceState.Waiting;
 	}
 	
 	public static void Init() throws Exception
@@ -141,7 +140,7 @@ public class WorkNode extends jxORMobj
 	@ORM(keyType=KeyType.PrimaryKey)
 	public UUID ID;
 	
-	@ORM
+	@ORM(Index=1)
 	public String Name;		
 	
 	@ORM(Descr="说明信息",Encrypted=true)
@@ -178,8 +177,8 @@ public class WorkNode extends jxORMobj
 			return PI.getProcess(PIID,ts);
 		return null;
 	}
-	@ORM(Index=6,Descr="流程的当前状态，创建就是在运行中")
-	public InstanceState State=InstanceState.Doing;
+	@ORM(Index=6,Descr="流程的当前状态")
+	public InstanceState State;
 
 	@ORM
 	public Result Result;
@@ -197,23 +196,18 @@ public class WorkNode extends jxORMobj
 	}
 
 	//第一个参数是节点，第二个参数是From节点名，第三个参数是出口名
-    public void Touch(TopSpace ts,String Msg) throws Exception
+    public void Touch(String Msg) throws Exception
     {
     	CallParam param=new CallParam(null,null,Msg);
-    	param.addParam(this);
-    	param.addParam(null);
-    	param.addParam(null);
-    	param.addParam(ts);
+    	param.addParam("Name",Name);
     	NodeSM.Happen(this, "State", InstanceEvent.Touch, param);
     	Update(null);
     }
     public void Close(TopSpace ts,String ExportName,String Msg) throws Exception
     {    	
     	CallParam param=new CallParam(null,null,Msg);
-    	param.addParam(this);
-    	param.addParam(null);
-    	param.addParam(ExportName);
-    	param.addParam(ts);
+		param.addParam("Name",Name);
+    	param.addParam("ExportName",ExportName);
     	NodeSM.Happen(this, "State", InstanceEvent.Close, param);
     	Update(null);
     }
@@ -253,7 +247,7 @@ public class WorkNode extends jxORMobj
 	{
 		Map<String,String> ks=new HashMap<String,String>();
 		ks.put("From", From);
-		setExtendArrayValue(InputToken,ks,"TokenNum",TokenNum);
+		setExtendArrayValue(InputToken, ks, "TokenNum", TokenNum);
 	}
 	int getInputToken(String From) throws Exception
 	{

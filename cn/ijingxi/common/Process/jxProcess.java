@@ -16,7 +16,7 @@ import java.util.regex.Pattern;
  * @author andrew
  *
  */
-public class jxProcess extends Container
+public class jxProcess extends jxORMobj
 {
 	public static ORMID GetORMID(UUID ID)
 	{
@@ -30,9 +30,10 @@ public class jxProcess extends Container
 	}
 
 	@Override
-	protected void Init_Create() throws Exception
+	protected void Init_Create(DB db) throws Exception
 	{
 		ID=UUID.randomUUID();
+		CreateTime=new Date();
 	}
 	/*
 	protected boolean DualEventMsg(jxMsg msg) throws Exception
@@ -70,35 +71,40 @@ public class jxProcess extends Container
 	
 	
 	}
-*/	
+*/
 	@ORM(keyType=KeyType.PrimaryKey)
 	public UUID ID;
 
-	@ORM(Descr="流水号模板名称")
+	@ORM(Index=1)
+	public String Name;
+
+	@ORM(Descr="说明信息")
+	public String Descr;
+
+	@ORM(Index=2)
+	public Date CreateTime;
+
+	@ORM(Descr="流水号模板名称，用于在生成流程实例时自动创建序号")
 	public String SNPurpose; 
-	
+
+	/*
 	@ORM(Descr="版本号，用于同名进程模板之间的区分")
 	public String Version; 
 	static Pattern PatternVersion = Pattern.compile("^[1-9]\\d+\\.\\d+\\.\\d+\\.\\d+$");
-		
+	*/
+
 	@ORM(Descr="json格式的所有节点名")
 	public String Nodes;		
 
 	@ORM(Descr="json格式的所有流转，自动执行条件，是绑定在各条trans上的，只有设为auto的才可以")
 	public String NodeTrans;
 
-	@ORM(Descr="用于显示本流程的处理页面，这样当新的流程处理方法出来后原流程可不受影响")
-	public String DispURL;		
+	//@ORM(Descr="用于显示本流程的处理页面，这样当新的流程处理方法出来后原流程可不受影响")
+	//public String DispURL;
 	
 	@ORM
 	public Boolean NoUsed;
-		
-	@Override
-	protected void Verify() throws Exception
-	{
-		if(Version!=null&&!PatternVersion.matcher(Version).matches())
-			throw new Exception("版本号的格式应为：vvv.vvv.vvv.vvv");		
-	}
+
 	
 	//发起新流程时调用
 	public PI StartNewInstance(TopSpace ts, PeopleInTs Caller,String Msg) throws Exception

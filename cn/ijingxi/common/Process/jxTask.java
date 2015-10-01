@@ -32,7 +32,7 @@ public class jxTask extends WorkNode
 	}
 
 	@Override
-	protected void Init_Create() throws Exception
+	protected void Init_Create(DB db) throws Exception
 	{
 		ID=UUID.randomUUID();
 		Type=NodeType.Task;
@@ -292,8 +292,8 @@ public class jxTask extends WorkNode
 			   task.Name=Name;
 			   task.Descr=Descr;
 			   task.Insert(db, ts);
-			   if(doAt!=null)
-				   task.AddTag(db,ts, ObjTag.Tag_System_LastTime, doAt, null);
+			   //if(doAt!=null)
+				//   task.AddTag(db,ts, ObjTag.Tag_System_LastTime, doAt, null);
      
 			return task;
     }
@@ -342,7 +342,7 @@ public class jxTask extends WorkNode
 		PeopleInTs pe=GetExecer(ts);
 		if(pe!=null&&pe.ID==Caller.ID)
 		{
-			ObjTag tag=AddTag(ts,ObjTag.Tag_System_Plan,doAt,plan);
+			ObjTag tag=AddTag(ts,ObjTag.getTagID("计划"),doAt,"任务",plan);
 			tag.setExtendValue("Addition", "CallerID", Trans.TransToString(Caller.ID));
 			tag.setExtendValue("Addition", "CallerName", Caller.Real.Name);
 			tag.Number=(float) order;
@@ -364,28 +364,28 @@ public class jxTask extends WorkNode
     	CallParam param = new CallParam(Caller,Caller,Msg);
     	param.addParam(this);
     	jxTask.TaskSM.Happen(this, "State", InstanceEvent.Pause, param);
-		ObjTag.AddTag(ts, ObjTag.Tag_System_StateChange, getTypeID(), ID, 0f, "Pause");
+		ObjTag.AddTag(ts, ObjTag.getTagID("状态切换"), getTypeID(), ID, 0f,"状态", "Pause");
     }
     public void ReDo(TopSpace ts,PeopleInTs Caller,String Msg) throws Exception
     {
     	CallParam param = new CallParam(Caller,Caller,Msg);
     	param.addParam(this);
     	jxTask.TaskSM.Happen(this, "State", InstanceEvent.Trigger, param);
-		ObjTag.AddTag(ts, ObjTag.Tag_System_StateChange, getTypeID(), ID, 0f, "Trigger");
+		ObjTag.AddTag(ts, ObjTag.getTagID("状态切换"), getTypeID(), ID, 0f, "状态", "Trigger");
     }
     public void Cancle(TopSpace ts,PeopleInTs Caller,String Msg) throws Exception
     {
     	CallParam param = new CallParam(Caller,Caller,Msg);
     	param.addParam(this);
     	jxTask.TaskSM.Happen(this, "State", InstanceEvent.Cancel, param);
-		ObjTag.AddTag(ts, ObjTag.Tag_System_StateChange, getTypeID(), ID, 0f, "Cancel");
+		ObjTag.AddTag(ts, ObjTag.getTagID("状态切换"), getTypeID(), ID, 0f,"状态",  "Cancel");
     }
     public void Close(TopSpace ts,PeopleInTs Caller,String Msg) throws Exception
     {
     	CallParam param = new CallParam(Caller,Caller,Msg);
     	param.addParam(this);
     	jxTask.TaskSM.Happen(this, "State", InstanceEvent.Close, param);
-		ObjTag.AddTag(ts, ObjTag.Tag_System_StateChange, getTypeID(), ID, 0f, "Close");
+		ObjTag.AddTag(ts, ObjTag.getTagID("状态切换"), getTypeID(), ID, 0f,"状态",  "Close");
     }
 
     

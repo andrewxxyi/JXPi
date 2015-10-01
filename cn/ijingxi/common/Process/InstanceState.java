@@ -7,8 +7,6 @@ import cn.ijingxi.common.util.IjxEnum;
 	public enum InstanceState implements IjxEnum
 	{
 		None,
-		//非活动状态
-		NoActive,
 		//等待执行
 		Waiting,
 		//正在执行
@@ -33,8 +31,6 @@ import cn.ijingxi.common.util.IjxEnum;
 			{
 			case None:
 				return "空";
-			case NoActive:
-				return "非活动";
 			case Waiting:
 				return "等待";
 			case Doing:

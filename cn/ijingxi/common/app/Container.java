@@ -1,11 +1,8 @@
 
 package cn.ijingxi.common.app;
 
-import cn.ijingxi.common.orm.ORM;
+import cn.ijingxi.common.orm.*;
 import cn.ijingxi.common.orm.ORM.KeyType;
-import cn.ijingxi.common.orm.ORMID;
-import cn.ijingxi.common.orm.ORMType;
-import cn.ijingxi.common.orm.jxORMobj;
 
 import java.util.Date;
 import java.util.UUID;
@@ -15,7 +12,7 @@ public class Container extends jxORMobj
 	//圈子
 
 	@Override
-	protected void Init_Create() throws Exception
+	protected void Init_Create(DB db) throws Exception
 	{
 		   ID=UUID.randomUUID();
 			CreateTime=new Date();

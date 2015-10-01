@@ -3,11 +3,8 @@ package cn.ijingxi.common.msg;
 
 import cn.ijingxi.common.app.TopSpace;
 import cn.ijingxi.common.app.jxSystem;
-import cn.ijingxi.common.orm.ORM;
+import cn.ijingxi.common.orm.*;
 import cn.ijingxi.common.orm.ORM.KeyType;
-import cn.ijingxi.common.orm.ORMID;
-import cn.ijingxi.common.orm.ORMType;
-import cn.ijingxi.common.orm.jxORMobj;
 import cn.ijingxi.common.util.*;
 
 import java.io.UnsupportedEncodingException;
@@ -33,7 +30,7 @@ public class jxMsg extends jxORMobj implements Iterable<byte[]>
 	}
 
 	@Override
-	protected void Init_Create() throws Exception
+	protected void Init_Create(DB db) throws Exception
 	{
 		ID=UUID.randomUUID();
 	}

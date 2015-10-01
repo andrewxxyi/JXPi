@@ -6,7 +6,8 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.FIELD })
 public @interface ORM 
-{  
+{
+	//如果没有PrimaryKey，则无法update
 	public enum KeyType {None, PrimaryKey, AutoDBGenerated, AutoSystemGenerated};
 	KeyType keyType() default KeyType.None;  
 

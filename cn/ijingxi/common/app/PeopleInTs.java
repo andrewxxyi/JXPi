@@ -39,7 +39,7 @@ public class PeopleInTs extends jxORMobj implements IExecutor
 	{
 		Real=(People) GetByID(People.class, ID, null);
 	}
-	
+	/*
 	@Override
 	protected boolean DualEventMsg(jxMsg msg) throws Exception{
 		InstanceEvent event = (InstanceEvent) msg.getEvent();
@@ -57,7 +57,6 @@ public class PeopleInTs extends jxORMobj implements IExecutor
 				        	TopSpace ts=msg.getTopSpace();
 				        	jxTask task=(jxTask) msg.getObj();
 				        	task.Insert(db,ts);
-				        	/*
 						   task=(jxTask) Create(jxTask.class);
 						   task.CreatorTypeID=Trans.TransToInteger(tag.getExtendValue("Addition", "ctid"));
 						   task.CreatorID=Trans.TransToUUID(tag.getExtendValue("Addition", "cid"));
@@ -71,7 +70,6 @@ public class PeopleInTs extends jxORMobj implements IExecutor
 							   task.AddTag(db,ts, ObjTag.Tag_System_LastTime, tag.Time, null);
 						   //当前只创建自己负责的任务
 						   Relation.AddRela(db, ts, ORMType.PeopleInTs.ordinal(), ID, ORMType.jxTask.ordinal(), task.ID, RelationType.Main);
-						   */
 				        }
 				        db.Trans_Commit();
 					}
@@ -87,7 +85,7 @@ public class PeopleInTs extends jxORMobj implements IExecutor
 			}
 		return false;
 	}
-	
+	*/
 	//1号是手机主人，但如果某人在两台手机上都装了，则会出现冲突，需要加以解决
 	@ORM(keyType=KeyType.PrimaryKey)
 	public UUID ID;

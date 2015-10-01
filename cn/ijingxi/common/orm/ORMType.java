@@ -17,6 +17,7 @@ public enum ORMType
 	Relation,
 	Role,
 	Tag,
+	Group,
 	TopSpace,
 	//流程是模板
 	jxProcess,
@@ -27,6 +28,10 @@ public enum ORMType
 	//流程中的各任务节点的实例
 	WorkNode,
 	jxMsg,
-	jxLog
+	jxLog,
+
+	Message,
+	MsgGroup
+
 	
 }

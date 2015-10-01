@@ -9,7 +9,8 @@ import java.util.*;
 
 
 public class Trans
-{	
+{
+	public static UUID NullUUID=UUID.fromString("00000000000000000000000000000000");
 	public static String DateTimeFormat="yyyy-MM-dd HH:mm:ss";
 	public static String DateFormat="yyyy-MM-dd";
 	public static SimpleDateFormat DateTimeFormatter=new SimpleDateFormat(DateTimeFormat);

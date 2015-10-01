@@ -2,11 +2,8 @@
 package cn.ijingxi.common.app;
 
 import cn.ijingxi.common.Process.IExecutor;
-import cn.ijingxi.common.orm.ORM;
+import cn.ijingxi.common.orm.*;
 import cn.ijingxi.common.orm.ORM.KeyType;
-import cn.ijingxi.common.orm.ORMType;
-import cn.ijingxi.common.orm.SelectSql;
-import cn.ijingxi.common.orm.jxORMobj;
 import cn.ijingxi.common.util.Trans;
 
 import java.util.*;
@@ -36,7 +33,7 @@ public class jxSystem extends jxORMobj
 	}	
 
 	@Override
-	protected void Init_Create() throws Exception
+	protected void Init_Create(DB db) throws Exception
 	{
 		ID=UUID.randomUUID();
 	}

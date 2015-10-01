@@ -3,10 +3,7 @@ package cn.ijingxi.common.util;
 
 import cn.ijingxi.common.Process.*;
 import cn.ijingxi.common.app.*;
-import cn.ijingxi.common.msg.jxMsg;
-import cn.ijingxi.common.msg.jxMsgState;
-import cn.ijingxi.common.msg.jxMsgType;
-import cn.ijingxi.common.msg.udpMsg;
+import cn.ijingxi.common.msg.*;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -41,6 +38,10 @@ public class utils
 		ObjTag.Init();
 		jxLog.Init();
 		jxTask.Init();
+		Group.Init();
+
+		Message.Init();
+		MsgGroup.Init();
 
 		Trans.AddEunmType(InstanceState.Doing);
 		Trans.AddEunmType(InstanceEvent.Touch);
@@ -52,9 +53,13 @@ public class utils
 		Trans.AddEunmType(Right.Read);
 		Trans.AddEunmType(TSEvent.Sync);
 		Trans.AddEunmType(NodeType.Task);
+
+		Trans.AddEunmType(Message.MsgType.Event);
+
+
+		MsgAgent.Start();
 		
-		
-		udpMsg.Init();
+		//udpMsg.Init();
 	}
 	public static void CreateDBTable() throws Exception
 	{
@@ -67,6 +72,9 @@ public class utils
 		ObjTag.CreateDB(null);
 		//保存自己的信息及全局通讯录
 		jxLog.CreateDB();
+
+		Message.CreateDB(null);
+		MsgGroup.CreateDB(null);
 	}	
 	private static Map<String,Object> objCache=new HashMap<String,Object>();
 	public static void putCache(String key,Object obj)
@@ -85,7 +93,7 @@ public class utils
     private static Pattern RegSuffix = Pattern.compile(regSuffix);
     /**
      * 获取文件名的后缀
-     * @param path
+     * @param filename
      * @return
      */
 	public static String getSuffix(String filename)
@@ -106,6 +114,14 @@ public class utils
 		Calendar ctd = utils.GetDate(ct);
 		return Trans.TransToInteger((ctd.getTimeInMillis()-cfd.getTimeInMillis())/1000*3600*24);
 	}
+	public static Integer secondsBetween(Date f,Date t)
+	{
+		Calendar cf=Calendar.getInstance();
+		cf.setTime(f);
+		Calendar ct=Calendar.getInstance();
+		ct.setTime(t);
+		return Trans.TransToInteger((ct.getTimeInMillis()-cf.getTimeInMillis())/1000);
+	}
 	public static Calendar GetDate(Calendar t)
 	{
 		Calendar c=Calendar.getInstance();
@@ -113,6 +129,14 @@ public class utils
 		c.set(Calendar.MONTH, t.get(Calendar.MONTH));
 		c.set(Calendar.DAY_OF_MONTH, t.get(Calendar.DAY_OF_MONTH));
 		return c;				
+	}
+
+	public static Date addSecond(Date dt,int seconds)
+	{
+		Calendar c=Calendar.getInstance();
+		c.setTime(dt);
+		c.add(Calendar.SECOND, seconds);
+		return c.getTime();
 	}
 	public static boolean CheckDate(int year,int month,int day)
 	{

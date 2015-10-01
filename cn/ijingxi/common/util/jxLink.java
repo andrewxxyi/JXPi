@@ -75,6 +75,7 @@ public class jxLink<TKey extends Comparable<TKey>, TValue> implements Iterable<L
     	return node!=null;
     }
     /**
+	 * 尾部添加，头部移除
      * 直接在尾部加入
      * @param Key
      * @param Value
@@ -176,7 +177,7 @@ public class jxLink<TKey extends Comparable<TKey>, TValue> implements Iterable<L
 		LinkNode<TKey, TValue> node=searchNode(Key);
 		delete(node);
 	}
-	void delete(LinkNode<TKey, TValue> node)
+	public void delete(LinkNode<TKey, TValue> node)
 	{
 		synchronized (this)
         {
@@ -193,6 +194,50 @@ public class jxLink<TKey extends Comparable<TKey>, TValue> implements Iterable<L
 				Count--;
 			}
         }
+	}
+	public void moveToHead(LinkNode<TKey, TValue> node)
+	{
+		synchronized (this)
+		{
+			if(node!=null)
+			{
+				if(node.Prev!=null){
+					node.Prev.Next=node.Next;
+					node.Prev=null;
+				}
+				else
+				//node就是head
+					return;
+				if(node.Next!=null)
+					node.Next.Prev=node.Prev;
+				else
+					LastSonNode=node.Prev;
+				node.Next=SonNodeList;
+				SonNodeList=node;
+			}
+		}
+	}
+	public void moveToTail(LinkNode<TKey, TValue> node)
+	{
+		synchronized (this)
+		{
+			if(node!=null)
+			{
+				if(node.Next!=null){
+					node.Next.Prev=node.Prev;
+					node.Next=null;
+				}
+				else
+				//node就是tail
+					return;
+				if(node.Prev!=null)
+					node.Prev.Next=node.Next;
+				else
+					SonNodeList=node.Next;
+				node.Prev=LastSonNode;
+				LastSonNode=node;
+			}
+		}
 	}
 	
     /** 
