@@ -35,6 +35,9 @@ public class jxLink<TKey extends Comparable<TKey>, TValue> implements Iterable<L
 			return LastSonNode.getValue();
         return null;
     }
+
+	//是否允许存在相等的key
+	public boolean permitKeyEqual=false;
 		
     //子节点拉链
     LinkNode<TKey, TValue> SonNodeList = null;
@@ -105,12 +108,16 @@ public class jxLink<TKey extends Comparable<TKey>, TValue> implements Iterable<L
      */
     public TValue poll()
     {
+		return pollFromHead();
+    }
+	public TValue pollFromHead()
+	{
 		synchronized (this)
-        {
+		{
 			if(SonNodeList==null)
 				return null;
 			else
-			{				
+			{
 				LinkNode<TKey, TValue> n=SonNodeList;
 				SonNodeList=SonNodeList.Next;
 				if(SonNodeList!=null)
@@ -119,9 +126,28 @@ public class jxLink<TKey extends Comparable<TKey>, TValue> implements Iterable<L
 					LastSonNode=null;
 				Count--;
 				return n.Value;
-			}			
-        }
-    }
+			}
+		}
+	}
+	public TValue pollFromTail()
+	{
+		synchronized (this)
+		{
+			if(LastSonNode==null)
+				return null;
+			else
+			{
+				LinkNode<TKey, TValue> n=LastSonNode;
+				LastSonNode=LastSonNode.Prev;
+				if(LastSonNode!=null)
+					LastSonNode.Next=null;
+				else
+					SonNodeList=null;
+				Count--;
+				return n.Value;
+			}
+		}
+	}
 	public void addByRise(TKey Key,TValue Value)
 	{ 
 		synchronized (this)
@@ -129,14 +155,19 @@ public class jxLink<TKey extends Comparable<TKey>, TValue> implements Iterable<L
 			LinkNode<TKey, TValue> node=SonNodeList;
 			while(node!=null)
 			{
-				if(Key.compareTo(node.getKey())==0)
-				{
-					//已在链中，则更新其值
-					node.Value=Value;
-					return;
+				if(permitKeyEqual){
+					if(Key.compareTo(node.getKey())<=0)
+						break;
 				}
-				if(Key.compareTo(node.getKey())<0)
-					break;
+				else {
+					if (Key.compareTo(node.getKey()) == 0) {
+						//已在链中，则更新其值
+						node.Value = Value;
+						return;
+					}
+					if (Key.compareTo(node.getKey()) < 0)
+						break;
+				}
 				node=node.Next;			
 			}
 			LinkNode<TKey, TValue> n=new LinkNode<TKey, TValue>(Key,Value);

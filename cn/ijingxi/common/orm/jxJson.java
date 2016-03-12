@@ -1,10 +1,7 @@
 
 package cn.ijingxi.common.orm;
 
-import cn.ijingxi.common.util.LinkNode;
-import cn.ijingxi.common.util.Trans;
-import cn.ijingxi.common.util.jxLink;
-import cn.ijingxi.common.util.utils;
+import cn.ijingxi.common.util.*;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -24,8 +21,12 @@ public class jxJson implements Iterable<jxJson>
     //成员变量
     //==============================================================================
     //空节点
-    static jxJson NullJsonNode = new jxJson();	
-    
+    static jxJson NullJsonNode = new jxJson();
+
+    private static String CR="-br-";
+    private static Pattern CRLF = Pattern.compile("(\\r\\n|\\r|\\n|\\n\\r)");
+
+
     private NodeType Type=NodeType.Undefined;
     
     private String Name=null;
@@ -117,11 +118,23 @@ public class jxJson implements Iterable<jxJson>
         return Name;
     }
 	public boolean IsNull() { return Type == NodeType.Undefined; }
-    
+
+    public int size() {
+        if (Type == NodeType.Array && Array != null)
+            return Array.size();
+        else if (Type == NodeType.Object && SubObjectList != null)
+            return SubObjectList.getCount();
+        return 0;
+    }
+
 	public Object getValue()
 	{
-		if(Type == NodeType.Original)
-                return Value;
+		if(Type == NodeType.Original){
+            if(Value!=null)
+                if(utils.judgeIsSameClass(Value.getClass(),"".getClass()))
+                    return replaceCRFromJsonStr((String)Value);
+            return Value;
+        }
 		return null;
 	}
 	public void setValue(Object value)
@@ -153,7 +166,7 @@ public class jxJson implements Iterable<jxJson>
 	public jxJson GetSubObject(String SubName) throws Exception
 	{
 		utils.Check(SubName==null, "需要给出子对象的名字");
-		utils.Check(Type!=NodeType.Object, "只有对象才能读取子对象");
+		utils.Check(Type!=NodeType.Object, "只有对象才能读取子对象:"+Type.toString());
 		if(SubObjectList==null)
 			return null;
 		jxJson node=SubObjectList.search(SubName);
@@ -235,7 +248,7 @@ public class jxJson implements Iterable<jxJson>
     }
 	/**
 	 * 作为数组添加子元素
-	 * @param sub
+	 * @param el
 	 * @throws Exception 
 	 */
     public void AddArrayElement(jxJson el) throws Exception
@@ -254,6 +267,15 @@ public class jxJson implements Iterable<jxJson>
         {
 	    	Array.remove(el.ArrayIndex);    	
         }
+    }
+
+    public static boolean checkResult(jxJson json) throws Exception {
+        if(json!=null&&json.Type==NodeType.Object){
+            jxJson sub=json.GetSubObject("Result");
+            if(sub!=null)
+                return Trans.TransToBoolean(sub.getValue());
+        }
+        return false;
     }
 
     public String TransToStringWithName()
@@ -323,9 +345,12 @@ public class jxJson implements Iterable<jxJson>
         /// </summary>
         /// <param name="jxJson">用$.jxPostJSON传送进来的json对象会被转换成json字符串</param>
         /// <returns></returns>
-        public static jxJson JsonToObject(String jxJson)
+        public static jxJson JsonToObject(String json)
         {
-            if (jxJson == null) return null;
+            if (json == null) return null;
+            //utils.P("JsonToObject json:", json);
+            String  jxJson=replaceCRToJsonStr(json);
+            //utils.P("JsonToObject Replace CR:", jxJson);
             //utils.P("JsonToObject", jxJson);
             jxJson = jxJson.trim();
             jxJson = jxJson.replaceAll("[\r\n]", "");
@@ -440,7 +465,7 @@ public class jxJson implements Iterable<jxJson>
         {
         	int num=m.groupCount();
         	for(int i=1;i<=num;i++)
-        		utils.P("Json group",String.format("Group(%1$s):%2$s",i, m.group(i)));	
+                jxLog.logger.debug("Json group:"+String.format("Group(%1$s):%2$s",i, m.group(i)));
         }
         /** 
          * 实现Iterable接口中要求实现的方法 
@@ -482,7 +507,7 @@ public class jxJson implements Iterable<jxJson>
             	else if(myType==NodeType.Object)
             	{
             		jxJson j=objSubNode.getValue();
-            		objSubNode=objSubNode.getNext();
+            		objSubNode=objSubNode.Next;
             		return j;
             	}
 				return null;
@@ -492,4 +517,24 @@ public class jxJson implements Iterable<jxJson>
                 //未实现这个方法  
             }
         }
+
+    /**
+     * 因为正则表达式只能处理一行数据，所以需要将回车符进行替换；设置回车替换符
+     * @param CRStr
+     */
+    public static void setCRStr(String CRStr){
+        if(CRStr!=null&&CRStr!="")
+            CR=CRStr;
+    }
+
+    private static String replaceCRToJsonStr(String str){
+        if(str!=null)
+            return str.replace("\\n",CR);
+        return str;
+    }
+    private static String replaceCRFromJsonStr(String str){
+        if(str!=null)
+            return str.replace(CR, "\n");
+        return str;
+    }
 }

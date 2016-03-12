@@ -79,7 +79,7 @@ public class jxCron
 	
 	private void setDate() throws Exception
 	{
-		Calendar cal=utils.GetDate();
+		Calendar cal=utils.Now();
 		myYear=cal.get(Calendar.YEAR);
 		Carry c=myMonth.setNumber(cal.get(Calendar.MONTH)+1);
 		if(c==Carry.Negative)

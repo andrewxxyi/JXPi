@@ -11,7 +11,16 @@ public class jxStateMachine<TState extends Enum<?>,TEvent extends Enum<?>>
 	{
 		TState TransToState=null;
 		IDoSomething doCaller=null;		
-	}	
+	}
+	public jxStateMachine(){}
+	public jxStateMachine(boolean async){this.async=async;}
+
+	private boolean async =false;
+
+	//必须设置
+	private IDo2 setStateFunc=null;
+	public void setStateFunc(IDo2 func){setStateFunc=func;}
+
 	//当前状态，本状态机并不保存当前状态，而负责执行
     //private Integer m_CurrentState = 0;
     //状态跳转树
@@ -40,16 +49,21 @@ public class jxStateMachine<TState extends Enum<?>,TEvent extends Enum<?>>
      * @param param 参数
      * @throws Exception 
      */
-    public TState Happen(TState CurrentState,TEvent Event,CallParam param) throws Exception
+    public void Happen(TState CurrentState,TEvent Event,CallParam param) throws Exception
     {
     	String fs=CurrentState.name(),e=Event.name();
     	SMTrans s=m_SMTree.Search(fs, e);
     	if(s!=null)
     	{
-    		s.doCaller.Do(param);
-    		return s.TransToState;
+			setStateFunc.Do(param,s.TransToState);
+			if(s.doCaller!=null)
+				//只改变状态而不执行动作
+				if(async)
+					jxTimer.asyncRun_CallParam(s.doCaller,param);
+				else
+					s.doCaller.Do(param);
     	}
-	    throw new Exception(String.format("当前状态：%s 时发生了事件 %s，未找到相应的状态转换", CurrentState.name(),Event.name()));
+	    //throw new Exception(String.format("当前状态：%s 时发生了事件 %s，未找到相应的状态转换", CurrentState.name(),Event.name()));
     }
 
 }

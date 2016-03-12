@@ -5,7 +5,6 @@ package cn.ijingxi.common.util;
  * @author andrew
  *
  */
-public interface IDo
-{
-	public void Do(Object param) throws Exception;
+public interface IDo{
+	void Do(Object param) throws Exception;
 }

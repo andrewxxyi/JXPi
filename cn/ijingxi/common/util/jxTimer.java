@@ -2,20 +2,22 @@
 package cn.ijingxi.common.util;
 
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class jxTimer
 {
+	public static final int asyncTaskNum=100;
 	private Timer myTimer=null;
 	private int secondNum=0;
 	private IDo dual=null;
 	private Object param=null;
 	public jxTimer(){
-		myTimer = new Timer(); 
+		myTimer = new Timer(true);
 	}
 	/**
 	 * 多少秒以后开始执行
 	 * @param SecondNum
-	 * @param Execer
 	 * @param toDo
 	 * @param param
 	 */
@@ -32,7 +34,6 @@ public class jxTimer
 	/**
 	 * 在什么时间执行
 	 * @param Time
-	 * @param Execer
 	 * @param toDo
 	 * @param param
 	 */
@@ -46,7 +47,6 @@ public class jxTimer
 	/**
 	 * 周期性执行
 	 * @param Period_Second
-	 * @param Execer
 	 * @param toDo
 	 * @param param
 	 */
@@ -70,9 +70,103 @@ public class jxTimer
 			myTimer.schedule(new myTask(dual,param), secondNum * 1000);			
 		}
 	}
-	
+
+	private static ExecutorService asyncService= Executors.newFixedThreadPool(asyncTaskNum);
+	public static void asyncRun(IDo dual,Object param){
+		asyncService.execute(new myThreand1(dual,param));
+	}
+	public static void asyncRun_CallParam(IDoSomething dual,CallParam param){
+		asyncService.execute(new myThreand2(dual,param));
+	}
+	public static Thread asyncRun_Repeat(IDo dual,Object param,boolean canInterrupt){
+		Thread th=new Thread(() -> {
+			while (true) {
+				try {
+					dual.Do(param);
+				} catch (InterruptedException e) {
+					if (canInterrupt)
+						break;
+				} catch (Exception ex) {
+					//最好自己处理异常
+					jxLog.error(ex);
+					return;
+				}
+			}
+		});
+		th.start();
+		return th;
+	}
+
 }
 
+class myThreand1 implements Runnable
+{
+	private IDo toDo=null;
+	private Object param=null;
+
+	myThreand1(IDo toDo,Object param)
+	{
+		this.toDo=toDo;
+		this.param=param;
+	}
+	@Override
+	public void run()
+	{
+		try {
+			toDo.Do(param);
+		} catch (Exception e) {
+			jxLog.error(e);
+		}
+	}
+
+}
+class myThreand2 implements Runnable
+{
+	private IDoSomething toDo=null;
+	private CallParam param=null;
+
+	myThreand2(IDoSomething toDo,CallParam param)
+	{
+		this.toDo=toDo;
+		this.param=param;
+	}
+	@Override
+	public void run()
+	{
+		try {
+			toDo.Do(param);
+		} catch (Exception e) {
+			jxLog.error(e);
+		}
+	}
+
+}
+
+class myThreand3 implements Runnable
+{
+	private IFunc toDo=null;
+	private Object param=null;
+	private Object result=null;
+	private Object sync_lock=new Object();
+
+	myThreand3(IFunc toDo,Object param)
+	{
+		this.toDo=toDo;
+		this.param=param;
+	}
+	@Override
+	public void run()
+	{
+		try {
+			toDo.Do(param);
+		} catch (Exception e) {
+			jxLog.error(e);
+		}
+
+
+	}
+
+}
 class myTask extends TimerTask 
 {
 	private IDo toDo=null;
@@ -83,13 +177,13 @@ class myTask extends TimerTask
 		this.toDo=toDo;
 		this.param=param;
 	}
+	@Override
 	public void run()
 	{
 		try {
 			toDo.Do(param);
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			jxLog.error(e);
 		}
 	}
 

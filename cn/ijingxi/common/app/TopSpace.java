@@ -2,7 +2,6 @@
 package cn.ijingxi.common.app;
 
 import cn.ijingxi.common.Process.*;
-import cn.ijingxi.common.msg.jxMsg;
 import cn.ijingxi.common.orm.*;
 import cn.ijingxi.common.orm.ORM.KeyType;
 import cn.ijingxi.common.util.jxCompare;
@@ -17,24 +16,14 @@ import java.util.UUID;
  */
 public class TopSpace extends jxORMobj
 {
-	public static void Init() throws Exception{	InitClass(ORMType.TopSpace.ordinal(),TopSpace.class);}
+	public static void Init() throws Exception{
+		InitClass(ORMType.TopSpace.ordinal(), TopSpace.class,"顶层空间");
+	}
 	public static void CreateDB() throws Exception
 	{
-		CreateTableInDB(TopSpace.class,null);
-		People p=(People) People.GetByID(People.class, jxSystem.SystemID, null);
-		CreateTopSpace(p,null,"我的空间",null);
-	}
-	public static void CreateDBTableInTS(TopSpace ts) throws Exception
-	{
-		Container.CreateDB(ts);
-		jxProcess.CreateDB(ts);
-		jxTask.CreateDB(ts);
-		PI.CreateDB(ts);
-		WorkNode.CreateDB(ts);
-		Role.CreateDB(ts);
-		Relation.CreateDB(ts);
-		PeopleInTs.CreateDB(ts);
-		ObjTag.CreateDB(ts);
+		CreateTableInDB(TopSpace.class);
+		People p=(People) People.GetByID(People.class, ObjTag.SystemID);
+		CreateTopSpace(p, null, "我的空间", null);
 	}
 
 	@Override
@@ -62,48 +51,40 @@ public class TopSpace extends jxORMobj
 	public static TopSpace getByName(String Name) throws Exception
 	{
 		SelectSql s=new SelectSql();
-		s.AddTable("TopSpace",null);
+		s.AddTable("TopSpace");
 		s.AddContion("TopSpace", "Name", jxCompare.Equal, Name);
-		return (TopSpace) Get(TopSpace.class,s,null);
+		return (TopSpace) Get(TopSpace.class,s);
 	}
-	
-	public PeopleInTs getPeopleInTs(People p) throws Exception
-	{
-		SelectSql s=new SelectSql();
-		s.AddTable("PeopleInTs",this);
-		s.AddContion("PeopleInTs", "ID", jxCompare.Equal, p.ID);
-		return (PeopleInTs) Get(PeopleInTs.class,s,this);		
-	}
-	
+
 	public static Queue<jxORMobj> ListTopSpace(int Start, int Number) throws Exception
 	{
 		SelectSql s=new SelectSql();
-		s.AddTable("TopSpace",null);
+		s.AddTable("TopSpace");
 		s.AddContion("TopSpace", "NoUsed", jxCompare.Equal, false);
 		s.setOffset(Start);
 		s.setLimit(Number);
-		return Select(TopSpace.class,s,null);
+		return Select(TopSpace.class,s);
 	}	
 
-	public Organize CreateOrganize(TopSpace ts,PeopleInTs Caller,String OrganizeName) throws Exception
+	public Organize CreateOrganize(People Caller,String OrganizeName) throws Exception
 	{
-		if(!Caller.CheckRight(this,Caller, Role.RoleName_Assist, false))
-			throw new Exception(String.format("您没有权限执行该操作%s:%s","TopSpace","CreateOrganize"));
+		//if(!Caller.CheckRight(this,Caller, Role.RoleName_Assist, false))
+		//	throw new Exception(String.format("您没有权限执行该操作%s:%s","TopSpace","CreateOrganize"));
 		Organize r=(Organize) Create(Organize.class);
 		r.Name=OrganizeName;
-		DB db=JdbcUtils.GetDB();
+		DB db=JdbcUtils.GetDB(null,this);
 		db.Trans_Begin();
 		try{
         synchronized (db)
         {		
-        	r.Insert(db,ts);
+        	r.Insert(db);
         	Relation rl=(Relation)Create(Relation.class);
         	rl.ObjTypeID=ORMType.TopSpace.ordinal();
         	rl.ObjID=ID;
         	rl.TargetTypeID=ORMType.Organize.ordinal();
         	rl.TargetID=r.ID;
         	rl.RelType=RelationType.Contain;
-        	rl.Insert(db,ts);
+        	rl.Insert(db);
         }
         db.Trans_Commit();
 	}
@@ -113,28 +94,24 @@ public class TopSpace extends jxORMobj
 	}
         return r;
 	}
-	public void AddPeople(PeopleInTs Caller,People p) throws Exception
+	public void AddPeople(People Caller,People p) throws Exception
 	{
-		if(!Caller.CheckRight(this, Caller,Role.RoleName_Admin, false))
-			throw new Exception(String.format("您没有权限执行该操作%s:%s","TopSpace","AddPeople"));
-		DB db=JdbcUtils.GetDB();
+		//if(!Caller.CheckRight(this, Caller,Role.RoleName_Admin, false))
+		//	throw new Exception(String.format("您没有权限执行该操作%s:%s","TopSpace","AddPeople"));
+		DB db=JdbcUtils.GetDB(null,this);
 		db.Trans_Begin();
 		try{
         synchronized (db)
         {		
         	//p.Insert(this);
-        	
-    		PeopleInTs pits=(PeopleInTs) PeopleInTs.Create(PeopleInTs.class);
-    		pits.ID=p.ID;
-    		pits.Insert(this);
-        	
+
         	Relation rl=(Relation)Create(Relation.class);
         	rl.ObjTypeID=ORMType.TopSpace.ordinal();
         	rl.ObjID=ID;
-        	rl.TargetTypeID=ORMType.PeopleInTs.ordinal();
-        	rl.TargetID=pits.ID;
+        	rl.TargetTypeID=ORMType.People.ordinal();
+        	rl.TargetID=Caller.ID;
         	rl.RelType=RelationType.Contain;
-        	rl.Insert(db,this);
+        	rl.Insert(db);
         }
         db.Trans_Commit();
 	}
@@ -145,7 +122,7 @@ public class TopSpace extends jxORMobj
 	}
 	void AddRole(Role r) throws Exception
 	{
-		DB db=JdbcUtils.GetDB();
+		DB db=JdbcUtils.GetDB(null,this);
 		db.Trans_Begin();
 		try{
         synchronized (db)
@@ -156,7 +133,7 @@ public class TopSpace extends jxORMobj
         	rl.TargetTypeID=ORMType.Role.ordinal();
         	rl.TargetID=r.ID;
         	rl.RelType=RelationType.Contain;
-        	rl.Insert(db,this);
+        	rl.Insert(db);
         }
         db.Trans_Commit();
 	}
@@ -176,118 +153,117 @@ public class TopSpace extends jxORMobj
 	 */
 	public static TopSpace CreateTopSpace(People Caller,UUID id,String TSName,String Descr) throws Exception
 	{
+		/*
 		TopSpace ts=(TopSpace) TopSpace.Create(TopSpace.class);
 		ts.Name=TSName;
 		ts.Descr=Descr;
 		if(id!=null)
 			ts.ID=id;
-		ts.Insert(null);
-		CreateDBTableInTS(ts);		
+		ts.Insert();
+		//CreateDBTableInTS(ts);
 		
-		PeopleInTs p=(PeopleInTs) PeopleInTs.Create(PeopleInTs.class);
+		People p=(People) People.Create(People.class);
 		p.ID=Caller.ID;
-		p.NickName=Caller.Name;
-		p.Insert(ts);
+		//p.NickName=Caller.Name;
+		p.Insert();
 		
 		Role r=(Role) Role.Create(Role.class);
 		r.Name=Role.RoleName_Owner;
-		r.Insert(ts);
+		r.Insert();
 		ts.AddRole(r);
-		r.SetMapToNotCheckRight(ts,p);
+		r.SetMapToNotCheckRight(p);
 		
 		r=(Role) Role.Create(Role.class);
 		r.Name=Role.RoleName_Admin;
-		r.Insert(ts);
+		r.Insert();
 		ts.AddRole(r);
-		r.SetMapToNotCheckRight(ts,p);
+		r.SetMapToNotCheckRight(p);
 		
 		r=(Role) Role.Create(Role.class);
 		r.Name=Role.RoleName_Assist;
-		r.Insert(ts);
+		r.Insert();
 		ts.AddRole(r);
-		r.SetMapToNotCheckRight(ts,p);
+		r.SetMapToNotCheckRight(p);
 		
 		r=(Role) Role.Create(Role.class);
 		r.Name=Role.RoleName_Manager;
-		r.Insert(ts);
+		r.Insert();
 		ts.AddRole(r);
-		r.SetMapToNotCheckRight(ts,p);
-		/*
+		r.SetMapToNotCheckRight(p);
+
+
+
 		r=(Role) Role.Create(Role.class);
 		r.Name=Role.RoleName_Agency;
 		r.Insert(ts);
 		ts.AddRole(r);
 		*/
 		
-		return ts;		
+		return null;
 	}
 	
 
 	public int getTaskNum() throws Exception
 	{
 		SelectSql s=new SelectSql();
-		s.AddTable("Relation",this);
-		s.AddTable("jxTask",this);
+		s.AddTable("Relation");
+		s.AddTable("jxTask");
 		s.AddContion("Relation", "ObjTypeID", jxCompare.Equal, ORMType.TopSpace.ordinal());
 		s.AddContion("Relation", "ObjID", jxCompare.Equal, ID);
-		s.AddContion("Relation", "TargetTypeID", jxCompare.Equal, ORMType.jxTask.ordinal());
+		//s.AddContion("Relation", "TargetTypeID", jxCompare.Equal, ORMType.jxTask.ordinal());
 		s.AddContion("Relation", "TargetID", "jxTask","ID");
 		s.AddContion("jxTask", "State", jxCompare.Equal, InstanceState.Doing);
-		return GetCount(jxTask.class,s,this);
+		//return GetCount(jxTask.class,s);
+		return 0;
 	}	
 	public Queue<jxORMobj> ListTask() throws Exception
 	{
 		SelectSql s=new SelectSql();
-		s.AddTable("Relation",this);
-		s.AddTable("jxTask",this);
+		s.AddTable("Relation");
+		s.AddTable("jxTask");
 		s.AddContion("Relation", "ObjTypeID", jxCompare.Equal, ORMType.TopSpace.ordinal());
 		s.AddContion("Relation", "ObjID", jxCompare.Equal, ID);
-		s.AddContion("Relation", "TargetTypeID", jxCompare.Equal, ORMType.jxTask.ordinal());
+		//s.AddContion("Relation", "TargetTypeID", jxCompare.Equal, ORMType.jxTask.ordinal());
 		s.AddContion("Relation", "TargetID", "jxTask","ID");
 		s.AddContion("jxTask", "State", jxCompare.Equal, InstanceState.Doing);
-		return Select(jxTask.class,s,this);
+		//return Select(jxTask.class,s);
+		return null;
 	}	
 	public Queue<jxORMobj> ListPeople() throws Exception
 	{
 		SelectSql s=new SelectSql();
-		s.AddTable("Relation",this);
-		s.AddTable("PeopleInTs",this);
+		s.AddTable("Relation");
+		s.AddTable("People");
 		s.AddContion("Relation", "ObjTypeID", jxCompare.Equal, ORMType.TopSpace.ordinal());
 		s.AddContion("Relation", "ObjID", jxCompare.Equal, ID);
-		s.AddContion("Relation", "TargetTypeID", jxCompare.Equal, ORMType.Role.ordinal());
-		s.AddContion("Relation", "TargetID", "PeopleInTs","ID");
-		return Select(PeopleInTs.class,s,this);
+		s.AddContion("Relation", "TargetTypeID", jxCompare.Equal, ORMType.People.ordinal());
+		s.AddContion("Relation", "TargetID", "People","ID");
+		return Select(People.class,s);
 	}	
 	public Queue<jxORMobj> ListRole() throws Exception
 	{
 		SelectSql s=new SelectSql();
-		s.AddTable("Relation",this);
-		s.AddTable("Role",this);
+		s.AddTable("Relation");
+		s.AddTable("Role");
 		s.AddContion("Relation", "ObjTypeID", jxCompare.Equal, ORMType.TopSpace.ordinal());
 		s.AddContion("Relation", "ObjID", jxCompare.Equal, ID);
 		s.AddContion("Relation", "TargetTypeID", jxCompare.Equal, ORMType.Role.ordinal());
 		s.AddContion("Relation", "TargetID", "Role","ID");
-		return Select(Role.class,s,this);
+		return Select(Role.class,s);
 	}	
 	public Role getRole(String RoleName) throws Exception
 	{
 		SelectSql s=new SelectSql();
-		s.AddTable("Relation",this);
-		s.AddTable("Role",this);
+		s.AddTable("Relation");
+		s.AddTable("Role");
 		s.AddContion("Relation", "ObjTypeID", jxCompare.Equal, ORMType.TopSpace.ordinal());
 		s.AddContion("Relation", "ObjID", jxCompare.Equal, ID);
 		s.AddContion("Relation", "TargetTypeID", jxCompare.Equal, ORMType.Role.ordinal());
 		s.AddContion("Relation", "TargetID", "Role","ID");
 		s.AddContion("Role", "Name",  jxCompare.Equal,RoleName);
-		return (Role) Get(Role.class,s,this);
+		return (Role) Get(Role.class,s);
 	}	
 
-	protected boolean DualEventMsg(jxMsg msg)
-	{
-		
-		return true;
-	}
-	
 	//邀请加入时才广播
 	public void BroadCast() throws Exception
 	{

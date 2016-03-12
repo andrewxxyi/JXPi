@@ -1,10 +1,6 @@
 package cn.ijingxi.common.orm;
 
-import cn.ijingxi.common.app.TopSpace;
-import cn.ijingxi.common.util.LinkNode;
-import cn.ijingxi.common.util.jxCompare;
-import cn.ijingxi.common.util.jxLink;
-import cn.ijingxi.common.util.utils;
+import cn.ijingxi.common.util.*;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -20,7 +16,7 @@ public class SelectSql
 	int Limit=0;
 	int Offset=0;
 	//jxLink<String,String> clsToDBTablename=new jxLink<String,String>();
-	jxLink<String,Integer> Tables=new jxLink<String,Integer>();
+	public jxLink<String,Integer> Tables=new jxLink<String,Integer>();
 	//目前假定，由or组合的各组and链
 	jxLink<Integer,contionLink> con=new jxLink<Integer,contionLink>();
 	public Queue<Object> params=new LinkedList<Object>();
@@ -31,7 +27,7 @@ public class SelectSql
 	 * 用的是类名
 	 * @param ClassName
 	 */
-	public void AddTable(String ClassName,TopSpace ts)
+	public void AddTable(String ClassName)
 	{
 		//ORMClassAttr a=jxORMobj.getClassAttr(ClassName);
 		//String dbtable=a.getDBTableName(ts);
@@ -42,7 +38,7 @@ public class SelectSql
 			ORMClassAttr a=jxORMobj.getClassAttr(ClassName);
 			if(a==null)
 			{
-				utils.P(ClassName, "没有进行rom定义或初始化");
+				jxLog.logger.debug(ClassName+":没有进行rom定义或初始化");
 				return;
 			}
 			if(a.dbTableName!=null)
@@ -50,7 +46,7 @@ public class SelectSql
 			ORMClassAttr p=jxORMobj.getClassAttr(a.SuperClassName);
 			if(p!=null)
 			{
-				AddTable(p.ClsName,ts);
+				AddTable(p.ClsName);
 				//如果存在继承则必须只能有一个主键进行链接
 				//selectContion sc=new selectContion(dbtable,a.PrimaryKeys.get(0),p.getDBTableName(ts),p.PrimaryKeys.get(0));
 				if(a.dbTableName!=null)
@@ -70,13 +66,14 @@ public class SelectSql
 		//utils.P(ClassName, ColName);
 		
 		String cn=jxORMobj.GetClassName(ClassName,ColName);
-		DB db=JdbcUtils.GetDB();
+		DB db=JdbcUtils.GetDB(null,this);
 		ORMClassAttr a=jxORMobj.getClassAttr(cn);
 		if(a==null)
-			throw new Exception("ORM类在使用前必须先初始化："+cn);
+			throw new Exception("ORM类在使用前必须先初始化："+ClassName);
 		FieldAttr fa = a.Fields.get(ColName);
 		selectContion sc=new selectContion(cn,ColName,cp,db.TransValueFromJavaToDB(fa,jxORMobj.Encrypte(ClassName, ColName, value)));
 		AddContion(LinkID,sc);
+		db.Release(this);
 	}
 	public void AddContion(Integer LinkID,selectContion sc)
 	{
@@ -113,7 +110,7 @@ public class SelectSql
 	 * @return
 	 * @throws Exception 
 	 */
-	public String GetSql(DB db,String ClassName,TopSpace ts) throws Exception
+	public String GetSql(DB db,String ClassName) throws Exception
 	{
 		String select=null;
 		select=GetFullName(ClassName,"*");
@@ -124,7 +121,7 @@ public class SelectSql
 				select=utils.StringAdd(select, ",",GetFullName(p.ClsName,"*"));
 			p=jxORMobj.getSuperClassAttr(p.ClsName);
 		}
-		String sql="Select "+select+" From "+GetSql_From(ts)+GetSql_Where(db);		
+		String sql="Select "+select+GetSql_From()+GetSql_Where(db);
 		if(Limit>0)
 		{
 			sql+=" LIMIT "+Limit+" OFFSET "+Offset;
@@ -132,9 +129,50 @@ public class SelectSql
 		}
 		return sql;
 	}
-	public String GetSql_Count(DB db,String ClassName,TopSpace ts) throws Exception
+	public String GetSql(DB db) throws Exception
 	{
-		String sql="Select Count(*) From "+GetSql_From(ts)+GetSql_Where(db);		
+		String select=null;
+		for(LinkNode<String,Integer> node: Tables){
+			select=utils.StringAdd(select,",",GetFullName(node.getKey(), "*"));
+		}
+		String sql="Select "+select+GetSql_From()+GetSql_Where(db);
+		if(Limit>0)
+		{
+			sql+=" LIMIT "+Limit+" OFFSET "+Offset;
+			Offset+=Limit;
+		}
+		return sql;
+	}
+	public String[] getTableNames(){
+		if(Tables.getCount()==0)return null;
+		String[] rs=new String[Tables.getCount()];
+		for(LinkNode<String,Integer> node: Tables)
+			rs[node.getValue()]=node.getKey();
+		return rs;
+	}
+	public String getTableName(String colName){
+		String[] ts=getTableNames();
+		if(ts==null)return null;
+		for(String t:ts){
+			FieldAttr fa = jxORMobj.getFieldAttr(t, colName);
+			if(fa!=null)
+				return t;
+		}
+		return null;
+	}
+	public FieldAttr getFieldAttr(String colName){
+		String[] ts=getTableNames();
+		if(ts==null)return null;
+		for(String t:ts){
+			FieldAttr fa = jxORMobj.getFieldAttr(t, colName);
+			if(fa!=null)
+				return fa;
+		}
+		return null;
+	}
+	public String GetSql_Count(DB db,String ClassName) throws Exception
+	{
+		String sql="Select Count(*) "+GetSql_From()+GetSql_Where(db);
 		return sql;
 	}
 	/**
@@ -143,7 +181,7 @@ public class SelectSql
 	 * @return
 	 * @throws Exception
 	 */
-	String GetSql_Where(DB db) throws Exception
+	public String GetSql_Where(DB db) throws Exception
 	{
 		String w="";
 		for(LinkNode<Integer,contionLink> node : con)
@@ -155,7 +193,7 @@ public class SelectSql
 		}
 		return w;
 	}
-	String GetSql_From(TopSpace ts) throws Exception
+	public String GetSql_From() throws Exception
 	{
 		String f=null;
 		for(LinkNode<String,Integer> node:Tables)
@@ -164,16 +202,20 @@ public class SelectSql
 			ORMClassAttr a=jxORMobj.getClassAttr(clsname);
 			String dtn=GetTableAlias(clsname);
 			if(dtn!=null)
-				if(f==null)
-					f=a.getDBTableName(ts)+" AS "+dtn;
-				else
-					f+=","+a.getDBTableName(ts)+" AS "+dtn;
+				dtn=" AS "+dtn;
+			else
+				dtn="";
+			if(f==null)
+				f=" From "+a.getDBTableName()+dtn;
+			else
+				f+=","+a.getDBTableName()+dtn;
 		}
 		return f;
 	}
 
 	String GetTableAlias(String ClassName) throws Exception
 	{
+		if(Tables.getCount()<2)return null;
 		if(ClassName==null)return null;
 		Integer t=Tables.search(ClassName);
 		if(t==null)
@@ -193,7 +235,7 @@ public class SelectSql
 		}
 		if(alias!=null)
 			return alias+"."+ColName;
-		return null;
+		return ColName;
 	}
 		
 	class selectContion
@@ -229,23 +271,26 @@ public class SelectSql
 			String sc=GetFullName(ClassName,ColName);
 			if(sc==null)
 				return null;
-			sc+=db.TransCompareToString(cp);
-			if(cpValue)
-			{
-				sc +=" ?";
-				//ORMClassAttr a=jxORMobj.getClassAttr(ClassName);
-				//if(a==null)
-				//	throw new Exception("ORM类在使用前必须先初始化："+ClassName);
-				//FieldAttr fa = a.Fields.get(ColName);
-				//params.offer(db.TransValueFromJavaToDB(fa,value));
-				params.offer(value);
+			if(cp==jxCompare.Like){
+				utils.Check(!cpValue,"Like操作只能用于字符串值");
+				sc+=" Like '%"+value.toString()+"%'";
 			}
-			else
-			{
-				String sco=GetFullName(OtherClassName,OtherColName);
-				if(sco==null)
-					return null;
-				sc += sco;
+			else {
+				sc += db.TransCompareToString(cp);
+				if (cpValue) {
+					sc += " ?";
+					//ORMClassAttr a=jxORMobj.getClassAttr(ClassName);
+					//if(a==null)
+					//	throw new Exception("ORM类在使用前必须先初始化："+ClassName);
+					//FieldAttr fa = a.Fields.get(ColName);
+					//params.offer(db.TransValueFromJavaToDB(fa,value));
+					params.offer(value);
+				} else {
+					String sco = GetFullName(OtherClassName, OtherColName);
+					if (sco == null)
+						return null;
+					sc += sco;
+				}
 			}
 			return sc;
 		}

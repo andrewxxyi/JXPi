@@ -10,7 +10,7 @@ import java.util.*;
 
 public class Trans
 {
-	public static UUID NullUUID=UUID.fromString("00000000000000000000000000000000");
+	//public static UUID NullUUID=UUID.fromString("00000000000000000000000000000000");
 	public static String DateTimeFormat="yyyy-MM-dd HH:mm:ss";
 	public static String DateFormat="yyyy-MM-dd";
 	public static SimpleDateFormat DateTimeFormatter=new SimpleDateFormat(DateTimeFormat);
@@ -131,7 +131,21 @@ public class Trans
 		String s=str.substring(0,8)+"-"+str.substring(8,12)+"-"+str.substring(12,16)+"-"+str.substring(16,20)+"-"+str.substring(20); 
 		return UUID.fromString(s);
 	}
-	
+	public static Object TransTo(jxDataType type,Object value){
+		switch (type){
+			case Integer:
+				return TransToInteger(value);
+			case Boolean:
+				return TransToBoolean(value);
+			case Float:
+				return TransToFloat(value);
+			case String:
+				if(value!=null)
+					return value.toString();
+				return null;
+		}
+		return value;
+	}
 	public static Object TransTo(Class<?> cls,Object value)
 	{
 		return TransTo(utils.GetClassName(cls),value);
@@ -238,6 +252,23 @@ public class Trans
 		return Byte.parseByte(String.valueOf(value));
 		}catch(Exception e){	return 0;}
 	}
+	public static String TransToHexString(byte b){
+		int v = b & 0xFF;
+		String hv = Integer.toHexString(v);
+		if (hv.length() < 2)
+			return "0"+hv;
+		return hv;
+	}
+	public static String TransToHexString(byte[] bs,String splitor) {
+		return TransToHexString(bs, 0, bs.length, splitor);
+	}
+	public static String TransToHexString(byte[] bs,int start,int len,String splitor) {
+		String rs = "";
+		for (int i = 0; i < len; i++)
+			rs += TransToHexString(bs[start + i]) + splitor;
+		return rs;
+	}
+
 	public static Date TransToDate(Object str)
 	{
 		if(str==null)return null;
@@ -246,6 +277,19 @@ public class Trans
 		 return DateTimeFormatter.parse(String.valueOf(str));
 		}catch(Exception e){	return null;}
 	}
+	public static Calendar TransToCalendar(Object str)
+	{
+		if(str==null)return null;
+		try
+		{
+			Date d=TransToDate(str);
+			if(d==null)return null;
+			Calendar c=Calendar.getInstance();
+			c.setTime(d);
+			return c;
+		}catch(Exception e){	return null;}
+	}
+
 	public static String TransToChinese(Date dt)
 	{
 		return TransToChinese_Date(dt)+" "+TransToChinese_Time(dt);
@@ -262,7 +306,49 @@ public class Trans
 		c.setTime(dt);
 		return c.get(Calendar.HOUR)+"时"+c.get(Calendar.MINUTE)+"分"+c.get(Calendar.SECOND)+"秒";
 	}
-	
+
+	private static int minute=60;
+	private static int hour=60*minute;
+	private static int day=24*hour;
+	private static int month=30*day;
+	private static int year=12*month;
+
+	/**
+	 * 将秒数转换为时分秒，月以上不太准
+	 * @param secondNum
+	 * @return
+	 */
+	public static String TransToChinese_Duration(int secondNum)
+	{
+		String rs="";
+		int num=secondNum;
+		int n1=num%year;
+		int n2=num/year;
+		if(n2>0)
+			rs+=n2+"年";
+		num=n1;
+		n1=num%month;
+		n2=num/month;
+		if(n2>0)
+			rs+=n2+"月";
+		num=n1;
+		n1=num%day;
+		n2=num/day;
+		if(n2>0)
+			rs+=n2+"天";
+		num=n1;
+		n1=num%hour;
+		n2=num/hour;
+		if(n2>0)
+			rs+=n2+"小时";
+		num=n1;
+		n1=num%minute;
+		n2=num/minute;
+		if(n2>0)
+			rs+=n2+"分";
+		rs+=n1+"秒";
+		return rs;
+	}
 	public static String TransToChinese(int num)
 	{
 		String rs=null;
@@ -411,6 +497,32 @@ public class Trans
 		TransToByteArray(bs,0,num);
 		return bs;
 	}
+
+	public static void TransToByteArray(byte[] bs,int start,short num)
+	{
+		bs[start+0] = (byte)((num >> 8) & 0xFF);
+		bs[start+1] = (byte)(num & 0xFF);
+	}
+	public static byte[] TransToByteArray(short num)
+	{
+		byte[] bs=new byte[2];
+		TransToByteArray(bs,0,num);
+		return bs;
+	}
+	public static Short TransToShort(byte[] bs, int start)
+	{
+		if(bs==null)return 0;
+		Integer value= 0;
+		//由高位到低位
+		for (int i = 0; i < 2; i++)
+		{
+			int shift= (2 - 1 - i) * 8;
+			//往高位游
+			value +=(bs[start+i] & 0xFF) << shift;
+		}
+		return TransToShort(value);
+	}
+
 	public static byte[] TransToByteArray(long num)
 	{
 		byte[] bs=new byte[8];
@@ -445,7 +557,7 @@ public class Trans
 		case "Paused":
 			return InstanceState.Paused;		
 		}
-		return InstanceState.NoActive;
+		return InstanceState.None;
 	}
 
 	private static Map<String,IjxEnum> jxEnumTransor=new HashMap<String,IjxEnum>();

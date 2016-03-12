@@ -2,10 +2,8 @@
 package cn.ijingxi.common.orm;
 
 import cn.ijingxi.common.app.ObjTag;
-import cn.ijingxi.common.app.TopSpace;
-import cn.ijingxi.common.app.jxSystem;
+import cn.ijingxi.common.app.SerialNumber;
 import cn.ijingxi.common.msg.IMsgDual;
-import cn.ijingxi.common.msg.IObjDualMsg;
 import cn.ijingxi.common.msg.Message;
 import cn.ijingxi.common.orm.ORM.KeyType;
 import cn.ijingxi.common.util.*;
@@ -21,6 +19,10 @@ public class jxORMobj implements IMsgDual
 	private static Map<String,ORMClassAttr> ClassAttrTree=new HashMap<String,ORMClassAttr>();
 	private static Map<Integer,ORMClassAttr> ClassAttrTreeByTypeID=new HashMap<Integer,ORMClassAttr>();
 
+	//如果对象被缓存，则当对象发生变化时进行通知
+	private static Queue<IDo> changeInform_cache=new LinkedList<>();
+	//类型ID到类型名的解释
+	private static Map<Integer,String> typeNames=new HashMap<>();
 
 	private ORMClassAttr myClassAttr=null;
 	private Queue<Object> params=null;
@@ -54,31 +56,11 @@ public class jxORMobj implements IMsgDual
 	 */
 	protected void Init_Create(DB db) throws Exception{}
 
-	public void DualMsg(Message msg) {
-		if(myClassAttr.msgDual!=null)
-			for (IObjDualMsg dual:myClassAttr.msgDual)
-				if(dual.Dual(this, msg))
-					return;
-	}
-	public void registerMsg(){
-		if(myClassAttr.msgDual!=null)
-			for (IObjDualMsg dual:myClassAttr.msgDual)
-				dual.Register(this);
-	}
-	public static void setDualMsg(Class<?> cls,IObjDualMsg dual){
-		ORMClassAttr attr=getClassAttr(cls);
-		if(attr!=null) {
-			if(attr.msgDual==null)
-				attr.msgDual = new LinkedList<>();
-			attr.msgDual.offer(dual);
-			utils.P("setDualMsg", "Set done");
-		}
-		else
-			utils.P("setDualMsg", "class Not Init:" + cls.getName());
-	}
+	public void DualMsg(Message msg) { }
+	public void registerMsg(){ }
+
 	/**
 	 * 系统消息分发
-	 * @param msg
 	 * @return 用于组织消息处理链条，返回true则已经处理完毕了，不必继续处理
 	public boolean DualMsg(jxMsg msg) throws Exception
 	{
@@ -169,34 +151,29 @@ public class jxORMobj implements IMsgDual
 		return DeEncryptField(fa, value);
 	}
 
-	public ObjTag getTag(TopSpace ts,String Name) throws Exception
-	{
-		return ObjTag.GetTag(ts, (UUID) getFiledValue(this, "ID"), Name);
+	public ObjTag getTag(DB db,int tagID) throws Exception {
+		if(tagID==0)return null;
+		SelectSql s=new SelectSql();
+		s.AddTable("ObjTag");
+		s.AddContion("ObjTag", "ID", jxCompare.Equal, getID());
+		s.AddContion("ObjTag", "TagID", jxCompare.Equal, tagID);
+		return (ObjTag) Get(db, ObjTag.class, s);
 	}
-	public Queue<jxORMobj> ListTag(TopSpace ts,int StartID) throws Exception
-	{
-		return ObjTag.ListTag(ts, (UUID) getFiledValue(this, "ID"), StartID);
+	public ObjTag getTag(DB db,String tag) throws Exception {
+		return getTag(db,ObjTag.getTagID(tag));
 	}
-	public Queue<jxORMobj> ListTag(TopSpace ts,String Name) throws Exception
-	{
-		return ObjTag.ListTag(ts, (UUID) getFiledValue(this, "ID"), Name);
+	public ObjTag addTag(DB db,int tagID,String Category,String Name,String Descr) throws Exception {
+		ObjTag tag= (ObjTag) ObjTag.Create(db,ObjTag.class);
+		tag.ObjTypeID=getTypeID();
+		tag.ObjID=getID();
+		tag.TagID=tagID;
+		tag.Category=Category;
+		tag.Name=Name;
+		tag.Descr=Descr;
+		tag.Insert(db);
+		return tag;
 	}
-	public ObjTag AddTag(TopSpace ts,int TagID,Float TagValue,String Category,String Descr) throws Exception
-	{
-		return ObjTag.AddTag(ts, TagID, getTypeID(), (UUID) getFiledValue(this, "ID"), TagValue, Category, Descr);
-	}
-	public ObjTag AddTag(DB db,TopSpace ts,int TagID,Float TagValue,String Category,String Descr) throws Exception
-	{
-		return ObjTag.AddTag(db, ts, TagID, getTypeID(), (UUID) getFiledValue(this, "ID"), TagValue, Category,Descr);
-	}
-	public ObjTag AddTag(TopSpace ts,int TagID,Date time,String Category,String Descr) throws Exception
-	{
-		return ObjTag.AddTag(ts, TagID, getTypeID(),(UUID)getFiledValue(this, "ID"), time, Category,Descr);
-	}
-	public ObjTag AddTag(DB db,TopSpace ts,int TagID,Date time,String Category,String Descr) throws Exception
-	{
-		return ObjTag.AddTag(db,ts, TagID, getTypeID(),(UUID)getFiledValue(this, "ID"), time, Category,Descr);
-	}
+
 	
 	public void setObj(String FieldName,jxORMobj obj) throws Exception
 	{
@@ -217,7 +194,15 @@ public class jxORMobj implements IMsgDual
 		try {
 			return (UUID) getFiledValue(this, "ID");
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
+	}
+	public String getName()
+	{
+		try {
+			return (String) getFiledValue(this, "Name");
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		return null;
@@ -240,15 +225,21 @@ public class jxORMobj implements IMsgDual
 		return getTypeID(utils.GetClassName(cls));
 	}
 
-	public static void InitClass(int Typeid,Class<?> cls) throws Exception
+	public static String getTypeName(int typeid){
+		return typeNames.get(typeid);
+	}
+	public static void InitClass(int typeid,Class<?> cls,String typeName) throws Exception
 	{
+		utils.Check(typeNames.containsKey(typeid),
+				"Type ID已存在："+typeid+"，类型名："+typeNames.get(typeid));
+		typeNames.put(typeid,typeName);
 		Field[] fs = cls.getDeclaredFields();
 		//if(fs==null||fs.length==0)return;
 		String classname=utils.GetClassName(cls);
 		ORMClassAttr attr=new ORMClassAttr();
-		attr.TypeID=Typeid;
+		attr.TypeID=typeid;
 		ClassAttrTree.put(classname, attr);
-		ClassAttrTreeByTypeID.put(Typeid, attr);
+		ClassAttrTreeByTypeID.put(typeid, attr);
 		attr.ClsName=classname;
 		attr.clsType=cls;		
 		
@@ -339,101 +330,116 @@ public class jxORMobj implements IMsgDual
 		obj.myClassAttr=attr;
 		return obj;
 	}
-	
-	static void DropTable(Class<?> cls,TopSpace ts) throws Exception
+
+	public static void setChangeInform(IDo dual){
+		changeInform_cache.offer(dual);
+	}
+	private void changeInform(){
+		for(IDo inform:changeInform_cache){
+			try {
+				inform.Do(this);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	static void DropTable(Class<?> cls) throws Exception
 	{
 		ORMClassAttr attr=getClassAttr(cls);
-		if(attr==null||attr.getDBTableName(ts)==null)return;
-		DB db=JdbcUtils.GetDB();
+		if(attr==null||attr.getDBTableName()==null)return;
+		DB db=JdbcUtils.GetDB(null,attr);
         synchronized (db)
-        {		
-			String sql="DROP TABLE "+attr.getDBTableName(ts);
-			Exec(db,sql,null);  	
-			db.Release();			
+        {
+			try {
+				String sql = "DROP TABLE " + attr.getDBTableName();
+				Exec(db, sql, null);
+			}
+			finally {
+				db.Release(attr);
+			}
         }
 	}
 	
-	public static void CreateTableInDB(Class<?> cls,TopSpace ts) throws Exception
+	public static void CreateTableInDB(Class<?> cls) throws Exception
 	{
 		ORMClassAttr attr=getClassAttr(cls);
-		if(attr==null||attr.getDBTableName(ts)==null)return;
-		utils.P("CreateTableInDB", attr.ClsName);
+		if(attr==null||attr.getDBTableName()==null)return;
+		jxLog.logger.debug(attr.ClsName);
 		try
 		{
 			//如果建表，则先试图将旧表删除
-			DropTable(cls,ts);
+			DropTable(cls);
 		}
 		catch(Exception e){}
 		
-		DB db=JdbcUtils.GetDB();
+		DB db=JdbcUtils.GetDB(null,cls);
         synchronized (db)
-        {		
-			String pkl=null;
-			String cl=null;
-			for(String fn:attr.Fields.keySet())
-			{
-				FieldAttr fa = attr.Fields.get(fn);
-				if(fa.IsPrimaryKey&&attr.PrimaryKeys.size()==1)
-				{
-					pkl = fn+" "+db.TransDataTypeFromJavaToDB(fa.FieldType)+" PRIMARY KEY";
-					if(fa.keyType==KeyType.AutoDBGenerated)
-						pkl += " "+db.GetDBGeneratedSQL();
+        {
+			try {
+				String pkl = null;
+				String cl = null;
+				for (String fn : attr.Fields.keySet()) {
+					FieldAttr fa = attr.Fields.get(fn);
+					if (fa.IsPrimaryKey && attr.PrimaryKeys.size() == 1) {
+						pkl = fn + " " + db.TransDataTypeFromJavaToDB(fa.FieldType) + " PRIMARY KEY";
+						if (fa.keyType == KeyType.AutoDBGenerated)
+							pkl += " " + db.GetDBGeneratedSQL();
+					} else
+						cl = utils.StringAdd(cl, ",", fn + " " + db.TransDataTypeFromJavaToDB(fa.FieldType));
 				}
+				if (attr.PrimaryKeys != null && attr.PrimaryKeys.size() > 1) {
+					String ksl = null;
+					for (String ks : attr.PrimaryKeys)
+						ksl = utils.StringAdd(ksl, ",", ks);
+					cl += ",PRIMARY KEY(" + ksl + ")";
+				}
+				String scl = null;
+				if (pkl != null && cl != null)
+					scl = pkl + "," + cl;
+				else if (pkl == null)
+					scl = cl;
 				else
-					cl=utils.StringAdd(cl, ",", fn+" "+db.TransDataTypeFromJavaToDB(fa.FieldType));
-			}
-			if(attr.PrimaryKeys!=null&&attr.PrimaryKeys.size()>1)
-			{
-				String ksl=null;
-				for(String ks:attr.PrimaryKeys)
-					ksl=utils.StringAdd(ksl, ",", ks);
-				cl+=",PRIMARY KEY("+ksl+")";			
-			}
-			String scl=null;
-			if(pkl!=null&&cl!=null)
-				scl=pkl+","+cl;
-			else if(pkl==null)
-				scl=cl;
-			else
-				scl=pkl;
-			String sql="CREATE TABLE "+attr.getDBTableName(ts)+"("+scl+")";
-			utils.P("CreateTableInDB", sql);
-			Exec(db,sql,null);  	
-			if(attr.Indexs!=null)
-			{
-				for(LinkNode<Integer, ArrayList<String>> node:attr.Indexs)
-				{
-					String il=null;
-					for(String index:node.getValue())
-						il=utils.StringAdd(il, ",", index);
-					sql="CREATE INDEX index_"+node.getKey()+"_"+attr.getDBTableName(ts)+" ON "+attr.getDBTableName(ts)+" ("+il+")";		
-					Exec(db,sql,null);  		
+					scl = pkl;
+				String sql = "CREATE TABLE " + attr.getDBTableName() + "(" + scl + ")";
+				jxLog.logger.debug(sql);
+				Exec(db, sql, null);
+				if (attr.Indexs != null) {
+					for (LinkNode<Integer, ArrayList<String>> node : attr.Indexs) {
+						String il = null;
+						for (String index : node.getValue())
+							il = utils.StringAdd(il, ",", index);
+						sql = "CREATE INDEX index_" + node.getKey() + "_" + attr.getDBTableName() + " ON " + attr.getDBTableName() + " (" + il + ")";
+						Exec(db, sql, null);
+					}
 				}
 			}
-			db.Release();		
+			finally {
+				db.Release(cls);
+			}
         }
 	}
 
 
 	//读写删插
-	String GetWherePrimaryKey(DB db) throws Exception
+	String GetWherePrimaryKey(DB db,ORMClassAttr attr) throws Exception
 	{
-		if(myClassAttr.PrimaryKeys==null)return null;
+		if(attr.PrimaryKeys==null)return null;
 		if(params==null)
 			params=new LinkedList<Object>();
 		String w=null;
-		for(String s:myClassAttr.PrimaryKeys)
+		for(String s:attr.PrimaryKeys)
 		{
 			w=utils.StringAdd(w, " And ", s+"=?");
-			FieldAttr fa = myClassAttr.Fields.get(s);
+			FieldAttr fa = attr.Fields.get(s);
 			Object ov=getFiledValue(this, s);
 
 
-			Object odb=db.TransValueFromJavaToDB(fa, jxORMobj.Encrypte(myClassAttr.ClsName, s, ov));
+			Object odb=db.TransValueFromJavaToDB(fa, jxORMobj.Encrypte(attr.ClsName, s, ov));
 			if(odb!=null)
-				utils.P("GetWherePrimaryKey",s+":"+odb.toString());
+				jxLog.logger.debug(s+":"+odb.toString());
 			else
-				utils.P("GetWherePrimaryKey",s+":null");
+				jxLog.logger.debug(s+":null");
 			params.offer(odb);
 			if(dbBackup.needBackup())
 				backupparams.put(s, ov);		
@@ -443,13 +449,18 @@ public class jxORMobj implements IMsgDual
 	//数据出数据库要做：
 	//1、db数据类型到java数据类型的转换
 	//2、解密
-	public static Queue<jxORMobj> Select(Class<?> cls,SelectSql s,TopSpace ts) throws Exception
+	public static Queue<jxORMobj> Select(Class<?> cls,SelectSql s) throws Exception
 	{
-		DB db=JdbcUtils.GetDB();
+		Queue<jxORMobj> rs=null;
+		DB db=JdbcUtils.GetDB(null,cls);
         synchronized (db)
-        {		
-			Queue<jxORMobj> rs=Select(db,cls,s,ts);
-			db.Release();		
+        {
+			try{
+				rs=Select(db,cls,s);
+			}
+			finally {
+				db.Release(cls);
+			}
 			return rs;
         }
 	}
@@ -459,21 +470,24 @@ public class jxORMobj implements IMsgDual
 	 * @param db
 	 * @param cls
 	 * @param s
-	 * @param ts
 	 * @return
 	 * @throws Exception
 	 */
-	public static Queue<jxORMobj> Select(DB db,Class<?> cls,SelectSql s,TopSpace ts) throws Exception
+	public static Queue<jxORMobj> Select(DB db,Class<?> cls,SelectSql s) throws Exception
 	{
-		return Select(db,cls,s,false,ts);
+		return Select(db,cls,s,false);
 	}
-	public static Queue<jxORMobj> Select(Class<?> cls,SelectSql s,boolean Cache, TopSpace ts) throws Exception
+	public static Queue<jxORMobj> Select(Class<?> cls,SelectSql s,boolean Cache) throws Exception
 	{
-		DB db=JdbcUtils.GetDB();
+		Queue<jxORMobj> rs=null;
+		DB db=JdbcUtils.GetDB(null,cls);
 		synchronized (db)
 		{
-			Queue<jxORMobj> rs=Select(db,cls,s,Cache,ts);
-			db.Release();
+			try{
+				rs=Select(db,cls,s,Cache);}
+			finally {
+				db.Release(cls);
+			}
 			return rs;
 		}
 	}
@@ -483,90 +497,133 @@ public class jxORMobj implements IMsgDual
 	 * @param cls
 	 * @param s
 	 * @param Cache 如果为true则读取对象后需进行初始化并进行缓存，否则只是读取对象后进行数据处理
-	 * @param ts
 	 * @return
 	 * @throws Exception
 	 */
-	public static Queue<jxORMobj> Select(DB db,Class<?> cls,SelectSql s,boolean Cache,TopSpace ts) throws Exception
+	public static Queue<jxORMobj> Select(DB db,Class<?> cls,SelectSql s,boolean Cache,IDual dual) throws Exception
 	{
 		Queue<jxORMobj> rs=new LinkedList<jxORMobj>();
 		String clsName=utils.GetClassName(cls);
-		String sql = s.GetSql(db,clsName,ts);
-        utils.P("Select", sql);
+		//String sql = s.GetSql(db,clsName);
+		String sql = s.GetSql(db);
+		//jxLog.logger.debug("Select", sql);
 		
-		Queue<jxLink<String, Object>> dbrs = db.Search(cls, sql, s.params);
-		for(jxLink<String, Object> map:dbrs)
-		{
-			jxORMobj obj=New(cls);
-			if(Cache)
-				obj.initInObjRebuild(db);
-			for(LinkNode<String, Object> node:map)
-			{
-				Object ov=node.getValue();
-				if(ov!=null)
-				{
-					String ks=(String) node.getKey();
-					FieldAttr fa = getFieldAttr(clsName,ks);
-					Object dv=db.TransValueFromDBToJava(fa, ov);
-					Object ev=DeEncryptField(fa, dv);
-					setFiledValue(obj, ks, ev);					
-				}				
-			}
-			rs.offer(obj);
-			if(Cache&&obj.myClassAttr.canCache)
-				myLRU.add(obj);
-		}
-        utils.P("Select result", "size:"+rs.size());
-		return rs;
-	}
-	
-	public static jxJson Select_Dual(DB db,Class<?> cls,SelectSql s,boolean Cache,TopSpace ts,IDual dual) throws Exception
-	{
-		jxJson rs=jxJson.GetArrayNode("rs");
-		String clsName=utils.GetClassName(cls);
-		String sql = s.GetSql(db,clsName,ts);
-        utils.P("Select_Dual", sql);
-		
-		Queue<jxLink<String, Object>> dbrs = db.Search(cls, sql, s.params);
-		for(jxLink<String, Object> map:dbrs)
-		{
-			jxORMobj obj=New(cls);
-			if(Cache)
-				obj.initInObjRebuild(db);
-			for(LinkNode<String, Object> node:map)
-			{
-				Object ov=node.getValue();
-				if(ov!=null)
-				{
-					String ks=(String) node.getKey();
-					FieldAttr fa = getFieldAttr(clsName,ks);
-					if(fa==null){
-						utils.P("属性不存在",clsName+":"+ks);
-						continue;
+		Queue<jxLink<String, Object>> dbrs = null;
+		db = JdbcUtils.GetDB(db,cls);
+		try {
+			dbrs = db.Search(cls, sql, s.params);
+			for (jxLink<String, Object> map : dbrs) {
+				jxORMobj obj = New(cls);
+				for (LinkNode<String, Object> node : map) {
+					Object ov = node.getValue();
+					if (ov != null) {
+						String ks = (String) node.getKey();
+						FieldAttr fa = getFieldAttr(s.Tables, ks);
+						if (fa == null)
+							continue;
+						//utils.P("属性不存在",clsName+":"+ks);
+						Object dv = db.TransValueFromDBToJava(fa, ov);
+						Object ev = DeEncryptField(fa, dv);
+						setFiledValue(obj, ks, ev);
+						if (dual != null)
+							dual.Do(obj, ks, ev);
 					}
-					Object dv=db.TransValueFromDBToJava(fa, ov);
-					Object ev=DeEncryptField(fa, dv);
-					setFiledValue(obj, ks, ev);					
-				}				
+				}
+				if (Cache && obj.myClassAttr.canCache) {
+					jxORMobj no = null;
+					no = myLRU.put(obj);
+					if (no == null)
+						obj.initInObjRebuild(db);
+					else
+						obj = no;
+				} else
+					obj.initInObjRebuild(db);
+				rs.offer(obj);
 			}
-			jxJson sub=null;
-			if(dual!=null)
-				sub=dual.Do(obj);
-			if(sub!=null)
-				rs.AddArrayElement(sub);
-			if(Cache&&obj.myClassAttr.canCache)
-				myLRU.add(obj);
+			jxLog.logger.debug("select result:" + rs.size());
+		}
+		finally {
+			db.Release(cls);
 		}
 		return rs;
 	}
-	
-	
+	public static Queue<jxORMobj> Select(Class<?> cls,SelectSql s,boolean Cache,IDual dual) throws Exception{
+		DB db=JdbcUtils.GetDB(null,cls);
+		synchronized (db)
+		{
+			try {
+				Queue<jxORMobj> rs = Select(db, cls, s, Cache, dual);
+				return rs;
+			}
+			finally {
+				db.Release(cls);
+			}
+		}
+	}
+	public static Queue<jxORMobj> Select(DB db,Class<?> cls,SelectSql s,boolean Cache) throws Exception
+	{
+		return Select(db,cls,s,Cache,null);
+	}
+	/**
+	 * 只能用于单一对象的读取
+	 * @param db
+	 * @param cls
+	 * @param keys
+	 * @return
+	 * @throws Exception
+	 */
+	public static Queue<jxORMobj> Select(DB db,Class<?> cls,Map<String,Object> keys) throws Exception{
+		SelectSql s=new SelectSql();
+		s.AddTable(utils.GetClassName(cls));
+		for(Map.Entry<String, Object> entry : keys.entrySet()){
+			s.AddContion(utils.GetClassName(cls), entry.getKey(), jxCompare.Equal, entry.getValue());
+		}
+		return Select(db,cls,s);
+	}
+	public static Queue<jxORMobj> Select(Class<?> cls,Map<String,Object> keys) throws Exception{
+		SelectSql s=new SelectSql();
+		s.AddTable(utils.GetClassName(cls));
+		for(Map.Entry<String, Object> entry : keys.entrySet()){
+			s.AddContion(utils.GetClassName(cls), entry.getKey(), jxCompare.Equal, entry.getValue());
+		}
+		return Select(cls,s);
+	}
+	public static jxORMobj Get(Class<?> cls,Map<String,Object> keys) throws Exception{
+		SelectSql s=new SelectSql();
+		s.AddTable(utils.GetClassName(cls));
+		for(Map.Entry<String, Object> entry : keys.entrySet()){
+			s.AddContion(utils.GetClassName(cls), entry.getKey(), jxCompare.Equal, entry.getValue());
+		}
+		Queue<jxORMobj> list = Select(cls, s);
+		if(list.size()==1)
+			return list.poll();
+		return null;
+	}
+	public static Queue<jxORMobj> Select(Class<?> cls,SelectSql s,String FieldName,Map<String,Object> extkeys) throws Exception{
+		Queue<jxORMobj> list = Select(cls, s);
+		if(extkeys==null||extkeys.size()==0)return list;
+		Queue<jxORMobj> rs=new LinkedList<>();
+		for(jxORMobj o:list)
+			if(o.judgeExtendValue(FieldName,extkeys))
+				rs.offer(o);
+		return rs;
+	}
+	public static Queue<jxORMobj> Select(Class<?> cls,Map<String,Object> keys,String FieldName,Map<String,Object> extkeys) throws Exception{
+		Queue<jxORMobj> list = Select(cls, keys);
+		if(extkeys==null||extkeys.size()==0)return list;
+		Queue<jxORMobj> rs=new LinkedList<>();
+		for(jxORMobj o:list)
+			if(o.judgeExtendValue(FieldName,extkeys))
+				rs.offer(o);
+		return rs;
+	}
+
 	public static Queue<jxORMobj> Sort_FieldInt(Queue<jxORMobj> ol,String fieldName) throws Exception
 	{
 		jxLink<Integer,jxORMobj> rl=null;
 		for(jxORMobj obj:ol)
 		{
-			rl=addObjToSortList_FieldInt(rl,fieldName,obj);
+			rl=addObjToSortList_FieldInt(rl, fieldName, obj);
 		}
 		if(rl!=null)
 		{
@@ -584,7 +641,7 @@ public class jxORMobj implements IMsgDual
 		jxLink<String,jxORMobj> rl=null;
 		for(jxORMobj obj:ol)
 		{
-			rl=addObjToSortList_FieldString(rl,fieldName,obj);
+			rl=addObjToSortList_FieldString(rl, fieldName, obj);
 		}
 		if(rl!=null)
 		{
@@ -602,7 +659,7 @@ public class jxORMobj implements IMsgDual
 		jxLink<Integer,jxORMobj> rl=null;
 		for(jxORMobj obj:ol)
 		{
-			rl=addObjToSortList_FieldInt(rl,fieldName,obj);
+			rl=addObjToSortList_FieldInt(rl, fieldName, obj);
 		}
 		if(rl!=null)
 			return rl.LastValue();
@@ -613,7 +670,7 @@ public class jxORMobj implements IMsgDual
 		jxLink<String,jxORMobj> rl=null;
 		for(jxORMobj obj:ol)
 		{
-			rl=addObjToSortList_FieldString(rl,fieldName,obj);
+			rl=addObjToSortList_FieldString(rl, fieldName, obj);
 		}
 		if(rl!=null)
 			return rl.LastValue();
@@ -624,7 +681,7 @@ public class jxORMobj implements IMsgDual
 		jxLink<Integer,jxORMobj> rl=null;
 		for(jxORMobj obj:ol)
 		{
-			rl=addObjToSortList_FieldInt(rl,fieldName,obj);
+			rl=addObjToSortList_FieldInt(rl, fieldName, obj);
 		}
 		if(rl!=null)
 			return rl.FirstValue();
@@ -635,7 +692,7 @@ public class jxORMobj implements IMsgDual
 		jxLink<String,jxORMobj> rl=null;
 		for(jxORMobj obj:ol)
 		{
-			rl=addObjToSortList_FieldString(rl,fieldName,obj);
+			rl=addObjToSortList_FieldString(rl, fieldName, obj);
 		}
 		if(rl!=null)
 			return rl.FirstValue();
@@ -647,7 +704,7 @@ public class jxORMobj implements IMsgDual
 		jxLink<Integer,jxORMobj> rl=null;
 		for(jxORMobj obj:ol)
 		{
-			rl=addObjToSortList_ExtraInt(rl,fieldName,Purpose,obj);
+			rl=addObjToSortList_ExtraInt(rl, fieldName, Purpose, obj);
 		}
 		if(rl!=null)
 		{
@@ -665,7 +722,7 @@ public class jxORMobj implements IMsgDual
 		jxLink<String,jxORMobj> rl=null;
 		for(jxORMobj obj:ol)
 		{
-			rl=addObjToSortList_ExtraString(rl,fieldName,Purpose,obj);
+			rl=addObjToSortList_ExtraString(rl, fieldName, Purpose, obj);
 		}
 		if(rl!=null)
 		{
@@ -683,7 +740,7 @@ public class jxORMobj implements IMsgDual
 		jxLink<Integer,jxORMobj> rl=null;
 		for(jxORMobj obj:ol)
 		{
-			rl=addObjToSortList_ExtraInt(rl,fieldName,Purpose,obj);
+			rl=addObjToSortList_ExtraInt(rl, fieldName, Purpose, obj);
 		}
 		if(rl!=null)
 			return rl.LastValue();
@@ -694,7 +751,7 @@ public class jxORMobj implements IMsgDual
 		jxLink<String,jxORMobj> rl=null;
 		for(jxORMobj obj:ol)
 		{
-			rl=addObjToSortList_ExtraString(rl,fieldName,Purpose,obj);
+			rl=addObjToSortList_ExtraString(rl, fieldName, Purpose, obj);
 		}
 		if(rl!=null)
 			return rl.LastValue();
@@ -705,7 +762,7 @@ public class jxORMobj implements IMsgDual
 		jxLink<Integer,jxORMobj> rl=null;
 		for(jxORMobj obj:ol)
 		{
-			rl=addObjToSortList_ExtraInt(rl,fieldName,Purpose,obj);
+			rl=addObjToSortList_ExtraInt(rl, fieldName, Purpose, obj);
 		}
 		if(rl!=null)
 			return rl.FirstValue();
@@ -742,7 +799,7 @@ public class jxORMobj implements IMsgDual
 	{
 		if(list==null)
 			list=new  jxLink<Integer,jxORMobj>();
-		list.addByRise(Trans.TransToInteger(obj.getExtendValue(fieldName,Purpose)), obj);
+		list.addByRise(Trans.TransToInteger(obj.getExtendValue(fieldName, Purpose)), obj);
 		return list;
 	}	
 	private static jxLink<String,jxORMobj> addObjToSortList_ExtraString(jxLink<String,jxORMobj> list,String fieldName,String Purpose,jxORMobj obj) throws Exception
@@ -753,81 +810,118 @@ public class jxORMobj implements IMsgDual
 		return list;
 	}
 	
-	public static int GetCount(Class<?> cls,SelectSql s,TopSpace ts) throws Exception
+	public static int GetCount(Class<?> cls,SelectSql s) throws Exception
 	{
-		DB db=JdbcUtils.GetDB();
+		int rs=0;
+		DB db=JdbcUtils.GetDB(null,cls);
         synchronized (db)
-        {		
-			String clsName=utils.GetClassName(cls);
-			String sql = s.GetSql_Count(db,clsName,ts);
-			int rs=db.GetRS_int(sql, s.params);
-			db.Release();
+        {
+			try {
+				String clsName=utils.GetClassName(cls);
+				String sql = s.GetSql_Count(db,clsName);
+				rs=db.GetRS_int(sql, s.params);
+			}
+			finally {
+				db.Release(cls);
+			}
 			return rs;
         }
 	}
-	public static jxORMobj Get(Class<?> cls,SelectSql s,TopSpace ts) throws Exception
+	public static jxORMobj Get(Class<?> cls,SelectSql s) throws Exception
 	{
-		DB db=JdbcUtils.GetDB();
+		Queue<jxORMobj> rs=null;
+		DB db=JdbcUtils.GetDB(null,cls);
         synchronized (db)
-        {		
-			Queue<jxORMobj> rs=Select(db,cls,s,false,ts);
-			db.Release();
+        {
+			try {
+				rs = Select(db, cls, s, false);
+			}
+			finally {
+				db.Release(cls);
+			}
 			return rs.poll();
         }
 	}
-	public static jxORMobj GetByID(Class<?> cls,UUID ID,TopSpace ts) throws Exception
+	public static jxORMobj Get(DB db,Class<?> cls,SelectSql s) throws Exception
 	{
-		DB db=JdbcUtils.GetDB();
+		Queue<jxORMobj> rs=Select(db, cls, s, false);
+		return rs.poll();
+	}
+	public static jxORMobj GetByID(Class<?> cls,UUID ID) throws Exception
+	{
+		jxORMobj obj=null;
+		DB db=JdbcUtils.GetDB(null,cls);
         synchronized (db)
-        {		
-			jxORMobj obj=GetByID(db,cls,ID,ts);
-			db.Release();		
+        {
+			try {
+				obj = GetByID(db, cls, ID);
+			}
+			finally {
+				db.Release(cls);
+			}
 			return obj;
         }
 	}
-	public static jxORMobj GetByID(String clsName,UUID ID,TopSpace ts) throws Exception
+	public static jxORMobj GetByID(String clsName,UUID ID) throws Exception
 	{
+		Queue<jxORMobj> rs =null;
 		jxORMobj cachers = myLRU.get(ID);
 		if(cachers!=null)
 			return cachers;
-		DB db=JdbcUtils.GetDB();
+		DB db=JdbcUtils.GetDB(null,myLRU);
         synchronized (db)
-        {		
-			ORMClassAttr attr = getClassAttr(clsName);
-			SelectSql s=new SelectSql();
-			s.AddTable(attr.ClsName,ts);
-			s.AddContion(attr.ClsName, attr.PrimaryKeys.get(0), jxCompare.Equal, ID);
-			Queue<jxORMobj> rs=Select(db,attr.clsType,s,true,ts);
-			db.Release();		
+        {
+			try {
+				ORMClassAttr attr = getClassAttr(clsName);
+				SelectSql s = new SelectSql();
+				s.AddTable(attr.ClsName);
+				s.AddContion(attr.ClsName, attr.PrimaryKeys.get(0), jxCompare.Equal, ID);
+				rs = Select(db, attr.clsType, s, true);
+			}
+			finally {
+				db.Release(myLRU);
+			}
 			return rs.poll();
         }
 	}
-	public static jxORMobj GetByID(DB db,Class<?> cls,UUID ID,TopSpace ts) throws Exception
+	public static jxORMobj GetByID(DB db,Class<?> cls,UUID ID) throws Exception
 	{
+		Queue<jxORMobj> rs=null;
+		db=JdbcUtils.GetDB(db, myLRU);
 		jxORMobj cachers = myLRU.get(ID);
 		if(cachers!=null)
 			return cachers;
-		ORMClassAttr attr = getClassAttr(cls);
-		SelectSql s=new SelectSql();
-		s.AddTable(attr.ClsName,ts);
-		s.AddContion(attr.ClsName, attr.PrimaryKeys.get(0), jxCompare.Equal, ID);
-		Queue<jxORMobj> rs=Select(db,cls,s,true,ts);
+		try {
+			ORMClassAttr attr = getClassAttr(cls);
+			SelectSql s = new SelectSql();
+			s.AddTable(attr.ClsName);
+			s.AddContion(attr.ClsName, attr.PrimaryKeys.get(0), jxCompare.Equal, ID);
+			rs = Select(db, cls, s, true);
+		}
+		finally {
+			db.Release(myLRU);
+		}
 		return rs.poll();
 	}
-	public static jxORMobj GetByID(int typeid,UUID id,TopSpace ts) throws Exception
+	public static jxORMobj GetByID(int typeid,UUID id) throws Exception
 	{
+		Queue<jxORMobj> rs=null;
 		jxORMobj cachers = myLRU.get(id);
 		if(cachers!=null)
 			return cachers;
-		DB db=JdbcUtils.GetDB();
+		DB db=JdbcUtils.GetDB(null,myLRU);
         synchronized (db)
-        {		
-			ORMClassAttr attr = getClassAttr(typeid);
-			SelectSql s=new SelectSql();
-			s.AddTable(attr.ClsName,ts);
-			s.AddContion(attr.ClsName, attr.PrimaryKeys.get(0), jxCompare.Equal, id);
-			Queue<jxORMobj> rs=Select(db,attr.clsType,s,true,ts);
-			db.Release();		
+        {
+			try {
+				ORMClassAttr attr = getClassAttr(typeid);
+				SelectSql s = new SelectSql();
+				s.AddTable(attr.ClsName);
+				s.AddContion(attr.ClsName, attr.PrimaryKeys.get(0), jxCompare.Equal, id);
+				rs = Select(db, attr.clsType, s, true);
+			}
+			finally {
+				db.Release(myLRU);
+			}
 			return rs.poll();
         }
 	}
@@ -837,49 +931,49 @@ public class jxORMobj implements IMsgDual
 		
 	}
 	//延迟3分钟后再保存
-	public void DelaySave(TopSpace ts)
+	public void DelaySave()
 	{
 		NeedSave=true;
-		jxTimer.DoAfter(DelaySaveSecond, new IDo(){
-			@Override
-			public void Do(Object param) throws Exception {
-				if(NeedSave)
-					Update((TopSpace) param);
-			}
-		}, ts);
+		jxTimer.DoAfter(DelaySaveSecond, param -> {
+            if(NeedSave)
+                Update();
+        },null);
 	}
 	
-	public void Update(TopSpace ts) throws Exception
+	public void Update() throws Exception
 	{
-		DB db=JdbcUtils.GetDB();
-        synchronized (db)
-        {		
-        	Update(db,ts);
-			NeedSave=false;
-			db.Release();		
-        }
+		Update(null);
 	}
 	//数据进数据库要做：
 	//1、加密
 	//2、java数据类型到db数据类型的转换
-	public void Update(DB db,TopSpace ts) throws Exception
+	public void Update(DB db) throws Exception
 	{
-		Verify();
-		ORMClassAttr attr=myClassAttr;
-		while(attr!=null)
-		{
-			Update(db,attr,ts);
-			if(attr.SuperClassName!=null)
-				attr=getClassAttr(attr.SuperClassName);
-			else
-				break;
-		}		
+		db=JdbcUtils.GetDB(db,this);
+		synchronized (db) {
+			try {
+				Verify();
+				ORMClassAttr attr = myClassAttr;
+				while (attr != null) {
+					Update(db, attr);
+					if (attr.SuperClassName != null)
+						attr = getClassAttr(attr.SuperClassName);
+					else
+						break;
+				}
+				NeedSave = false;
+			}
+			finally {
+				db.Release(this);
+			}
+		}
+		changeInform();
 	}
-	private void Update(DB db,ORMClassAttr attr,TopSpace ts) throws Exception
+	private void Update(DB db,ORMClassAttr attr) throws Exception
 	{
-		if(attr.getDBTableName(ts)==null)return;
+		if(attr.getDBTableName()==null)return;
 		params=new LinkedList<Object>();
-		String sql=null;
+		String sql="Update "+attr.getDBTableName()+" Set ";
 		//if(attr.sql_Update==null)
 		//	sql="Update "+attr.getDBTableName(ts)+" Set ";
 		if(dbBackup.needBackup())
@@ -895,13 +989,15 @@ public class jxORMobj implements IMsgDual
 				Object ov=getFiledValue(this, fn);
 				Object odb=db.TransValueFromJavaToDB(fa,jxORMobj.Encrypte(attr.ClsName, fn, ov));
 				params.offer(odb);
+				/*
 				if(odb!=null)
-					utils.P("update",fn+":"+odb.toString());
+					jxLog.logger.debug(fn+":"+odb.toString());
 				else
-					utils.P("update",fn+":null");
+					jxLog.logger.debug(fn+":null");
+				*/
 
-				if(dbBackup.needBackup())
-					backupparams.put(fn, ov);
+				//if(dbBackup.needBackup())
+				//	backupparams.put(fn, ov);
 			}
 		}
 		/*
@@ -914,41 +1010,42 @@ public class jxORMobj implements IMsgDual
 		else
 			sql=attr.sql_Update;
 		*/
-		sql+=v+" Where "+GetWherePrimaryKey(db);
+		sql+=v+" Where "+GetWherePrimaryKey(db,attr);
 
 		Exec(db,sql,params);
-		dbBackup.backup(attr.ClsName, sql, backupparams);
+		//dbBackup.backup(attr.ClsName, sql, backupparams);
 	}
-	public void Delete(TopSpace ts) throws Exception
+	public void Delete() throws Exception
 	{
-		DB db=JdbcUtils.GetDB();
-        synchronized (db)
-        {		
-        	Delete(db,ts);
-    		if(myClassAttr.canCache)
-    			myLRU.delete(getID());        
-    		db.Release();			
-        }
+		Delete(null);
 	}
-	public void Delete(DB db,TopSpace ts) throws Exception
+	public void Delete(DB db) throws Exception
 	{
-		ORMClassAttr attr=myClassAttr;
-		while(attr!=null)
-		{
-			Delete(db,attr,ts);
-			if(attr.SuperClassName!=null)
-				attr=getClassAttr(attr.SuperClassName);
-			else
-				break;
-		}		
+		db=JdbcUtils.GetDB(db,this);
+		synchronized (db) {
+			try {
+				ORMClassAttr attr = myClassAttr;
+				while (attr != null) {
+					Delete(db, attr);
+					if (attr.SuperClassName != null)
+						attr = getClassAttr(attr.SuperClassName);
+					else
+						break;
+				}
+			}
+			finally {
+				db.Release(this);
+			}
+		}
+		changeInform();
 	}
-	private void Delete(DB db,ORMClassAttr attr,TopSpace ts) throws Exception
+	private void Delete(DB db,ORMClassAttr attr) throws Exception
 	{
-		if(attr.getDBTableName(ts)==null)return;
+		if(attr.getDBTableName()==null)return;
 		params=new LinkedList<Object>();
-		if(dbBackup.needBackup())
-			backupparams=new HashMap<String,Object>();
-		String sql="Delete From "+attr.getDBTableName(ts)+" Where "+GetWherePrimaryKey(db);
+		//if(dbBackup.needBackup())
+		//	backupparams=new HashMap<String,Object>();
+		String sql="Delete From "+attr.getDBTableName()+" Where "+GetWherePrimaryKey(db,attr);
 		/* 缓存还需设置参数
 		if(attr.sql_Delete==null)
 		{
@@ -959,60 +1056,64 @@ public class jxORMobj implements IMsgDual
 			sql=attr.sql_Delete;
 		*/
 		Exec(db,sql,params);
-		dbBackup.backup(attr.ClsName, sql, backupparams);
+		//dbBackup.backup(attr.ClsName, sql, backupparams);
+	}
+	public static void Delete(DB db,Class<?> cls,Map<String,Object> keys) throws Exception {
+		SelectSql s=new SelectSql();
+		s.AddTable(utils.GetClassName(cls));
+		for(Map.Entry<String, Object> entry : keys.entrySet()){
+			s.AddContion(utils.GetClassName(cls), entry.getKey(), jxCompare.Equal, entry.getValue());
+		}
+		String sql="Delete "+s.GetSql_From()+s.GetSql_Where(db);
+		Exec(db,sql,null);
 	}
 
 	/**
 	 * 清空数据
-	 * @param ts
 	 * @throws Exception
 	 */
-	public void Clear(TopSpace ts) throws Exception
+	public void Clear() throws Exception
 	{
-		DB db=JdbcUtils.GetDB();
-        synchronized (db)
-        {		
-        	Clear(db,ts);
-    		if(myClassAttr.canCache)
-    			myLRU.delete(getID());        
-    		db.Release();			
-        }
+		Clear(null);
 	}
-	public void Clear(DB db,TopSpace ts) throws Exception
+	public void Clear(DB db) throws Exception
 	{
-		ORMClassAttr attr=myClassAttr;
-		while(attr!=null)
-		{
-			Clear(db,attr,ts);
-			if(attr.SuperClassName!=null)
-				attr=getClassAttr(attr.SuperClassName);
-			else
-				break;
-		}		
+		db=JdbcUtils.GetDB(db,this);
+		synchronized (db) {
+			try {
+				ORMClassAttr attr = myClassAttr;
+				while (attr != null) {
+					Clear(db, attr);
+					if (attr.SuperClassName != null)
+						attr = getClassAttr(attr.SuperClassName);
+					else
+						break;
+				}
+			}
+			finally {
+				db.Release(this);
+			}
+		}
 	}
-	private void Clear(DB db,ORMClassAttr attr,TopSpace ts) throws Exception
+	private void Clear(DB db,ORMClassAttr attr) throws Exception
 	{
-		if(attr.getDBTableName(ts)==null)return;
-		String sql="Delete * From "+attr.getDBTableName(ts);
+		if(attr.getDBTableName()==null)return;
+		String sql="Delete * From "+attr.getDBTableName();
 		Exec(db,sql,params);
 	}
 	//数据进数据库要做：
 	//1、加密
 	//2、java数据类型到db数据类型的转换
-	public void Insert(TopSpace ts) throws Exception
+	public void Insert() throws Exception
 	{
-		DB db=JdbcUtils.GetDB();
-        synchronized (db)
-        {		
-        	Insert(db,ts);
-    		if(myClassAttr.canCache)
-    			myLRU.add(this);
-    		db.Release();		
-        }
+		Insert(null);
 	}
-	public void Insert(DB db,TopSpace ts) throws Exception
+	public void Insert(DB db) throws Exception
 	{
-		Verify();		
+		db=JdbcUtils.GetDB(db,this);
+		synchronized (db) {
+			try {
+				Verify();
 		/*
 		//因为对象的id可能是自增长列，所以必须从最早的祖类开始插入
 		Stack<ORMClassAttr> al=new Stack<ORMClassAttr>();
@@ -1043,22 +1144,27 @@ public class jxORMobj implements IMsgDual
 			}
 		}
 		*/
-		ORMClassAttr attr=myClassAttr;
-		while(attr!=null)
-		{
-			Insert(db,attr,ts);
-			if(attr.SuperClassName!=null)
-				attr=getClassAttr(attr.SuperClassName);
-			else
-				break;
+				ORMClassAttr attr = myClassAttr;
+				while (attr != null) {
+					Insert(db, attr);
+					if (attr.SuperClassName != null)
+						attr = getClassAttr(attr.SuperClassName);
+					else
+						break;
+				}
+			}
+			finally {
+				db.Release(this);
+			}
 		}
 	}
-	private void Insert(DB db,ORMClassAttr attr,TopSpace ts) throws Exception
+	private void Insert(DB db,ORMClassAttr attr) throws Exception
 	{
-		if(attr.getDBTableName(ts)==null)return;
+		if(attr.getDBTableName()==null)return;
+
 		params=new LinkedList<Object>();
-		if(dbBackup.needBackup())
-			backupparams=new HashMap<String,Object>();
+		//if(dbBackup.needBackup())
+		//	backupparams=new HashMap<String,Object>();
 		String cl=null,vl=null;
 		for(String s:attr.Fields.keySet())
 		{
@@ -1068,9 +1174,9 @@ public class jxORMobj implements IMsgDual
 			if(fa.keyType==KeyType.AutoSystemGenerated)
 			{
 				Object ov=getFiledValue(this,s);
-				if(Trans.JudgeIsDefaultValue(fa.FieldType, ov))
+				//if(Trans.JudgeIsDefaultValue(fa.FieldType, ov))
 					//如果已设置了值则将其再次插入，主要是用于topspace中的数据复制
-					setFiledValue(this,s, jxSystem.System.GetAutoGeneratedID(attr.ClsName));
+					//setFiledValue(this,s, jxSystem.System.GetAutoGeneratedID(attr.ClsName));
 			}
 			cl=utils.StringAdd(cl, ",", s);
 			vl=utils.StringAdd(vl, ",", "?");
@@ -1079,16 +1185,16 @@ public class jxORMobj implements IMsgDual
 			Object dv=db.TransValueFromJavaToDB(fa,ev);
 
 			if(dv!=null)
-				utils.P("Param",dv.toString());
+				jxLog.logger.debug("Param:"+s+ " "+dv.toString());
 			else
-				utils.P("Param", "null");
+				jxLog.logger.debug("Param:"+s+" null");
 
 			params.offer(dv);
-			if(dbBackup.needBackup())
-				backupparams.put(s, v);
+			//if(dbBackup.needBackup())
+			//	backupparams.put(s, v);
 		}
 				
-		String sql="Insert Into "+attr.getDBTableName(ts)+"("+cl+") Values ("+vl+")";
+		String sql="Insert Into "+attr.getDBTableName()+"("+cl+") Values ("+vl+")";
 		/*
 		if(attr.sql_Insert==null)
 		{
@@ -1098,8 +1204,9 @@ public class jxORMobj implements IMsgDual
 		else
 			sql=attr.sql_Insert;
 		*/
-		Exec(db,sql,params);
-		dbBackup.backup(attr.ClsName, sql, backupparams);
+		Exec(db, sql, params);
+
+		//dbBackup.backup(attr.ClsName, sql, backupparams);
 		/*
 		if(attr.AutoGenerateKey!=null)
 		if(attr.IsDBGenerateKey)
@@ -1141,6 +1248,7 @@ public class jxORMobj implements IMsgDual
 		//TransToString是不带对象自身名字的！
 		return root;
 	}
+	private jxJson extJson=null;
 	public jxJson ToJSON() throws Exception
 	{
 		jxJson js=jxJson.GetObjectNode(myClassAttr.ClsName);
@@ -1158,8 +1266,19 @@ public class jxORMobj implements IMsgDual
 			}
 			attr=getSuperClassAttr(myClassAttr.ClsName);
 		}
+		if(extJson!=null)
+			for(jxJson sub:extJson){
+				jxLog.logger.debug("ExtJsonAttr:"+sub.getName()+" " +sub.getValue().toString());
+				js.AddSubObjNode(sub);
+			}
 		//TransToString是不带对象自身名字的！
 		return js;
+	}
+	public void addExtJsonAttr(String attrName,Object v) throws Exception {
+		jxLog.logger.debug("addExtJsonAttr:"+attrName+" " +v.toString());
+		if(extJson==null)
+			extJson=jxJson.GetObjectNode("Extra");
+		extJson.setSubObjectValue(attrName,v);
 	}
 	public String ToJSONString() throws Exception
 	{
@@ -1187,16 +1306,18 @@ public class jxORMobj implements IMsgDual
 	}
 	
 	//扩展属性的处理，子对象是值对象
-	private Map<String,jxJson> CachedExtend=null;
-	private jxJson getExtendJSON(String FieldName) throws Exception
+	//private Map<String,jxJson> CachedExtend=null;
+	protected jxJson getExtendJSON(String FieldName) throws Exception
 	{
-		if(CachedExtend==null)CachedExtend=new HashMap<String,jxJson>();		
-		jxJson js=CachedExtend.get(FieldName);
-		if(js!=null)return js;
+		//if(CachedExtend==null)CachedExtend=new HashMap<String,jxJson>();
+		//jxJson js=CachedExtend.get(FieldName);
+		//if(js!=null)return js;
 		String spv=(String) getFiledValue(this, FieldName);
 		if(spv==null)return null;
-		js=jxJson.JsonToObject(spv);
-		CachedExtend.put(FieldName, js);
+		//jxLog.logger.debug(spv);
+		jxJson js=jxJson.JsonToObject(spv);
+		//jxLog.logger.debug(js.TransToStringWithName());
+		//CachedExtend.put(FieldName, js);
 		return js;
 	}
 	public String getExtendValue(String FieldName,String Purpose) throws Exception
@@ -1206,8 +1327,26 @@ public class jxORMobj implements IMsgDual
 		jxJson sub=js.GetSubObject(Purpose);
 		if(sub!=null)
 			return sub.getValue().toString();
+		if(extJson!=null)
+			return (String) extJson.getSubObjectValue(Purpose);
 		return null;
 	}
+	public boolean judgeExtendValue(String FieldName,String Purpose,Object value) throws Exception{
+		String v=getExtendValue(FieldName,Purpose);
+		if(value!=null){
+			String ov=jxJson.TransValueToJSONString(value);
+			return ov.compareTo(v)==0;
+		}
+		return false;
+	}
+	public boolean judgeExtendValue(String FieldName,Map<String,Object> extkeys) throws Exception{
+		for(Map.Entry<String,Object> e:extkeys.entrySet())
+			if(!judgeExtendValue(FieldName,e.getKey(),e.getValue()))
+				return false;
+		return true;
+	}
+
+
 	//，属性列为数组，子元素是值对象所组成的对象
 	/**
 	 * 扩展属性的处理，读取某扩展属性的值
@@ -1284,7 +1423,7 @@ public class jxORMobj implements IMsgDual
 			sub.setValue(value);
 		else
 			js.AddValue(Purpose, value);
-		CachedExtend.put(FieldName, js);
+		//CachedExtend.put(FieldName, js);
 		setFiledValue(this, FieldName,js.TransToString());
 	}
 	/**
@@ -1351,7 +1490,7 @@ public class jxORMobj implements IMsgDual
 				el.AddValue(k, Keys.get(k));
 			el.AddValue(Purpose, value);
 		}
-		CachedExtend.put(FieldName, js);
+		//CachedExtend.put(FieldName, js);
 		setFiledValue(this, FieldName,js.TransToString());
 	}
 	public void addExtendArraySubNode(String FieldName,jxJson subNode) throws Exception
@@ -1371,7 +1510,7 @@ public class jxORMobj implements IMsgDual
 			js.AddSubObjNode(jarr);
 		}
 		jarr.AddSubObjNode(subNode);
-		CachedExtend.put(FieldName, js);
+		//CachedExtend.put(FieldName, js);
 		setFiledValue(this, FieldName, js.TransToString());
 	}
 	/**
@@ -1430,7 +1569,7 @@ public class jxORMobj implements IMsgDual
 				el.AddValue(k, Keys.get(k));
 			el.AddSubObjNode(subNode);
 		}
-		CachedExtend.put(FieldName, js);
+		//CachedExtend.put(FieldName, js);
 		setFiledValue(this, FieldName,js.TransToString());
 	}
 	protected void delExtendArraySubNode(String FieldName,Map<String,String> Keys) throws Exception
@@ -1440,7 +1579,7 @@ public class jxORMobj implements IMsgDual
 		if(js==null)
 			js=jxJson.GetArrayNode(FieldName);
 		boolean find=false;
-		ArrayList< jxJson> els=js.SubEl();
+		ArrayList<jxJson> els=js.SubEl();
 		for(jxJson j:els)
 		{
 			jxJson sub=null;
@@ -1468,7 +1607,7 @@ public class jxORMobj implements IMsgDual
 		}
 		if(find)
 		{
-			CachedExtend.put(FieldName, js);
+			//CachedExtend.put(FieldName, js);
 			setFiledValue(this, FieldName,js.TransToString());
 		}
 	}
@@ -1491,6 +1630,16 @@ public class jxORMobj implements IMsgDual
 	{
 		return getFieldAttr(utils.GetClassName(cls),FieldName);
 	}
+	static FieldAttr getFieldAttr(jxLink<String,Integer> clsNames, String FieldName)
+	{
+		if(clsNames!=null)
+			for(LinkNode<String,Integer> node:clsNames){
+				FieldAttr fa=getFieldAttr(node.getKey(),FieldName);
+				if(fa!=null)
+					return fa;
+			}
+		return null;
+	}
 	static FieldAttr getFieldAttr(String ClassName,String FieldName)
 	{
 		ORMClassAttr attr=getClassAttr(ClassName);
@@ -1501,7 +1650,7 @@ public class jxORMobj implements IMsgDual
 				return fa;
 			attr=ClassAttrTree.get(attr.SuperClassName);
 		}
-		utils.P("getFieldAttr Null:",ClassName+"->"+FieldName);
+		jxLog.logger.debug("getFieldAttr Null:"+ClassName+"->"+FieldName);
 		return null;
 	}
 	static String GetClassName(String ClassName,String ColName)
@@ -1519,7 +1668,7 @@ public class jxORMobj implements IMsgDual
 		}
 		if(p!=null)
 			return p.ClsName;
-		utils.P("GetClassName Null:",ClassName+"->"+ColName);
+		jxLog.logger.debug("GetClassName Null:"+ClassName+"->"+ColName);
 		return null;
 	}
 	public static String getClassName(int typeid)
@@ -1550,7 +1699,7 @@ public class jxORMobj implements IMsgDual
 		return null;
 	}
 	
-	static Object getFiledValue(jxORMobj obj,String FieldName) throws Exception
+	public static Object getFiledValue(jxORMobj obj,String FieldName) throws Exception
 	{
 		ORMClassAttr attr=obj.myClassAttr;
 		while(attr!=null)
@@ -1578,17 +1727,24 @@ public class jxORMobj implements IMsgDual
 		}
 	}
 
+	public static Map<String,Object> getMapParam(String k,Object v){
+		Map<String,Object> rs=new HashMap<>();
+		rs.put(k,v);
+		return rs;
+	}
+
+	public void setSN(String Purpose,String Model) throws Exception {
+		SerialNumber sn= SerialNumber.New(Purpose,Model);
+		sn.ObjID=getID();
+		sn.Update();
+	}
+	public SerialNumber getSN() throws Exception {
+		SerialNumber sn= (SerialNumber) getTag(null,"序列号");
+		return sn;
+	}
+
 }
 
-class FieldAttr
-{
-	Class<?> FieldType=null;
-	Field field=null;
-	boolean IsEnum=false;
-	boolean  Encrypted=false;
-	boolean IsPrimaryKey=false;
-	ORM.KeyType keyType=ORM.KeyType.None;
-}
 class ORMClassAttr
 {
 	String ClsName=null;
@@ -1603,17 +1759,12 @@ class ORMClassAttr
 	jxLink<Integer,ArrayList<String>> Indexs=null;
 	Map<String,FieldAttr> Fields=new HashMap<String,FieldAttr>();
 
-	Queue<IObjDualMsg> msgDual=null;
-		
-	String sql_Insert=null;
-	String sql_Update=null;
-	String sql_Delete=null;
-	
-	String getDBTableName(TopSpace ts)
+	String getDBTableName()
 	{
-		if(ts==null)return dbTableName;
+		//if(ts==null)return dbTableName;
 		if(dbTableName==null)return null;
-		return dbTableName+"_"+Trans.TransToString(ts.ID);
+		//return dbTableName+"_"+Trans.TransToString(ts.ID);
+		return dbTableName;
 	}
 }
 

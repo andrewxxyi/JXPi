@@ -2,20 +2,32 @@
 package cn.ijingxi.common.app;
 
 import cn.ijingxi.common.orm.*;
-import cn.ijingxi.common.util.Trans;
 import cn.ijingxi.common.util.jxCompare;
+import cn.ijingxi.common.util.utils;
 
 import java.util.*;
 
 public class ObjTag extends jxORMobj
 {
+	public static final int UserTagID=0x1000000;
+
+	public static ObjTag System=null;
+	public static UUID SystemID=null;
+
 	public static void Init() throws Exception{
-		InitClass(ORMType.ObjTag.ordinal(),ObjTag.class);
-		InitTagList(tags);
+		InitClass(ORMType.ObjTag.ordinal(),ObjTag.class,"标记");
+		InitTagList(tags,1);
+		System=getSystem();
+		if(System!=null)
+			SystemID=System.ID;
 	}
-	public static void CreateDB(TopSpace ts) throws Exception
+	public static void CreateDB() throws Exception
 	{
-		CreateTableInDB(ObjTag.class, ts);
+		CreateTableInDB(ObjTag.class);
+		System=(ObjTag) jxORMobj.Create(ObjTag.class);
+		System.TagID=getTagID("系统");
+		System.Insert(null);
+		SystemID=System.ID;
 	}
 	@Override
 	protected void Init_Create(DB db) throws Exception
@@ -39,9 +51,12 @@ public class ObjTag extends jxORMobj
 	public int TagOrder;
 
 	@ORM(Index=3)
-	public String Category;
+	public String Name;
 
 	@ORM(Index=4)
+	public String Category;
+
+	@ORM
 	public String Descr;
 	
 	@ORM(Descr="标记是可以带有状态的")
@@ -62,145 +77,62 @@ public class ObjTag extends jxORMobj
 	@ORM(Descr="json格式的附加信息")
 	public String Info;
 
+	@ORM
+	public boolean Used;
 
-	/**
-	 * 专用于ObjTag衍生出来的无额外数据表的类
-	 * @param cls
-	 * @param db
-	 * @param ObjID
-	 * @param Category
-	 * @return
-	 * @throws Exception
-	 */
-	public static Queue<jxORMobj> ListTagByCategory(Class<?> cls,DB db,UUID ObjID,String Category) throws Exception
+	public static Queue<jxORMobj> ListTag(Class<?> cls,Map<String,Object> ks) throws Exception
 	{
 		SelectSql s=new SelectSql();
-		s.AddTable("ObjTag", null);
-		if(ObjID!=null)
-			s.AddContion("ObjTag", "ObjID", jxCompare.Equal, ObjID);
-		s.AddContion("ObjTag", "Category", jxCompare.Equal, Category);
-		return Select(db,cls,s,null);
+		s.AddTable("ObjTag");
+		for(Map.Entry<String, Object> entry : ks.entrySet())
+			s.AddContion("ObjTag", entry.getKey(), jxCompare.Equal, entry.getValue());
+		return Select(cls,s);
 	}
-	public static Queue<jxORMobj> ListTagByCategory(Class<?> cls,UUID ObjID,String Category) throws Exception
+	public static Queue<jxORMobj> ListTag(DB db,Class<?> cls,Map<String,Object> ks) throws Exception
 	{
 		SelectSql s=new SelectSql();
-		s.AddTable("ObjTag", null);
-		if(ObjID!=null)
-			s.AddContion("ObjTag", "ObjID", jxCompare.Equal, ObjID);
-		s.AddContion("ObjTag", "Category", jxCompare.Equal, Category);
-		return Select(cls,s,null);
+		s.AddTable("ObjTag");
+		for(Map.Entry<String, Object> entry : ks.entrySet())
+			s.AddContion("ObjTag", entry.getKey(), jxCompare.Equal, entry.getValue());
+		return Select(db,cls,s);
 	}
-	public static Queue<jxORMobj> ListTag(TopSpace ts,UUID ObjID,String TagName) throws Exception
-	{
-		SelectSql s=new SelectSql();
-		s.AddTable("ObjTag", ts);
-		s.AddContion("ObjTag", "ObjID", jxCompare.Equal, ObjID);
-		if(TagName!=null && TagName!="")
-			s.AddContion("ObjTag", "TagID", jxCompare.Equal, getTagID(TagName));
-		return Select(ObjTag.class,s,ts);
-	}	
-	public static ObjTag GetTag(TopSpace ts,UUID ObjID,String TagName) throws Exception
-	{
-		SelectSql s=new SelectSql();
-		s.AddTable("ObjTag",ts);
-		s.AddContion("ObjTag", "ObjID", jxCompare.Equal, ObjID);
-		s.AddContion("ObjTag", "TagID", jxCompare.Equal, getTagID(TagName));
-		Queue<jxORMobj> tl = Select(ObjTag.class,s,ts);
-		for(jxORMobj obj:tl)
-		{
-			ObjTag tag=(ObjTag)obj;
-			if(tag!=null)
-				return tag;
-		}
-		return null;
-	}	
 	/**
 	 * 列表TagID在[StartID,StartID&0xffffff00+0x100)区间内的所有tag
-	 * @param ts
 	 * @param ObjID
 	 * @param StartID 是自StartID起直至下一个id段
 	 * @return
 	 * @throws Exception
 	 */
-	public static Queue<jxORMobj> ListTag(TopSpace ts,UUID ObjID,int StartID) throws Exception
+	public static Queue<jxORMobj> ListTag(UUID ObjID,int StartID) throws Exception
 	{
 		int endid=StartID&0xffffff00+0x100;
 		SelectSql s=new SelectSql();
-		s.AddTable("ObjTag",ts);
-		s.AddContion("ObjTag", "ObjID", jxCompare.Equal, ObjID);
+		s.AddTable("ObjTag");
+		if(ObjID!=null)
+			s.AddContion("ObjTag", "ObjID", jxCompare.Equal, ObjID);
 		s.AddContion("ObjTag", "TagID", jxCompare.GreateEqual, StartID);
 		s.AddContion("ObjTag", "TagID", jxCompare.Less, endid);
-		return Select(ObjTag.class,s,ts);
-	}
-	public static ObjTag AddTag(TopSpace ts,int TagID,int ObjTypeID,int TagOrder,UUID ObjID,Float TagValue,String Category,String Descr) throws Exception{
-		ObjTag tag=(ObjTag) ObjTag.Create(ObjTag.class);
-		tag.TagID=TagID;
-		tag.ObjTypeID=ObjTypeID;
-		tag.TagOrder=TagOrder;
-		tag.ObjID=ObjID;
-		tag.Number=TagValue;
-		tag.Category=Category;
-		tag.Descr=Descr;
-		tag.Insert(ts);
-		return tag;
-	}
-	public static ObjTag AddTag(TopSpace ts,int TagID,int ObjTypeID,UUID ObjID,Float TagValue,String Category,String Descr) throws Exception
-	{
-		return AddTag(ts,TagID,ObjTypeID,0,ObjID,TagValue,Category,Descr);
-	}
-	public static ObjTag AddTag(DB db,TopSpace ts,int TagID,int ObjTypeID,int TagOrder,UUID ObjID,Float TagValue,String Category,String Descr) throws Exception{
-		ObjTag tag=(ObjTag) ObjTag.Create(ObjTag.class);
-		//tag.Name=getTagName(TagID);
-		tag.TagID=TagID;
-		tag.ObjTypeID=ObjTypeID;
-		tag.ObjID=ObjID;
-		tag.TagOrder=TagOrder;
-		tag.Number=TagValue;
-		tag.Category=Category;
-		tag.Descr=Descr;
-		tag.Insert(db, ts);
-		return tag;
-	}
-	public static ObjTag AddTag(DB db,TopSpace ts,int TagID,int ObjTypeID,UUID ObjID,Float TagValue,String Category,String Descr) throws Exception
-	{
-		return AddTag(db,ts,TagID,ObjTypeID,0,ObjID,TagValue,Category,Descr);
-	}
-	public static ObjTag AddTag(TopSpace ts,int TagID,int ObjTypeID,int TagOrder,UUID ObjID,Date time,String Category,String Descr) throws Exception{
-		ObjTag tag=(ObjTag) ObjTag.Create(ObjTag.class);
-		//tag.Name=getTagName(TagID);
-		tag.TagID=TagID;
-		tag.ObjTypeID=ObjTypeID;
-		tag.ObjID=ObjID;
-		tag.TagOrder=TagOrder;
-		tag.Time=time;
-		tag.Category=Category;
-		tag.Descr=Descr;
-		tag.Insert(ts);
-		return tag;
-	}
-	public static ObjTag AddTag(TopSpace ts,int TagID,int ObjTypeID,UUID ObjID,Date time,String Category,String Descr) throws Exception
-	{
-		return AddTag(ts,TagID,ObjTypeID,0,ObjID,time,Category,Descr);
-	}
-	public static ObjTag AddTag(DB db,TopSpace ts,int TagID,int ObjTypeID,int TagOrder,UUID ObjID,Date time,String Category,String Descr) throws Exception{
-		ObjTag tag=(ObjTag) ObjTag.Create(ObjTag.class);
-		//tag.Name=getTagName(TagID);
-		tag.TagID=TagID;
-		tag.ObjTypeID=ObjTypeID;
-		tag.ObjID=ObjID;
-		tag.TagOrder=TagOrder;
-		tag.Time=time;
-		tag.Category=Category;
-		tag.Descr=Descr;
-		tag.Insert(db, ts);
-		return tag;
-	}
-	public static ObjTag AddTag(DB db,TopSpace ts,int TagID,int ObjTypeID,UUID ObjID,Date time,String Category,String Descr) throws Exception
-	{
-		return AddTag(db,ts,TagID,ObjTypeID,0,ObjID,time,Category,Descr);
+		return Select(ObjTag.class,s);
 	}
 
-	private static String[] tags={"记录","组","状态切换","说明","计划","开始时间","结束时间"};
+	private static String[] tags={"系统","记录","权限","组","文件","状态切换","说明","计划",
+			"开始时间","结束时间",
+			"序列号",
+			"智能前端配置"
+	};
+
+	private static ObjTag getSystem(){
+		Map<String, Object> map = getMapParam("TagID", getTagID("系统"));
+		Queue<jxORMobj> list = null;
+		try {
+			list = ListTag(ObjTag.class, map);
+			if(list.size()==1)
+				return (ObjTag) list.poll();
+		} catch (Exception e) {
+			//e.printStackTrace();
+		}
+		return null;
+	}
 
 	/*
 	//系统
@@ -222,54 +154,18 @@ public class ObjTag extends jxORMobj
 	//预算
 	public static final int Tag_Budget=0x2100;
 	*/
-	
 
-	public static void Log(TopSpace ts,int TypeID,UUID ID,int LogLevel,String Name,String Descr) throws Exception
-	{
-		ObjTag tag=(ObjTag) ObjTag.Create(ObjTag.class);
-		tag.TagID=getTagID("日志");
-		//tag.Name=getTagName(Tag_System_Log);
-		tag.ObjTypeID=TypeID;
-		tag.ObjID=ID;
-		tag.Number=Trans.TransToFloat(LogLevel);
-		//tag.Name=Name;
-		tag.Descr=Descr;
-		tag.Insert(ts);
-	}
-	public static void Log(DB db,TopSpace ts,int TypeID,UUID ID,int LogLevel,String Name,String Descr) throws Exception
-	{
-		ObjTag tag=(ObjTag) ObjTag.Create(ObjTag.class);
-		tag.TagID=getTagID("日志");
-		//tag.Name=getTagName(Tag_System_Log);
-		tag.ObjTypeID=TypeID;
-		tag.ObjID=ID;
-		tag.Number=Trans.TransToFloat(LogLevel);
-		//tag.Name=Name;
-		tag.Descr=Descr;
-		tag.Insert(db, ts);
-	}
-
-	//每调用InitTagList一次则myTagID增加0x1000
-	private static int myTagID=0;
-
-	/**
-	 * 要使用Tag，则应确保InitTagList调用顺序一致，不同模块定义的tag就可以不必担心tagid的冲突了
-	 * @param tags
-	 */
-	public static void InitTagList(String[] tags) throws Exception {
-		myTagID+=0x1000;
-		InitTagList(tags,myTagID);
-	}
 	private static Map<Integer,String> tagList=new HashMap<Integer,String>();
 	private static Map<String,Integer> tagList_KS=new HashMap<String,Integer>();
 	public static void InitTagList(String[] tags,int initTagID) throws Exception {
-		int i=0;
+		utils.Check(tagList.containsKey(initTagID),"TagID已使用："+initTagID);
+		int tid=initTagID;
 		for(String s:tags){
 			if(tagList_KS.containsKey(s))
 				throw new Exception("Tag already define:"+s);
-			int tid=initTagID+i;
 			tagList_KS.put(s,tid);
 			tagList.put(tid,s);
+			tid++;
 		}
 	}
 
@@ -278,7 +174,7 @@ public class ObjTag extends jxORMobj
 		return tagList.get(TagID);
 	}
 
-	public static int getTagID(String Name)
+	public static Integer getTagID(String Name)
 	{
 		return tagList_KS.get(Name);
 	}

@@ -1,45 +1,22 @@
 package cn.ijingxi.common.msg;
 
-import cn.ijingxi.common.app.TopSpace;
 import cn.ijingxi.common.orm.*;
-import cn.ijingxi.common.util.IjxEnum;
 
 import java.util.Date;
 import java.util.UUID;
 
 /**
- * 使用前需调用setMsgService设置消息服务
+ * 使用前需设置消息服务
  * 然后对需要进行消息处理的类，调用jxORMobj.setDualMsg来设置消息处理函数
  * Created by andrew on 15-9-4.
  */
 public class Message extends jxORMobj{
 
-    public enum MsgType implements IjxEnum
-    {
-        //事件
-        Event,
-        //消息
-        Info;
+    public static final UUID MsgID_Auth=UUID.fromString("00000000-0000-0000-0000-000000000001");
+    public static final UUID MsgID_Log=UUID.fromString("00000000-0000-0000-0000-000000000002");
+    public static final UUID MsgID_Config=UUID.fromString("00000000-0000-0000-0000-000000000003");
 
-        @Override
-        public Object TransToORMEnum(Integer param)
-        {
-            return MsgType.values()[param];
-        }
 
-        @Override
-        public String toChinese()
-        {
-            switch(this)
-            {
-                case Event:
-                    return "事件";
-                case Info:
-                    return "消息";
-            }
-            return "";
-        }
-    }
     public static ORMID GetORMID(UUID ID)
     {
         return new ORMID(ORMType.Message.ordinal(),ID);
@@ -52,20 +29,24 @@ public class Message extends jxORMobj{
         CreateTime=new Date();
     }
 
-    public static void Init() throws Exception{	InitClass(ORMType.Message.ordinal(),Message.class);}
-    public static void CreateDB(TopSpace ts) throws Exception
+    public static void Init() throws Exception {
+        InitClass(ORMType.Message.ordinal(), Message.class,"消息");
+    }
+    public static void CreateDB() throws Exception
     {
-        CreateTableInDB(Message.class,ts);
+        CreateTableInDB(Message.class);
     }
 
-    private static IMsgService msgService = null;
-    public static void setMsgService(IMsgService service){
-        msgService=service;
+    public static Message New(int SenderTypeID,UUID SenderID,int ReceiverTypeID,UUID ReceiverID,MessageType MsgType,String Msg) throws Exception {
+        Message msg= (Message) Message.Create(Message.class);
+        msg.SenderTypeID=SenderTypeID;
+        msg.SenderID=SenderID;
+        msg.ReceiverTypeID=ReceiverTypeID;
+        msg.ReceiverID=ReceiverID;
+        msg.MsgType = MsgType;
+        msg.Msg=Msg;
+        return msg;
     }
-    public static IMsgService getMsgService(){
-        return msgService;
-    }
-
 
     @ORM
     public int SenderTypeID;
@@ -78,7 +59,10 @@ public class Message extends jxORMobj{
     public UUID ReceiverID;
 
     @ORM
-    public MsgType MessageType;
+    public MessageType MsgType;
+
+    @ORM
+    public String Msg;
 
     @ORM(Index=3)
     public Date CreateTime;
@@ -92,7 +76,6 @@ public class Message extends jxORMobj{
     public String Info;
 
     public void send(){
-        if(msgService!=null)
-            msgService.SendMsg(this);
+        MsgAgent.send(this);
     }
 }

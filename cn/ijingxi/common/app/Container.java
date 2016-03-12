@@ -18,10 +18,12 @@ public class Container extends jxORMobj
 			CreateTime=new Date();
 	}
 
-	public static void Init() throws Exception{	InitClass(ORMType.Container.ordinal(),Container.class);}
-	public static void CreateDB(TopSpace ts) throws Exception
+	public static void Init() throws Exception{
+		InitClass(ORMType.Container.ordinal(),Container.class,"容器");
+	}
+	public static void CreateDB() throws Exception
 	{
-		CreateTableInDB(Container.class,ts);
+		CreateTableInDB(Container.class);
 	}
 	
 	public static ORMID GetORMID(UUID ID)

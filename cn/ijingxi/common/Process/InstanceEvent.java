@@ -7,7 +7,9 @@ public enum InstanceEvent implements IjxEnum
 {
 	Error,
 	Create,
-	//触发节点，但节点能否执行要看情况
+	//触碰节点，但该节点未必能得到执行
+	Touch,
+	//触发节点，该节点得以执行
 	Trigger,
 	//正常结束
 	Close,
@@ -33,6 +35,8 @@ public enum InstanceEvent implements IjxEnum
 			return "错误";
 		case Create:
 			return "创建";
+		case Touch:
+			return "触碰";
 		case Trigger:
 			return "激发";
 		case Close:

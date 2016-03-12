@@ -8,7 +8,8 @@ public enum jxCompare implements IjxEnum
 	Less,
 	LessEqual,
 	Greate,
-	GreateEqual;
+	GreateEqual,
+	Like;
 	@Override
 	public Object TransToORMEnum(Integer param) 
 	{
@@ -32,6 +33,8 @@ public enum jxCompare implements IjxEnum
 			return "大于";
 		case GreateEqual:
 			return "大于等于";
+		case Like:
+			return "类似";
 		}
 		return "";
 	}

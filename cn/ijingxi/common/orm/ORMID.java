@@ -7,7 +7,7 @@ import java.util.UUID;
 
 public class ORMID implements Comparable<ORMID>
 {
-	public static final ORMID SystemID=new ORMID(0,(UUID)null);
+	//public static final ORMID SystemID=new ORMID(0,(UUID)null);
 	
 	Integer TypeID;
 	public Integer getTypeID(){return TypeID;}

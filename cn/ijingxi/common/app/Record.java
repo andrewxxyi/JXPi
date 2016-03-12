@@ -28,16 +28,16 @@ public class Record extends ObjTag {
 
     public Queue<jxORMobj> List(UUID objID) throws Exception {
         SelectSql s=new SelectSql();
-        s.AddTable("ObjTag", null);
+        s.AddTable("ObjTag");
         s.AddContion("ObjTag", "ObjID", jxCompare.Equal, objID);
-        return Select(Record.class,s,null);
+        return Select(Record.class,s);
     }
     public Queue<jxORMobj> List(UUID objID,String Category) throws Exception {
         SelectSql s=new SelectSql();
-        s.AddTable("ObjTag", null);
+        s.AddTable("ObjTag");
         s.AddContion("ObjTag", "ObjID", jxCompare.Equal, objID);
         s.AddContion("ObjTag", "Category", jxCompare.Equal, Category);
-        return Select(Record.class,s,null);
+        return Select(Record.class,s);
     }
 
 

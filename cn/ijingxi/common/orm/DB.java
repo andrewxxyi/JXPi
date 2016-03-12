@@ -19,8 +19,8 @@ public interface DB
 	public void Trans_Commit();
 	public void Trans_Cancel();
 	
-	
-	public void Release() throws SQLException;
+	public void setOwner(Object obj);
+	public void Release(Object obj) throws SQLException;
 	//Connection最好只用于内部，用户只用Release
 	//public Connection GetConnection();
 	//public void ReleaseConnection(Connection conn) throws SQLException;
@@ -30,7 +30,7 @@ public interface DB
 	//执行delete、update、insert命令
 	public boolean Exec(String sql,Queue<Object> param) throws Exception;
 	//执行select命令
-	public Queue<jxLink<String, Object>> Search(Class<?> cls, String sql,Queue<Object> param) throws Exception;
+	public Queue<jxLink<String, Object>> Search(Class<?> cls,String sql,Queue<Object> param) throws Exception;
 	//执行select count命令
 	public int GetRS_int(String sql,Queue<Object> param) throws Exception;
 

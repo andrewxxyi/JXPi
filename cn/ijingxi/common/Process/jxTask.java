@@ -1,6 +1,6 @@
 
 package cn.ijingxi.common.Process;
-
+/*
 import cn.ijingxi.common.app.*;
 import cn.ijingxi.common.orm.*;
 import cn.ijingxi.common.orm.ORM.KeyType;
@@ -15,6 +15,7 @@ import java.util.UUID;
  * @author andrew
  *
  */
+/*
 public class jxTask extends WorkNode
 {		
 	public static ORMID GetORMID(UUID ID)
@@ -78,7 +79,7 @@ public class jxTask extends WorkNode
 	*/
 	
 	
-	
+	/*
 	@ORM(keyType=KeyType.PrimaryKey)
 	public UUID ID;
 			
@@ -105,6 +106,7 @@ public class jxTask extends WorkNode
 	 * @return
 	 * @throws Exception
 	 */
+/*
 	public Queue<jxORMobj> ListExecer(TopSpace ts,RelationType rt) throws Exception
 	{
 		SelectSql s=new SelectSql();
@@ -144,23 +146,7 @@ public class jxTask extends WorkNode
 		        	rl.RelType=RelationType.Slave;
 		        	rl.Insert(db,ts);
 
-		        	/*
-		    		jxMsg msg=jxMsg.NewMsg(jxMsgType.Event, ts, GetID(), null, GetID(), null);
-		    		msg.SetParam("EventInfo","Relation");
-		    		msg.SetParam("EventType",utils.GetClassName(jxMsgType.class));
-		    		msg.SetParam("Event",Trans.TransToInteger(jxMsgType.Report));
-		    		msg.setObj(rl);
-    				MsgCenter.Post(msg);				
-		    		Queue<jxORMobj> el = ListExecer(ts,RelationType.None);
-		    		for(jxORMobj obj:el)
-		    		{
-		    			PeopleInTs pe=(PeopleInTs)obj;
-		    			if(p!=null&&p.ID.compareTo(jxSystem.SystemID)!=0)
-		    			{
-		    				msg.Receiver=pe.ID;
-		    			}
-		    		}
-		    		*/
+
 		    }
 	}
 
@@ -188,22 +174,7 @@ public class jxTask extends WorkNode
         	rl.RelType=RelationType.Main;
         	rl.Insert(db,ts);
 	}
-	/*
-	jxMsg ToTaskMsg(TopSpace ts,UUID Receiver,ORMID ReceiverID) throws Exception
-	{
-		jxMsg msg=(jxMsg) jxMsg.Create(jxMsg.class);
-		msg.Sender=jxSystem.System.ID;
-		msg.setSenderID(this.GetID());
-		msg.Receiver=Receiver;
-		msg.setReceiverID(ReceiverID);
-		msg.MsgType=jxMsgType.Event;
-		msg.SetParam("EventInfo","CreateTaskFromPlan");
-		msg.SetParam("EventType",utils.GetClassName(InstanceEvent.class));
-		msg.SetParam("Event",Trans.TransToInteger(InstanceEvent.Create));
-		msg.SetParam("TopSpaceID",ts.ID);
-		return msg;
-	}
-	*/
+
 	public void AddSubTask(jxTask st) throws Exception
 	{
 		//st.Parent=ToJSONString();
@@ -239,14 +210,7 @@ public class jxTask extends WorkNode
 		      	this.AddExecer(db,ts, Execer, RelationType.Main);
 		      	if(Execer.ID.compareTo(jxSystem.SystemID)!=0)
 		      	{
-		      		/*
-					jxMsg msg=jxMsg.NewMsg(jxMsgType.Event, ts, GetID(), Execer.ID, Execer.GetID(), null);
-					msg.SetParam("EventInfo","Task");
-					msg.SetParam("EventType",utils.GetClassName(InstanceEvent.class));
-					msg.SetParam("Event",Trans.TransToInteger(InstanceEvent.Create));
-					msg.setObj(task);
-					MsgCenter.Post(db,msg);
-					*/
+
 		      	}
 	        }
 	        db.Trans_Commit();
@@ -256,17 +220,7 @@ public class jxTask extends WorkNode
 			db.Trans_Cancel();
 		}
 		
-		
-	   /*
-	   if(Caller.PeopleID==Execer.PeopleID)
-		   task.Insert(ts);
-	   else
-	   {
-		   jxMsg msg=task.ToTaskMsg(Execer.Real.UniqueID);
-		   MsgCenter.Post(msg);
-	   }
-	   */
-	   //AddSubTask(task);
+
     }
 
 	public Queue<jxORMobj> ListSubTask(TopSpace ts) throws Exception
@@ -306,25 +260,10 @@ public class jxTask extends WorkNode
 	 * @param tag
 	 * @throws Exception
 	 */
+/*
 	private void ReportTag(TopSpace ts,ObjTag tag) throws Exception
 	{
-		/*
-		jxMsg msg=jxMsg.NewMsg(jxMsgType.Event, ts, GetID(), null, GetID(), null);
-		msg.SetParam("EventInfo","Tag");
-		msg.SetParam("EventType",utils.GetClassName(jxMsgType.class));
-		msg.SetParam("Event",Trans.TransToInteger(jxMsgType.Report));
-		msg.setObj(tag);
-		Queue<jxORMobj> el = ListExecer(ts,RelationType.None);
-		for(jxORMobj obj:el)
-		{
-			PeopleInTs p=(PeopleInTs)obj;
-			if(p!=null&&p.ID.compareTo(jxSystem.SystemID)!=0)
-			{
-				msg.Receiver=p.ID;
-				MsgCenter.Post(msg);				
-			}
-		}
-		*/
+
 	}
 	/**
 	 * 为本任务添加一条计划
@@ -337,6 +276,7 @@ public class jxTask extends WorkNode
 	 * @return
 	 * @throws Exception
 	 */
+/*
 	public ObjTag AddPlan(TopSpace ts,PeopleInTs Caller,int order,Date doAt,PeopleInTs execer,String plan) throws Exception
 	{
 		PeopleInTs pe=GetExecer(ts);
@@ -464,3 +404,5 @@ class TaskRedo implements IDoSomething
 	}
 }
 
+
+*/

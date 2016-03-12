@@ -26,10 +26,12 @@ public class Role extends Container
 	 * 要在Container之后执行
 	 * @throws Exception
 	 */
-	public static void Init() throws Exception{	InitClass(ORMType.Role.ordinal(),Role.class);}
-	public static void CreateDB(TopSpace ts) throws Exception
+	public static void Init() throws Exception{
+		InitClass(ORMType.Role.ordinal(),Role.class,"角色");
+	}
+	public static void CreateDB() throws Exception
 	{
-		CreateTableInDB(Role.class,ts);
+		CreateTableInDB(Role.class);
 	}
 	
 	
@@ -37,11 +39,11 @@ public class Role extends Container
 	//public int ID;
 	
 	//设置人员映射
-	public void SetMapTo(TopSpace ts,PeopleInTs Caller,PeopleInTs p) throws Exception
+	public void SetMapTo(People Caller,People p) throws Exception
 	{
-		if(!Caller.CheckRight(ts,Caller, Role.RoleName_Admin, false))
-			throw new Exception(String.format("您没有权限执行该操作%s:%s","Role","SetMapTo"));
-		DB db=JdbcUtils.GetDB();
+		//if(!Caller.CheckRight(ts,Caller, Role.RoleName_Admin, false))
+		//	throw new Exception(String.format("您没有权限执行该操作%s:%s","Role","SetMapTo"));
+		DB db=JdbcUtils.GetDB(null,this);
 		db.Trans_Begin();
 		try{
         synchronized (db)
@@ -49,10 +51,10 @@ public class Role extends Container
         	Relation rl=(Relation)Create(Relation.class);
         	rl.ObjTypeID=ORMType.Role.ordinal();
         	rl.ObjID=ID;
-        	rl.TargetTypeID=ORMType.PeopleInTs.ordinal();
+        	rl.TargetTypeID=ORMType.People.ordinal();
         	rl.TargetID=p.ID;
         	rl.RelType=RelationType.OneToMulti;
-        	rl.Insert(db,ts);
+        	rl.Insert(db);
         }
         db.Trans_Commit();
 	}
@@ -61,9 +63,9 @@ public class Role extends Container
 		db.Trans_Cancel();
 	}
 	}
-	void SetMapToNotCheckRight(TopSpace ts,PeopleInTs p) throws Exception
+	void SetMapToNotCheckRight(People p) throws Exception
 	{
-		DB db=JdbcUtils.GetDB();
+		DB db=JdbcUtils.GetDB(null,this);
 		db.Trans_Begin();
 		try{
         synchronized (db)
@@ -71,10 +73,10 @@ public class Role extends Container
         	Relation rl=(Relation)Create(Relation.class);
         	rl.ObjTypeID=ORMType.Role.ordinal();
         	rl.ObjID=ID;
-        	rl.TargetTypeID=ORMType.PeopleInTs.ordinal();
+        	rl.TargetTypeID=ORMType.People.ordinal();
         	rl.TargetID=p.ID;
         	rl.RelType=RelationType.OneToMulti;
-        	rl.Insert(db,ts);
+        	rl.Insert(db);
         }
         db.Trans_Commit();
 	}
@@ -84,44 +86,65 @@ public class Role extends Container
 	}
 	}
 	
-	public Organize getOrganize(TopSpace ts) throws Exception
+	public Organize getOrganize() throws Exception
 	{
 		SelectSql s=new SelectSql();
-		s.AddTable("Relation",ts);
-		s.AddTable("Organize",ts);
+		s.AddTable("Relation");
+		s.AddTable("Organize");
 		s.AddContion("Relation", "ObjTypeID", jxCompare.Equal, ORMType.Organize.ordinal());
 		s.AddContion("Relation", "ObjID", "Organize", "ID");
 		s.AddContion("Relation", "TargetTypeID", jxCompare.Equal, ORMType.Role.ordinal());
 		s.AddContion("Relation", "TargetID", jxCompare.Equal, ID);
-		return (Organize) Get(Organize.class,s,ts);
+		return (Organize) Get(Organize.class,s);
 	}	
 
 	//某岗位如果对应了多人则返回第一个（不能确定谁是第一个），有岗位直接对应的一定是真实角色，虚拟角色一般需要和某部门结合才能
 	//确定相应的真实角色，但其永远不应有人员对应
-	public PeopleInTs GetMapTo(TopSpace ts) throws Exception
+	public People GetMapTo() throws Exception
 	{
 		SelectSql s=new SelectSql();
-		s.AddTable("Relation",ts);
-		s.AddTable("PeopleInTs",ts);
+		s.AddTable("Relation");
+		s.AddTable("People");
 		s.AddContion("Relation", "ObjTypeID", jxCompare.Equal, ORMType.Role.ordinal());
 		s.AddContion("Relation", "ObjID", jxCompare.Equal,ID);
-		s.AddContion("Relation", "TargetTypeID", jxCompare.Equal, ORMType.PeopleInTs.ordinal());
-		s.AddContion("Relation", "TargetID",  "PeopleInTs","ID");
-		return (PeopleInTs) Get(PeopleInTs.class,s,ts);
+		s.AddContion("Relation", "TargetTypeID", jxCompare.Equal, ORMType.People.ordinal());
+		s.AddContion("Relation", "TargetID",  "People","ID");
+		return (People) Get(People.class,s);
 	}
 	//某岗位可能对应了多个人
-	public Queue<jxORMobj> ListMapTo(TopSpace ts) throws Exception
+	public Queue<jxORMobj> ListMapTo() throws Exception
 	{
 		SelectSql s=new SelectSql();
-		s.AddTable("Relation",ts);
-		s.AddTable("PeopleInTs",ts);
+		s.AddTable("Relation");
+		s.AddTable("People");
 		s.AddContion("Relation", "ObjTypeID", jxCompare.Equal, ORMType.Role.ordinal());
 		s.AddContion("Relation", "ObjID", jxCompare.Equal,ID);
-		s.AddContion("Relation", "TargetTypeID", jxCompare.Equal, ORMType.PeopleInTs.ordinal());
-		s.AddContion("Relation", "TargetID",  "PeopleInTs","ID");
-		return Select(PeopleInTs.class,s,ts);
+		s.AddContion("Relation", "TargetTypeID", jxCompare.Equal, ORMType.People.ordinal());
+		s.AddContion("Relation", "TargetID",  "People","ID");
+		return Select(People.class,s);
 	}
 
+	/**
+	 * 角色分为实际角色（岗位角色）和虚拟角色（职权角色），虚拟角色主要用于权限管理，
+	 * 一个真实角色可以对应多个虚拟角色，也就是说一个真实岗位是由多个职权所组成
+	 * @param db
+	 * @param peopleID
+	 * @return
+	 * @throws Exception
+     */
+	public static Queue<UUID> listRoleMapToRoleID_SearchRightRole(DB db,
+			UUID realRoleID) throws Exception {
+		Queue<UUID> rs=new LinkedList<>();
+		Queue<jxORMobj> ar=Relation.listObj(db,ORMType.Role.ordinal(),
+				realRoleID,RelationType.OneToMulti);
+		for(jxORMobj obj:ar){
+			Relation rrole=(Relation)obj;
+			if(rrole.ObjTypeID==ORMType.Role.ordinal()){
+				rs.offer(rrole.ObjID);
+			}
+		}
+		return rs;
+	}
 	/**
 	 * 如果某角色为组合角色，即
 	 * 真实角色，即需要安排人对应的职位，如技术部经理
@@ -130,16 +153,16 @@ public class Role extends Container
 	 * @return
 	 * @throws Exception
 	 */
-	public Queue<jxORMobj> ListContainRole(TopSpace ts) throws Exception
+	public Queue<jxORMobj> ListContainRole() throws Exception
 	{
 		SelectSql s=new SelectSql();
-		s.AddTable("Relation",ts);
-		s.AddTable("Role",ts);
+		s.AddTable("Relation");
+		s.AddTable("Role");
 		s.AddContion("Relation", "ObjTypeID", jxCompare.Equal, ORMType.Role.ordinal());
 		s.AddContion("Relation", "ObjID", jxCompare.Equal,ID);
 		s.AddContion("Relation", "TargetTypeID", jxCompare.Equal, ORMType.Role.ordinal());
 		s.AddContion("Relation", "TargetID",  "Role","ID");
-		return Select(Role.class,s,ts);
+		return Select(Role.class,s);
 	}
 
 }

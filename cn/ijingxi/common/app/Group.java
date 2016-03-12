@@ -2,11 +2,8 @@ package cn.ijingxi.common.app;
 
 import cn.ijingxi.common.orm.DB;
 import cn.ijingxi.common.orm.ORMType;
-import cn.ijingxi.common.orm.SelectSql;
 import cn.ijingxi.common.orm.jxORMobj;
 import cn.ijingxi.common.util.Trans;
-import cn.ijingxi.common.util.jxCompare;
-import groovyx.gpars.dataflow.Select;
 
 import java.util.*;
 
@@ -19,7 +16,7 @@ public class Group extends ObjTag {
 
     public static void Init() throws Exception
     {
-        InitClass(ORMType.Group.ordinal(),Group.class);
+        InitClass(ORMType.Group.ordinal(),Group.class,"组");
     }
     @Override
     protected void Init_Create(DB db) throws Exception
@@ -29,7 +26,7 @@ public class Group extends ObjTag {
     }
     @Override
     protected void myInit(DB db) throws Exception{
-        Queue<jxORMobj> list = Relation.listTarget(db, null, ORMType.Group.ordinal(), ID, RelationType.OneToMulti);
+        Queue<jxORMobj> list = Relation.listTarget(db, ORMType.Group.ordinal(), ID, RelationType.OneToMulti);
         for(jxORMobj o:list){
             Relation r=(Relation)o;
             int order=Trans.TransToInteger(r.getExtendValue("Info", "order"));
@@ -52,7 +49,7 @@ public class Group extends ObjTag {
      * @return
      * @throws Exception
      */
-    public void AddMember(Class<?> cls,UUID id) throws Exception {
+    public void addMember(Class<?> cls,UUID id) throws Exception {
         int tid=jxORMobj.getTypeID(cls);
         if(tid!=TagOrder)
             throw new Exception(String.format("AddVer类型不匹配：需要s%，送入s%", jxORMobj.getClassName(TagOrder), cls.getName()));
@@ -71,7 +68,7 @@ public class Group extends ObjTag {
     public jxORMobj getMember(int order) throws Exception {
         Relation r = members.get(order);
         if(r!=null)
-            return GetByID(TagOrder,r.TargetID,null);
+            return GetByID(TagOrder,r.TargetID);
         return null;
     }
     public jxORMobj getLastMember() throws Exception {

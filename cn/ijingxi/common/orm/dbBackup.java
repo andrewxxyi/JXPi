@@ -1,7 +1,7 @@
 
 package cn.ijingxi.common.orm;
 
-import cn.ijingxi.common.app.jxSystem;
+import cn.ijingxi.common.app.ObjTag;
 import cn.ijingxi.common.util.LinkNode;
 import cn.ijingxi.common.util.Trans;
 import cn.ijingxi.common.util.utils;
@@ -36,7 +36,7 @@ public class dbBackup
 	
 	static
 	{
-		addTableFilter(jxSystem.class);
+		//addTableFilter(jxSystem.class);
 	}
 	
 	public static void addTableFilter(Class<?> cls)
@@ -142,7 +142,7 @@ public class dbBackup
 			}
 			if(newfile||file==null)
 			{
-				String bfname=Trans.TransToString(jxSystem.SystemID)+"_"+(new Date()).getTime();
+				String bfname=Trans.TransToString(ObjTag.SystemID)+"_"+(new Date()).getTime();
 				String fn=Path+bfname;
 				file=new File(fn);  				
 			}
