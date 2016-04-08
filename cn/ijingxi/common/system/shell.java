@@ -5,7 +5,9 @@ import cn.ijingxi.common.util.jxLog;
 import cn.ijingxi.common.util.utils;
 
 import java.io.BufferedReader;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -75,6 +77,46 @@ public class shell {
             jxLog.error(e);
         }
         return 0;
+    }
+    private static class cmdInfo{
+        int pid=0;
+        InputStream stdout=null;
+        OutputStream stdin=null;
+        Process process=null;
+    }
+    public static Object run(String cmd,String key) {
+        jxLog.logger.debug("exec: " + cmd);
+        try {
+            cmdInfo ci = new cmdInfo();
+            String[] cmds = {"/bin/sh", "-c", cmd};
+            ci.process = Runtime.getRuntime().exec(cmds);
+            ci.stdout = ci.process.getInputStream();
+            ci.stdin = ci.process.getOutputStream();
+            Thread.sleep(100);
+            ci.pid = getProcessID(cmd, key, 4);
+            return ci;
+        } catch (Exception e) {
+            jxLog.error(e);
+        }
+        return null;
+    }
+    public static void close(Object obj) throws Exception {
+        utils.Check(!(obj instanceof cmdInfo),"需送入run返回值");
+        cmdInfo ci=(cmdInfo)obj;
+        kill(ci.pid);
+        ci.stdin.close();
+        ci.stdout.close();
+        ci.process.destroy();
+    }
+    public static InputStream getStdOut(Object obj) throws Exception {
+        utils.Check(!(obj instanceof cmdInfo),"需送入run返回值");
+        cmdInfo ci=(cmdInfo)obj;
+        return ci.stdout;
+    }
+    public static OutputStream getStdIn(Object obj) throws Exception {
+        utils.Check(!(obj instanceof cmdInfo),"需送入run返回值");
+        cmdInfo ci=(cmdInfo)obj;
+        return ci.stdin;
     }
 
     public static void kill(int processID){

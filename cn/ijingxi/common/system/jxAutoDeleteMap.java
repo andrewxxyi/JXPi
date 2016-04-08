@@ -51,11 +51,14 @@ public class jxAutoDeleteMap {
         }
     }
 
-    public void remove(String key){
+    public Object remove(String key){
         synchronized (lock) {
             dmObj o = map.remove(key);
-            if (o != null)
+            if (o != null){
                 o.timer.cancel();
+                return o.value;
+            }
+            return null;
         }
     }
 
@@ -74,8 +77,10 @@ public class jxAutoDeleteMap {
     public Object get(String key){
         synchronized (lock) {
             dmObj o = map.get(key);
-            if (o != null)
+            if (o != null){
+                o.timer.reTick();
                 return o.value;
+            }
             return null;
         }
     }

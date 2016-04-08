@@ -17,29 +17,34 @@ import java.io.StringWriter;
  * @author andrew
  *
  */
-public class jxLog extends jxORMobj
-{
-	public static Boolean TraceDebug=true;
+public class jxLog extends jxORMobj {
+	public static Boolean TraceDebug = true;
 	public static Logger logger = LogManager.getLogger("common.log");
 
-	public static void debug(String msg){
-		if(TraceDebug)
+	public static void debug(String msg) {
+		if (TraceDebug)
 			logger.debug(msg);
 	}
 
-	public static void error(Exception e){
+	public static void warn(String msg) {
+		logger.warn(msg);
+	}
+
+	public static void error(String msg) {
+		logger.error(msg);
+	}
+
+	public static void error(Exception e) {
 		logger.error(getStackTrace(e));
 	}
-	public static String getStackTrace(Throwable t){
+
+	public static String getStackTrace(Throwable t) {
 		StringWriter sw = new StringWriter();
 		PrintWriter pw = new PrintWriter(sw);
-		try
-		{
+		try {
 			t.printStackTrace(pw);
 			return sw.toString();
-		}
-		finally
-		{
+		} finally {
 			pw.close();
 		}
 	}

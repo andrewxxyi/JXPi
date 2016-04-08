@@ -132,10 +132,10 @@ public class jxLua extends TwoArgFunction {
     //功能函数
     //
     static class delay extends OneArgFunction {
-        public LuaValue call(LuaValue delaySeconds) {
-            int js = delaySeconds.checkint();
+        public LuaValue call(LuaValue millis) {
+            int js = millis.checkint();
             try {
-                Thread.sleep(js*1000);
+                Thread.sleep(js);
             } catch (InterruptedException e) {
                 jxLog.error(e);
             }
@@ -173,15 +173,15 @@ public class jxLua extends TwoArgFunction {
         library.set("lock", new lock());
         library.set("checkLock", new checkLock());
 
+        library.set("delay", new delay());
 
         env.set("jxLua", library);
         return library;
     }
 
-    private static LuaValue exec(Globals globals, LuaValue chunk, LuaValue[] params) {
+    private static LuaValue execFunc(Globals globals,String funcName, LuaValue[] params) {
         jxLog.debug("jxLua exec starting");
-        chunk.call();
-        LuaValue fn = globals.get(LuaScript_CallEntry);
+        LuaValue fn = globals.get(funcName);
         LuaValue rs = null;
         switch (params.length) {
             case 0:
@@ -198,12 +198,15 @@ public class jxLua extends TwoArgFunction {
                 break;
             default:
                 Varargs rsa = fn.invoke(params);
-                if(rsa!=null)
+                if (rsa != null)
                     return rsa.arg(1);
                 break;
         }
         jxLog.debug("jxLua exec end");
         return rs;
+    }
+    private static LuaValue exec(Globals globals, LuaValue[] params) {
+        return execFunc(globals, LuaScript_CallEntry, params);
     }
 
     public static LuaValue run(String script, LuaValue... params) throws Exception {
@@ -211,7 +214,8 @@ public class jxLua extends TwoArgFunction {
         //utils.Check(params.length > 3, "只支持最多3个参数的调用");
         Globals globals = JsePlatform.standardGlobals();
         LuaValue chunk = globals.load(script);
-        return exec(globals, chunk, params);
+        chunk.call();
+        return exec(globals, params);
     }
 
     public static LuaValue runFile(String scriptFileName, LuaValue... params) throws Exception {
@@ -219,7 +223,8 @@ public class jxLua extends TwoArgFunction {
         //utils.Check(params.length > 3, "只支持最多3个参数的调用");
         Globals globals = JsePlatform.standardGlobals();
         LuaValue chunk = globals.loadfile(scriptFileName);
-        return exec(globals, chunk, params);
+        chunk.call();
+        return exec(globals, params);
     }
 
     public static void run_Async(String script, IDo getResult, LuaValue... params) throws Exception {
@@ -227,7 +232,8 @@ public class jxLua extends TwoArgFunction {
         jxTimer.asyncRun(param -> {
             Globals globals = JsePlatform.standardGlobals();
             LuaValue chunk = globals.load(script);
-            LuaValue rs = exec(globals, chunk, params);
+            chunk.call();
+            LuaValue rs = exec(globals, params);
             if (getResult != null)
                 getResult.Do(rs);
         }, null);
@@ -238,13 +244,43 @@ public class jxLua extends TwoArgFunction {
         jxTimer.asyncRun(param -> {
             Globals globals = JsePlatform.standardGlobals();
             LuaValue chunk = globals.loadfile(script);
-            LuaValue rs = exec(globals, chunk, params);
+            chunk.call();
+            LuaValue rs = exec(globals, params);
             if (getResult != null)
                 getResult.Do(rs);
         }, null);
     }
 
+    public static luaScript loadFile(String scriptFileName, LuaValue... params) throws Exception {
+        jxLog.debug("jxLua loadFile:" + scriptFileName);
+        luaScript s=new luaScript();
+        s.global= JsePlatform.standardGlobals();
+        LuaValue chunk = s.global.loadfile(scriptFileName);
+        chunk.call();
+        return s;
+    }
+    public static class luaScript{
+        Globals global=null;
+        Thread t=null;
+        public LuaValue exec (String funcName, LuaValue... params){
+            return execFunc(global, funcName, params);
+        }
 
+        /**
+         * 不干什么，只为了挂住
+         */
+        public void startTread(){
+            t=new Thread(()->{
+                while(true)
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+
+                    }
+            });
+            t.start();
+        }
+    }
     public static Map<String, Object> getKV(LuaValue table) {
         Map<String, Object> rs = new HashMap<>();
         LuaValue k = LuaValue.NIL;
