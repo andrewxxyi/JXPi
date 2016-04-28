@@ -1,9 +1,9 @@
 
 package cn.ijingxi.data.JdbcSqlite;
 
-import cn.ijingxi.common.orm.DB;
-import cn.ijingxi.common.orm.FieldAttr;
-import cn.ijingxi.common.util.*;
+import cn.ijingxi.orm.DB;
+import cn.ijingxi.orm.FieldAttr;
+import cn.ijingxi.util.*;
 
 import java.sql.*;
 import java.util.Date;

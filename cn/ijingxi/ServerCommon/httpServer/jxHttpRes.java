@@ -1,11 +1,11 @@
 package cn.ijingxi.ServerCommon.httpServer;
 
-import cn.ijingxi.common.app.ActiveRight;
-import cn.ijingxi.common.app.Right;
-import cn.ijingxi.common.orm.jxJson;
-import cn.ijingxi.common.util.jxLog;
-import cn.ijingxi.common.util.jxTimer;
-import cn.ijingxi.common.util.utils;
+import cn.ijingxi.app.ActiveRight;
+import cn.ijingxi.app.Right;
+import cn.ijingxi.orm.jxJson;
+import cn.ijingxi.util.jxLog;
+import cn.ijingxi.util.jxTimer;
+import cn.ijingxi.util.utils;
 import org.apache.http.HttpResponse;
 import org.apache.http.entity.InputStreamEntity;
 
@@ -42,6 +42,7 @@ public class jxHttpRes {
 			if (mi != null)
 				mi.invoke(null);
 		} catch (Exception e) {
+			jxLog.error(e);
 		}
 
 		ResAttr attr = new ResAttr();

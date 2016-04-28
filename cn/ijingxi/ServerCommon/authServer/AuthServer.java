@@ -2,9 +2,9 @@ package cn.ijingxi.ServerCommon.authServer;
 
 import cn.ijingxi.ServerCommon.httpServer.RES;
 import cn.ijingxi.ServerCommon.httpServer.jxHttpData;
-import cn.ijingxi.common.app.People;
-import cn.ijingxi.common.orm.jxJson;
-import cn.ijingxi.common.system.jxAutoDeleteMap;
+import cn.ijingxi.app.People;
+import cn.ijingxi.orm.jxJson;
+import cn.ijingxi.system.jxAutoDeleteMap;
 
 import java.util.Map;
 import java.util.Random;

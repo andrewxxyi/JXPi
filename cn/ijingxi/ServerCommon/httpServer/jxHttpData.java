@@ -1,9 +1,9 @@
 package cn.ijingxi.ServerCommon.httpServer;
 
-import cn.ijingxi.common.orm.jxJson;
-import cn.ijingxi.common.orm.jxORMobj;
-import cn.ijingxi.common.util.Trans;
-import cn.ijingxi.common.util.jxLog;
+import cn.ijingxi.orm.jxJson;
+import cn.ijingxi.orm.jxORMobj;
+import cn.ijingxi.util.Trans;
+import cn.ijingxi.util.jxLog;
 
 import java.util.Queue;
 

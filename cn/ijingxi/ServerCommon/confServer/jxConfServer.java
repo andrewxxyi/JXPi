@@ -2,7 +2,7 @@ package cn.ijingxi.ServerCommon.confServer;
 
 import cn.ijingxi.ServerCommon.httpServer.jxHttpRes;
 import cn.ijingxi.ServerCommon.httpServer.jxHttpServer;
-import cn.ijingxi.common.system.Config;
+import cn.ijingxi.system.Config;
 
 /**
  * Created by andrew on 15-12-6.

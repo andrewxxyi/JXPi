@@ -1,8 +1,8 @@
 package cn.ijingxi.ServerCommon.httpServer;
 
-import cn.ijingxi.common.system.jxAutoDeleteMap;
-import cn.ijingxi.common.util.Trans;
-import cn.ijingxi.common.util.jxLog;
+import cn.ijingxi.system.jxAutoDeleteMap;
+import cn.ijingxi.util.Trans;
+import cn.ijingxi.util.jxLog;
 
 import java.util.HashMap;
 import java.util.Map;

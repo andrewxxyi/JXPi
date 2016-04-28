@@ -1,9 +1,9 @@
 package cn.ijingxi.ServerCommon.confServer;
 
 import cn.ijingxi.ServerCommon.httpClient.jxHttpClient;
-import cn.ijingxi.common.orm.jxJson;
-import cn.ijingxi.common.system.Config;
-import cn.ijingxi.common.util.Trans;
+import cn.ijingxi.orm.jxJson;
+import cn.ijingxi.system.Config;
+import cn.ijingxi.util.Trans;
 
 /**
  * Created by andrew on 15-12-6.

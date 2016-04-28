@@ -1,7 +1,7 @@
 package cn.ijingxi.common.msg;
 
-import cn.ijingxi.common.system.Config;
-import cn.ijingxi.common.util.jxLog;
+import cn.ijingxi.system.Config;
+import cn.ijingxi.util.jxLog;
 
 import java.util.HashMap;
 import java.util.Map;

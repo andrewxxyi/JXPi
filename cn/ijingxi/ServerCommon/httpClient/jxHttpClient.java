@@ -1,10 +1,10 @@
 package cn.ijingxi.ServerCommon.httpClient;
 
 import cn.ijingxi.ServerCommon.httpServer.jxHttpServer;
-import cn.ijingxi.common.orm.jxJson;
-import cn.ijingxi.common.util.IDo;
-import cn.ijingxi.common.util.IDo2;
-import cn.ijingxi.common.util.jxLog;
+import cn.ijingxi.orm.jxJson;
+import cn.ijingxi.util.IDo;
+import cn.ijingxi.util.IDo2;
+import cn.ijingxi.util.jxLog;
 import org.apache.http.Header;
 import org.apache.http.HeaderElement;
 import org.apache.http.HttpResponse;

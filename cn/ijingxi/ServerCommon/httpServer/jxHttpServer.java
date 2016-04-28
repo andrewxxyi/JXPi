@@ -1,9 +1,9 @@
 package cn.ijingxi.ServerCommon.httpServer;
 
-import cn.ijingxi.common.orm.jxJson;
-import cn.ijingxi.common.util.jxLog;
-import cn.ijingxi.common.util.jxTimer;
-import cn.ijingxi.common.util.utils;
+import cn.ijingxi.orm.jxJson;
+import cn.ijingxi.util.jxLog;
+import cn.ijingxi.util.jxTimer;
+import cn.ijingxi.util.utils;
 import org.apache.http.*;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.FileEntity;
@@ -13,7 +13,6 @@ import org.apache.http.impl.DefaultBHttpServerConnectionFactory;
 import org.apache.http.protocol.*;
 import org.apache.http.util.EntityUtils;
 import org.apache.james.mime4j.MimeException;
-import org.apache.tika.Tika;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
@@ -28,6 +27,7 @@ import java.net.Socket;
 import java.net.URLDecoder;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.KeyStore;
 import java.util.HashMap;
@@ -239,10 +239,12 @@ public class jxHttpServer {
         	return null;
         }
         
-        private void handleFileDownload(String target,final HttpResponse response,final HttpContext context) throws HttpException, IOException {
+        private void handleFileDownload(String target,final HttpResponse response,
+                                        final HttpContext context) throws HttpException, IOException {
 
             String fn=URLDecoder.decode(target, "UTF-8");
-            final File file = new File(docRoot, fn);
+            String fileName=docRoot+fn;
+            final File file = new File(fileName);
             if (!file.exists()) {
 
                 response.setStatusCode(HttpStatus.SC_NOT_FOUND);
@@ -264,8 +266,26 @@ public class jxHttpServer {
                 response.setStatusCode(HttpStatus.SC_OK);
                 //FileEntity body = new FileEntity(file);
 
-                Tika tika = new Tika();
-                String contentType = tika.detect(file);
+                // getMagicMatch accepts Files or byte[],
+                // which is nice if you want to test streams
+                String contentType=null;
+                try {
+                    //Magic parser = new Magic() ;
+                    //MagicMatch match = parser.getMagicMatch(file, true);
+                    //contentType = match.getMimeType();
+                } catch (Exception e) {
+                    jxLog.error(e);
+                }
+
+
+                //FileNameMap fileNameMap = URLConnection.getFileNameMap();
+                Path path = Paths.get(fileName);
+                contentType = Files.probeContentType(path);
+
+                //jxLog.logger.debug("contentType:"+ contentType);
+
+                //Tika tika = new Tika();
+                //String contentType = tika.detect(file);
                 //jxLog.logger.debug("contentType:"+ contentType);
                 FileEntity body = new FileEntity(file,
                         ContentType.create(contentType, (Charset) null));

@@ -1,10 +1,10 @@
 package cn.ijingxi.ServerCommon.authServer;
 
 import cn.ijingxi.ServerCommon.httpClient.jxHttpClient;
-import cn.ijingxi.common.orm.jxJson;
-import cn.ijingxi.common.system.Config;
-import cn.ijingxi.common.system.jxAutoDeleteMap;
-import cn.ijingxi.common.util.Trans;
+import cn.ijingxi.orm.jxJson;
+import cn.ijingxi.system.Config;
+import cn.ijingxi.system.jxAutoDeleteMap;
+import cn.ijingxi.util.Trans;
 
 /**
  * 本类只有webserver会用到，其它服务都是以webserver为用户代理的，

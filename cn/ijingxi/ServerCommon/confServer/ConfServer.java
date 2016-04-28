@@ -2,7 +2,7 @@ package cn.ijingxi.ServerCommon.confServer;
 
 import cn.ijingxi.ServerCommon.httpServer.RES;
 import cn.ijingxi.ServerCommon.httpServer.jxHttpData;
-import cn.ijingxi.common.orm.jxJson;
+import cn.ijingxi.orm.jxJson;
 
 import java.util.HashMap;
 import java.util.Map;

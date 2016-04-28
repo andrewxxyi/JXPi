@@ -1,8 +1,8 @@
 package cn.ijingxi.common.msg;
 
-import cn.ijingxi.common.app.Group;
-import cn.ijingxi.common.orm.ORMID;
-import cn.ijingxi.common.orm.ORMType;
+import cn.ijingxi.app.Group;
+import cn.ijingxi.orm.ORMID;
+import cn.ijingxi.orm.ORMType;
 
 import java.util.UUID;
 

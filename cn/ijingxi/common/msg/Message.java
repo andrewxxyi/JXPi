@@ -1,6 +1,6 @@
 package cn.ijingxi.common.msg;
 
-import cn.ijingxi.common.orm.*;
+import cn.ijingxi.orm.*;
 
 import java.util.Date;
 import java.util.UUID;

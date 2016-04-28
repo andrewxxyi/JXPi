@@ -2,8 +2,8 @@ package cn.ijingxi.ServerCommon.authServer;
 
 import cn.ijingxi.ServerCommon.httpServer.jxHttpRes;
 import cn.ijingxi.ServerCommon.httpServer.jxHttpServer;
-import cn.ijingxi.common.system.Config;
-import cn.ijingxi.common.util.Trans;
+import cn.ijingxi.system.Config;
+import cn.ijingxi.util.Trans;
 
 /**
  * Created by andrew on 15-12-6.

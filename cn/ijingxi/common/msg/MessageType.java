@@ -1,6 +1,6 @@
 package cn.ijingxi.common.msg;
 
-import cn.ijingxi.common.util.IjxEnum;
+import cn.ijingxi.util.IjxEnum;
 
 /**
  * Created by andrew on 15-10-5.
