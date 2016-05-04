@@ -1,10 +1,9 @@
-package cn.ijingxi.com.USRIO88;
+package cn.ijingxi.communication.USRIO88;
 
 import cn.ijingxi.ServerCommon.httpServer.RES;
 import cn.ijingxi.ServerCommon.httpServer.jxHttpData;
 import cn.ijingxi.app.ActiveRight;
 import cn.ijingxi.communication.jxNIOTCPClient;
-import cn.ijingxi.intelControl.FrontDevice;
 import cn.ijingxi.intelControl.jxLua;
 import cn.ijingxi.orm.jxJson;
 import cn.ijingxi.util.Trans;
@@ -23,9 +22,9 @@ import java.util.Map;
 @ActiveRight(policy= ActiveRight.Policy.Accept)
 public class FrontUSR {
 
-    public static final String confFileName = "./conf/FrontUSR_conf.lua";
-    public static final String FrontDeviceTypeName_USR = "USR";
-    public static final int FrontDeviceType_USR = 1;
+    //public static final String confFileName = "./conf/FrontUSR_conf.lua";
+    public static final String FrontDeviceTypeName_USR = "USR88";
+    //public static final int FrontDeviceType_USR = 1;
 
 
     @RES
@@ -67,7 +66,7 @@ public class FrontUSR {
             final int finalP5 = p6;
 
             jxTimer.asyncRun(param -> call(fn, finalP, finalP1,
-                    finalP2, finalP3, finalP4, finalP5), null);
+                    finalP2, finalP3, finalP4, finalP5));
             jxHttpData rs = new jxHttpData(200, "OK");
             rs.addValue("Result", true);
             return rs;
@@ -113,9 +112,36 @@ public class FrontUSR {
     }
 
     public static void init() throws Exception {
-        jxLog.debug("FrontUSR init");
-        FrontDevice.addDevType(FrontDeviceTypeName_USR, FrontDeviceType_USR);
+        jxLog.logger.debug("FrontUSR init");
 
+        jxLua.registerFront(FrontDeviceTypeName_USR,map -> {
+            String name = ((LuaString) map.get("name")).checkjstring();
+            String passwd = ((LuaString) map.get("passwd")).checkjstring();
+            int ver = ((LuaInteger) map.get("ver")).checkint();
+            String ip = ((LuaString) map.get("ip")).checkjstring();
+            int port = ((LuaInteger) map.get("port")).checkint();
+            boolean startRead = ((LuaBoolean) map.get("startRead")).checkboolean();
+            jxLog.logger.debug(String.format("FrontUSR open %s at %s:%d", name, ip, port));
+            jxNIOTCPClient client = open(ip, port);
+            if (client != null) {
+                try {
+                    luaFront_USRIO88 lf = new luaFront_USRIO88(name,passwd, "USR", ver, client, startRead);
+                    lf.setAttribute("ip", ip);
+                    lf.setAttribute("port", port);
+                    lf.setAttribute("startRead", startRead);
+                    jxLog.logger.debug("FrontUSR open end");
+                    return lf;
+                } catch (Exception e) {
+                    jxLog.error(e);
+                }
+            } else
+                jxLog.logger.debug(String.format("无法连接到:%s at %s:%d", name, ip, port));
+            return null;
+        });
+
+        //FrontDevice.addDevType(FrontDeviceTypeName_USR, FrontDeviceType_USR);
+
+        /*
         jxLua.addConf(confFileName, map -> {
             String name = ((LuaString) map.get("name")).checkjstring();
             int ver = ((LuaInteger) map.get("ver")).checkint();
@@ -139,6 +165,7 @@ public class FrontUSR {
                 jxLog.debug(String.format("无法连接到:%s at %s:%d", name, ip, port));
             return null;
         });
+        */
     }
     private static jxNIOTCPClient open(String ip, int port) {
         try {

@@ -1,8 +1,8 @@
 package cn.ijingxi.communication;
 
-import cn.ijingxi.util.*;
+import cn.ijingxi.util.jxLog;
 
-import java.io.DataInputStream;
+import static cn.ijingxi.communication.pkgTrans_cmdResponse.checkResult;
 
 /**
  * RTU
@@ -11,46 +11,53 @@ import java.io.DataInputStream;
  */
 public class modbusTrans {
 
-    private jxNIOTCPClient client = null;
+    private pkgTrans_cmdResponse trans = null;
 
+
+    //public modbus getResponse() {
+    //    return response;
+    //}
+
+    /*
     private static jxStateMachine<state, event> dualSM = null;
+    private jxStateMachine.realSM sm = null;
 
     private modbus cmd = null;
     private modbus response = null;
-
-    public modbus getResponse() {
-        return response;
-    }
-
-    private jxStateMachine.realSM sm = null;
 
     static {
         dualSM = new jxStateMachine();
         //状态机定义
         dualSM.AddTrans(state.idel, event.send, state.waiting, null);
-        dualSM.AddTrans(state.waiting, event.response_no, state.waiting, null);
-        dualSM.AddTrans(state.waiting, event.timeout, state.error, (p1, p2) -> {
-            jxStateMachine.realSM sm = (jxStateMachine.realSM) p1;
+        //dualSM.AddTrans(state.waiting, event.response_no, state.waiting, null);
+        dualSM.AddTrans(state.waiting, event.timeout, state.idel, (p1, p2) -> {
             jxLog.error("modbus等待超时");
-            sm.happen(event.dualover, null);
         });
 
-        dualSM.AddTrans(state.waiting, event.response_ok, state.process, (p1, p2) -> {
+        dualSM.AddTrans(state.waiting, event.response_ok, state.idel, (p1, p2) -> {
             jxStateMachine.realSM m = (jxStateMachine.realSM) p1;
             ((modbusTrans) m.getStateObject()).response = (modbus) p2;
         });
 
-        dualSM.AddTrans(state.process, event.dualover, state.idel, null);
+        //dualSM.AddTrans(state.process, event.dualover, state.idel, null);
 
-        dualSM.AddTrans(state.process, event.error, state.error, (p1, p2) -> {
+        dualSM.AddTrans(state.waiting, event.error, state.idel, (p1, p2) -> {
             jxStateMachine.realSM sm = (jxStateMachine.realSM) p1;
             jxLog.error("modbus处理出现错误:" + p2);
-            sm.happen(event.dualover, null);
         });
-        dualSM.AddTrans(state.error, event.dualover, state.idel, null);
+        //dualSM.AddTrans(state.error, event.dualover, state.idel, null);
 
     }
 
+    class waitSend {
+        ComData data;
+        comTrans_CmdResponse.getResult getResultDual;
+        comTrans_CmdResponse.getErrorMsg errorDual;
+    }
+
+
+    private BlockingDeque<waitSend> sendQueue = new LinkedBlockingDeque<>();
+    private Thread sendThread = null;
     enum state {
         idel,
         waiting,
@@ -67,49 +74,45 @@ public class modbusTrans {
         dualover
     }
 
+    */
+
+
     public modbusTrans(jxNIOTCPClient client) {
-        this.client = client;
-        sm = dualSM.newRealSM(this, state.idel);
+        trans = new pkgTrans_cmdResponse(p -> client.sendData(p));
+        //sm = dualSM.newRealSM(this, state.idel);
         //jxLog.logger.debug("ComData_USR_IOT");
     }
 
-
+    /**
+     * 为了避免冲突，此处强制将
+     *
+     * @param data
+     * @param datalen
+     * @return
+     * @throws Exception
+     */
     public modbus send(modbus data, int datalen) throws Exception {
-        synchronized (this) {
-            response = null;
-            cmd = data;
-            sm.happen(event.send, null);
-            DataInputStream di = client.sendData(cmd.getPacket());
-            recevice(di,datalen);
-        }
-        return response;
-    }
 
-    private void recevice(DataInputStream di, int datalen) throws Exception {
-        try {
-            jxTimer.asyncRun(p -> {
-                modbusTrans trans = ((modbusTrans) p);
-                modbus m = modbus.read(di, datalen);
-                if (m != null)
-                    synchronized (trans) {
-                        trans.response = m;
-                        trans.notify();
-                    }
-            }, this);
-            this.wait(3000);
-            if (response != null) {
-                if (cmd.getAddress() == response.getAddress())
-                    sm.happen(event.response_ok, null);
-                else {
-                    sm.happen(event.response_no, null);
-                    //继续接收
-                    recevice(di,datalen);
-                }
-            } else
-                sm.happen(event.timeout, null);
-        } catch (InterruptedException e) {
-            sm.happen(event.timeout, null);
-        }
+        return (modbus) trans.send_serial(data.getPacket(), (di, getresult) -> {
+            modbus m = modbus.read(di, datalen);
+            if (m != null)
+                if (data.getAddress() == m.getAddress()) {
+                    //sm.happen(event.response_ok, null);
+                    getresult.Do(m);
+                    return checkResult.OK;
+                } else
+                    return checkResult.Waiting;
+            return checkResult.Error;
+        }, (et, msg) -> {
+            switch (et) {
+                case Timeout:
+                    jxLog.logger.error("modbus处理出现超时:" + msg);
+                    break;
+                default:
+                    jxLog.logger.error("modbus处理出现错误:" + msg);
+                    break;
+            }
+        });
     }
 
 

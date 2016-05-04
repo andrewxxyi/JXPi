@@ -11,7 +11,7 @@ import java.io.DataInputStream;
  * Created by andrew on 16-4-27.
  */
 public class modbus extends ComData {
-    private static final String pkg_name="modbus";
+    private static final String pkg_name = "modbus";
 
     static {
 
@@ -29,7 +29,6 @@ public class modbus extends ComData {
     }
 
 
-
     @Override
     protected byte[] computeCRC() throws Exception {
         //utils.P("computeCRC","ComData_USR_IOT");
@@ -37,34 +36,38 @@ public class modbus extends ComData {
         int len = getPkgLength() - 2;
         for (int i = 0; i < len; i++) {
             byte b = getValue(i);
-            crc[0] ^= b;
+            crc[1] ^= b;
             for (int j = 0; j < 8; j++) {
-                boolean bs = utils.checkLSB(crc[0]);
+                boolean bs = utils.checkLSB(crc[1]);
                 crc = utils.rightShift_unsigned(crc);
                 if (bs) {
-                    crc[0] ^= 1;
-                    crc[1] ^= 0xa0;
+                    crc[0] ^= 0xa0;
+                    crc[1] ^= 1;
                 }
             }
         }
         return crc;
     }
-    public modbus(String pkg_name){
+
+    public modbus(String pkg_name) {
         super(pkg_name);
         //jxLog.logger.debug("ComData_USR_IOT");
     }
-    public modbus(String pkg_name,byte[] data,int start) throws Exception {
-        super(pkg_name,data,start);
+
+    public modbus(String pkg_name, byte[] data, int start) throws Exception {
+        super(pkg_name, data, start);
         //jxLog.logger.debug("ComData_USR_IOT");
     }
-    public void setAddress(byte Address){
+
+    public void setAddress(byte Address) {
         try {
-            setValue("Address",new byte[]{Address});
+            setValue("Address", new byte[]{Address});
         } catch (Exception e) {
             jxLog.error(e);
         }
     }
-    public byte getAddress(){
+
+    public byte getAddress() {
         try {
             return getValue("Address")[0];
         } catch (Exception e) {
@@ -72,14 +75,16 @@ public class modbus extends ComData {
             return 0;
         }
     }
-    public void setCode(byte Code){
+
+    public void setCode(byte Code) {
         try {
-            setValue("Code",new byte[]{Code});
+            setValue("Code", new byte[]{Code});
         } catch (Exception e) {
             jxLog.error(e);
         }
     }
-    public byte getCode(){
+
+    public byte getCode() {
         try {
             return getValue("Code")[0];
         } catch (Exception e) {
@@ -87,14 +92,16 @@ public class modbus extends ComData {
             return 0;
         }
     }
-    public void setData(byte[] data){
+
+    public void setData(byte[] data) {
         try {
-            setValue("Data",data);
+            setValue("Data", data);
         } catch (Exception e) {
             jxLog.error(e);
         }
     }
-    public byte[] getData(){
+
+    public byte[] getData() {
         try {
             return getValue("Data");
         } catch (Exception e) {
@@ -103,30 +110,42 @@ public class modbus extends ComData {
         }
     }
 
-    public static modbus read(DataInputStream di, int datalen) throws Exception {
-        modbus m = new modbus(pkg_name);
-        byte[] data = new byte[packetBufSize];
-        int count = di.read(data);
-        utils.Check(count < datalen + 4, String.format("读入的包数据(%d)小于指定长度(%d)", count, datalen + 4));
+    /**
+     * 由于modbus没有定义包长或有助于推导出包长的字段，所以必须显式指定数据域的长度
+     *
+     * @param di
+     * @param datalen 数据域的大小
+     * @return
+     * @throws Exception
+     */
+    public static modbus read(DataInputStream di, int datalen) {
+        try {
+            modbus m = new modbus(pkg_name);
+            byte[] data = new byte[packetBufSize];
+            int count = di.read(data);
+            utils.Check(count < datalen + 4, String.format("读入的包数据(%d)小于指定长度(%d)", count, datalen + 4));
 
-        byte[] buf = new byte[1];
-        System.arraycopy(data, 0, buf, 0, 1);
-        m.setAddress(buf[0]);
+            byte[] buf = new byte[1];
+            System.arraycopy(data, 0, buf, 0, 1);
+            m.setAddress(buf[0]);
 
-        buf = new byte[1];
-        System.arraycopy(data, 1, buf, 0, 1);
-        m.setCode(buf[0]);
+            buf = new byte[1];
+            System.arraycopy(data, 1, buf, 0, 1);
+            m.setCode(buf[0]);
 
-        buf = new byte[datalen];
-        System.arraycopy(data, 2, buf, 0, datalen);
-        m.setData(buf);
+            buf = new byte[datalen];
+            System.arraycopy(data, 2, buf, 0, datalen);
+            m.setData(buf);
 
-        buf = new byte[2];
-        System.arraycopy(data, datalen + 2, buf, 0, 2);
-        m.setValue("CRC", buf);
+            buf = new byte[2];
+            System.arraycopy(data, datalen + 2, buf, 0, 2);
+            m.setValue("CRC", buf);
 
-        if (m.checkCRC())
-            return m;
+            if (m.checkCRC())
+                return m;
+        } catch (Exception e) {
+            jxLog.error(e);
+        }
         return null;
     }
 }

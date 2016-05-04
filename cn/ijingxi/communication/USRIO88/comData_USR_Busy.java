@@ -1,4 +1,4 @@
-package cn.ijingxi.com.USRIO88;
+package cn.ijingxi.communication.USRIO88;
 
 import cn.ijingxi.communication.ComData;
 import cn.ijingxi.util.jxLog;

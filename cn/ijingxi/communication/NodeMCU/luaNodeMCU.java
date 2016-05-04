@@ -1,4 +1,4 @@
-package cn.ijingxi.com.NodeMCU;
+package cn.ijingxi.communication.NodeMCU;
 
 import cn.ijingxi.intelControl.jxLua;
 import cn.ijingxi.orm.jxJson;

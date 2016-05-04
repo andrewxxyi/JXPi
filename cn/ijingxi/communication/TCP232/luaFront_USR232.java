@@ -1,4 +1,4 @@
-package cn.ijingxi.com.TCP232;
+package cn.ijingxi.communication.TCP232;
 
 import cn.ijingxi.communication.jxNIOTCPClient;
 import cn.ijingxi.intelControl.FrontCommunication;
@@ -11,8 +11,7 @@ public class luaFront_USR232 extends FrontCommunication {
     jxNIOTCPClient client=null;
     public luaFront_USR232(String devName,String devType,int ver,
                            jxNIOTCPClient client) throws Exception {
-        super(devName,devType);
-        this.ver=ver;
+        super(devName,devType,ver);
         this.client=client;
     }
 

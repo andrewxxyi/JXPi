@@ -1,4 +1,4 @@
-package cn.ijingxi.com.USRIO88;
+package cn.ijingxi.communication.USRIO88;
 
 /**
  * Created by andrew on 16-1-9.

@@ -1,4 +1,4 @@
-package cn.ijingxi.com.USRIO88;
+package cn.ijingxi.communication.USRIO88;
 
 import cn.ijingxi.communication.ComData;
 import cn.ijingxi.util.jxLog;
@@ -27,8 +27,8 @@ public class comData_USR_Init extends ComData {
         }
     }
 
-    public comData_USR_Init(){
+    public comData_USR_Init(String passwd){
         super(pkg_name);
-        setPasswd("admin");
+        setPasswd(passwd);
     }
 }

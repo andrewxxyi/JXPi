@@ -142,13 +142,13 @@ public class utils {
 	 * @param bs
 	 * @return
      */
-	public static byte[] rightShift_unsigned(byte[] bs){
-		byte[] rs=new byte[bs.length];
-		boolean b=false;
-		for(int i=0;i<bs.length;i++) {
-			rs[i]= (byte) (b?0x80:0);
+	public static byte[] rightShift_unsigned(byte[] bs) {
+		byte[] rs = new byte[bs.length];
+		boolean b = false;
+		for (int i = 0; i < bs.length; i++) {
+			rs[i] = (byte) (b ? 0x80 : 0);
 			b = checkLSB(bs[i]);
-			rs[i]|=bs[i]>>>1;
+			rs[i] |= bs[i] >>> 1;
 		}
 		return rs;
 	}

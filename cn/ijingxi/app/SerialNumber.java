@@ -178,6 +178,12 @@ public class SerialNumber extends ObjTag
         TagID=getTagID("序列号");
         sm=SNSM.newRealSM(this,SNState.None);
     }
+    @Override
+    protected void myInit(DB db) throws Exception
+    {
+        super.myInit(db);
+        sm=SNSM.newRealSM(this,SNState.None);
+    }
 
 }
 class SN_InputCommon implements IDo2<jxStateMachine.realSM,Object>

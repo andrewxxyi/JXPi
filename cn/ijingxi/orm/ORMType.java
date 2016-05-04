@@ -30,7 +30,7 @@ public enum ORMType
 	//任务是实例
 	//jxTask,
 
-	jxLog,
+	//jxLog,
 	FileDesc,
 
 	Container,

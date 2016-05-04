@@ -96,7 +96,7 @@ public class shell {
                     int readCount=0;
                     byte[] buf=new byte[4096];
                     while ((readCount = stdin.read(buf)) != -1) {
-                        jxLog.debug(String.format("jxPython run %s/%s stdin:%d",cmd,key, readCount));
+                        jxLog.logger.debug(String.format("%s/%s stdin:%d",cmd,key, readCount));
                         ci.stdin.write(buf, 0, readCount);
                     }
                 }, null);
@@ -105,7 +105,7 @@ public class shell {
                     int readCount=0;
                     byte[] buf=new byte[4096];
                     while ((readCount = ci.stdout.read(buf)) != -1) {
-                        jxLog.debug(String.format("jxPython run %s/%s stdout:%d",cmd,key, readCount));
+                        jxLog.logger.debug(String.format("%s/%s stdout:%d",cmd,key, readCount));
                         stdout.write(buf, 0, readCount);
                     }
                 }, null);
@@ -113,7 +113,7 @@ public class shell {
             jxTimer.asyncRun(p2 -> {
                 Thread.sleep(100);
                 ci.pid = getProcessID(cmd, key, 4);
-                jxLog.debug(String.format("jxPython run %s/%s pid:%d",cmd,key, ci.pid));
+                jxLog.logger.debug(String.format("%s/%s pid:%d",cmd,key, ci.pid));
             }, null);
             return ci;
         } catch (Exception e) {
@@ -145,7 +145,7 @@ public class shell {
             jxTimer.asyncRun(p2 -> {
                 Thread.sleep(100);
                 ci.pid = getProcessID(cmd, key, 4);
-                jxLog.debug(String.format("jxPython run %s/%s pid:%d",cmd,key, ci.pid));
+                jxLog.logger.debug(String.format("jxPython run %s/%s pid:%d",cmd,key, ci.pid));
             }, null);
             return ci;
         } catch (Exception e) {
@@ -165,15 +165,15 @@ public class shell {
             jxTimer.asyncRun(p2 -> {
                 String line=null;
                 while ((line = brerr.readLine()) != null) {
-                    jxLog.error(String.format("jxPython run %s/%s error:%s",cmd,key, line));
+                    jxLog.logger.error(String.format("jxPython run %s/%s error:%s",cmd,key, line));
                 }
-                jxLog.debug("jxPython read bstderr over");
+                jxLog.logger.debug("jxPython read bstderr over");
                 brerr.close();
             }, null);
             jxTimer.asyncRun(p2 -> {
                 Thread.sleep(100);
                 ci.pid = getProcessID(cmd, key, 4);
-                jxLog.debug(String.format("jxPython run %s/%s pid:%d",cmd,key, ci.pid));
+                jxLog.logger.debug(String.format("jxPython run %s/%s pid:%d",cmd,key, ci.pid));
             }, null);
 
             return ci;
@@ -185,9 +185,9 @@ public class shell {
     public static void close(Object obj) throws Exception {
         utils.Check(!(obj instanceof cmdInfo),"需送入run返回值");
         cmdInfo ci=(cmdInfo)obj;
-        kill(ci.pid);
         ci.stdin.close();
         ci.stdout.close();
+        kill(ci.pid);
         ci.process.destroy();
     }
     public static InputStream getStdOut(Object obj) throws Exception {
@@ -199,6 +199,11 @@ public class shell {
         utils.Check(!(obj instanceof cmdInfo),"需送入run返回值");
         cmdInfo ci=(cmdInfo)obj;
         return ci.stdin;
+    }
+    public static int getProcessID(Object obj) throws Exception{
+        utils.Check(!(obj instanceof cmdInfo),"需送入run返回值");
+        cmdInfo ci=(cmdInfo)obj;
+        return ci.pid;
     }
 
     public static void kill(int processID){

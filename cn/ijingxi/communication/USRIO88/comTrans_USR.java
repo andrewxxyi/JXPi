@@ -1,4 +1,4 @@
-package cn.ijingxi.com.USRIO88;
+package cn.ijingxi.communication.USRIO88;
 
 import cn.ijingxi.communication.ComData;
 import cn.ijingxi.communication.comTrans_CmdResponse;
@@ -20,7 +20,7 @@ public class comTrans_USR {
 
     private comTrans_CmdResponse trans=null;
 
-    public comTrans_USR(jxNIOTCPClient client) throws Exception {
+    public comTrans_USR(jxNIOTCPClient client,String passwd) throws Exception {
         utils.Check(client == null, "必须预习设置好和USR通信的TCP客户端");
         this.client = client;
 
@@ -72,7 +72,7 @@ public class comTrans_USR {
                 comData_USR_InitResponse.class,
                 (data, result, getResultDual, errorDual) -> {
                     //命令发送失败，则先发送初始化命令，然后重传该命令
-                    trans.send(new comData_USR_Init(),
+                    trans.send(new comData_USR_Init(passwd),
                             result1 -> trans.send(data, getResultDual, errorDual),
                             param -> {
                                 if (errorDual != null)
@@ -85,7 +85,7 @@ public class comTrans_USR {
                 comData_USR_Error.class,
                 (data, result, getResultDual, errorDual) -> {
                     //命令发送失败，则先发送初始化命令，然后重传该命令
-                    trans.send(new comData_USR_Init(),
+                    trans.send(new comData_USR_Init(passwd),
                             result1 -> trans.send(data, getResultDual, errorDual),
                             param -> {
                                 if (errorDual != null)
@@ -101,7 +101,7 @@ public class comTrans_USR {
                         errorDual.Do("命令得到了未定义的响应");
                     jxLog.logger.warn("comTrans_USR发送包:未得到正确响应");
                 });
-        trans.send(new comData_USR_Init(),
+        trans.send(new comData_USR_Init(passwd),
                 null,
                 param -> {
                     jxLog.logger.warn("设备未能正确初始化");

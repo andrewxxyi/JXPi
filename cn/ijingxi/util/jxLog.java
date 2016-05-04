@@ -20,19 +20,6 @@ public class jxLog {
 	public static Boolean TraceDebug = true;
 	public static Logger logger = LogManager.getLogger("common.log");
 
-	public static void debug(String msg) {
-		if (TraceDebug)
-			logger.debug(msg);
-	}
-
-	public static void warn(String msg) {
-		logger.warn(msg);
-	}
-
-	public static void error(String msg) {
-		logger.error(msg);
-	}
-
 	public static void error(Exception e) {
 		logger.error(getStackTrace(e));
 	}

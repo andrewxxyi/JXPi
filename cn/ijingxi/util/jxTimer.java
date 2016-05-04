@@ -5,81 +5,90 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class jxTimer
-{
-	public static final int asyncTaskNum=100;
-	private Timer myTimer=null;
-	private int secondNum=0;
-	private IDo dual=null;
-	private Object param=null;
-	public jxTimer(){
+public class jxTimer {
+	public static final int asyncTaskNum = 100;
+	private Timer myTimer = null;
+	private int secondNum = 0;
+	private IDo dual = null;
+	private Object param = null;
+
+	public jxTimer() {
 		myTimer = new Timer(true);
 	}
+
 	/**
 	 * 多少秒以后开始执行
+	 *
 	 * @param SecondNum
 	 * @param toDo
 	 * @param param
 	 */
-	public static jxTimer DoAfter(int SecondNum,IDo toDo,Object param)
-	{
-		  jxTimer t=new jxTimer();
-		  t.secondNum=SecondNum;
-		  t.dual=toDo;
-		  t.param=param;
-	      t.myTimer.schedule(new myTask(toDo,param), SecondNum * 1000);
-	      return t;
+	public static jxTimer DoAfter(int SecondNum, IDo toDo, Object param) {
+		jxTimer t = new jxTimer();
+		t.secondNum = SecondNum;
+		t.dual = toDo;
+		t.param = param;
+		t.myTimer.schedule(new myTask(toDo, param), SecondNum * 1000);
+		return t;
 	}
 
 	/**
 	 * 在什么时间执行
+	 *
 	 * @param Time
 	 * @param toDo
 	 * @param param
 	 */
-	public static jxTimer DoAt(Calendar Time,IDo toDo,Object param)
-	{
-		  jxTimer t=new jxTimer();		
-		  t.myTimer.schedule(new myTask(toDo,param), Time.getTime());		
-	      return t;
+	public static jxTimer DoAt(Calendar Time, IDo toDo, Object param) {
+		jxTimer t = new jxTimer();
+		t.myTimer.schedule(new myTask(toDo, param), Time.getTime());
+		return t;
 	}
 
 	/**
 	 * 周期性执行
+	 *
 	 * @param Period_Second
 	 * @param toDo
 	 * @param param
 	 */
-	public static jxTimer DoPeriod(int Period_Second,IDo toDo,Object param)
-	{
-		  jxTimer t=new jxTimer();
-		  t.myTimer.schedule(new myTask(toDo,param), Period_Second*1000,Period_Second*1000);	   
-	      return t;
+	public static jxTimer DoPeriod(int Period_Second, IDo toDo, Object param) {
+		jxTimer t = new jxTimer();
+		t.myTimer.schedule(new myTask(toDo, param), Period_Second * 1000, Period_Second * 1000);
+		return t;
 	}
-	
-	public void cancel()
-	{
+
+	public static jxTimer DoPeriod(int Period_Second, IDo toDo) {
+		return DoPeriod(Period_Second, toDo, null);
+	}
+
+	public void cancel() {
 		myTimer.cancel();
 	}
-	public void reTick()
-	{
-		if(secondNum>0)
-		{
+
+	public void reTick() {
+		if (secondNum > 0) {
 			myTimer.cancel();
-			myTimer = new Timer(); 
-			myTimer.schedule(new myTask(dual,param), secondNum * 1000);			
+			myTimer = new Timer();
+			myTimer.schedule(new myTask(dual, param), secondNum * 1000);
 		}
 	}
 
-	private static ExecutorService asyncService= Executors.newFixedThreadPool(asyncTaskNum);
-	public static void asyncRun(IDo dual,Object param){
-		asyncService.execute(new myThreand1(dual,param));
+	private static ExecutorService asyncService = Executors.newFixedThreadPool(asyncTaskNum);
+
+	public static void asyncRun(IDo dual, Object param) {
+		asyncService.execute(new myThreand1(dual, param));
 	}
-	public static void asyncRun_CallParam(IDoSomething dual,CallParam param){
-		asyncService.execute(new myThreand2(dual,param));
+	public static void asyncRun(IDo dual) {
+		asyncRun(dual,null);
 	}
-	public static Thread asyncRun_Repeat(IDo dual,Object param,boolean canInterrupt){
-		Thread th=new Thread(() -> {
+
+	public static void asyncRun_CallParam(IDoSomething dual, CallParam param) {
+		asyncService.execute(new myThreand2(dual, param));
+	}
+
+	public static Thread asyncRun_Repeat(IDo dual, Object param, boolean canInterrupt) {
+		Thread th = new Thread(() -> {
 			while (true) {
 				try {
 					dual.Do(param);

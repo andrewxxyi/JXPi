@@ -1,9 +1,11 @@
 
 package cn.ijingxi.app;
 
+import cn.ijingxi.intelControl.jxLua;
 import cn.ijingxi.orm.*;
 import cn.ijingxi.util.jxCompare;
 import cn.ijingxi.util.utils;
+import org.luaj.vm2.LuaValue;
 
 import java.util.*;
 
@@ -14,12 +16,26 @@ public class ObjTag extends jxORMobj
 	public static ObjTag System=null;
 	public static UUID SystemID=null;
 
+	private static Map<String,LuaValue> luaSystemConf=null;
+
 	public static void Init() throws Exception{
 		InitClass(ORMType.ObjTag.ordinal(),ObjTag.class,"标记");
 		InitTagList(tags,1);
 		System=getSystem();
 		if(System!=null)
 			SystemID=System.ID;
+		luaSystemConf= jxLua.getConf("system.lua","system");
+	}
+	public static LuaValue getSystemLuaConf(String confName){
+		if(luaSystemConf!=null)
+			return luaSystemConf.get(confName);
+		return LuaValue.NIL;
+	}
+	public static boolean checkSystemLogin() {
+		LuaValue v = getSystemLuaConf("NoLogin");
+		if (!v.isnil())
+			return v.checkboolean();
+		return false;
 	}
 	public static void CreateDB() throws Exception
 	{

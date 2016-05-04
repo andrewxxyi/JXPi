@@ -1,4 +1,4 @@
-package cn.ijingxi.com.USRIO88;
+package cn.ijingxi.communication.USRIO88;
 
 import cn.ijingxi.communication.comTrans_CmdResponse;
 import cn.ijingxi.intelControl.jxLua;

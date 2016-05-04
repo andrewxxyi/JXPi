@@ -7,14 +7,15 @@ import cn.ijingxi.orm.jxJson;
  */
 public class FrontCommunication {
 
-    protected String devName=null;
-    protected String devType=null;
+    public String devName=null;
+    public String devType=null;
     public int ver=0;
     private jxJson info=null;
 
-    public FrontCommunication(String devName,String devType){
+    public FrontCommunication(String devName,String devType,int ver){
         this.devName=devName;
         this.devType=devType;
+        this.ver=ver;
         info=jxJson.GetObjectNode("Front");
     }
     public void setAttribute(String name,Object value) throws Exception {

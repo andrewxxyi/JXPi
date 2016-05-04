@@ -1,4 +1,4 @@
-package cn.ijingxi.com.TCP232;
+package cn.ijingxi.communication.TCP232;
 
 import cn.ijingxi.intelControl.jxLua;
 import cn.ijingxi.util.jxLog;

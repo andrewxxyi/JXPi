@@ -36,8 +36,19 @@ public class jxPython {
         Process process = null;
         BufferedOutputStream bstdin = null;
         Map<Integer, jxJson> respons = new HashMap<>();
+        jxJson param=null;
     }
 
+    private static Map<String, IDo> eventDual = new HashMap<>();
+    public static void addEventDual(String event,IDo dual) {
+        eventDual.put(event, dual);
+    }
+
+    private static Object jxPythonObject = null;
+    public static Object getPythonObject(){return jxPythonObject;}
+    static {
+        jxPythonObject = jxPython.run("./conf/piControl.py", null);
+    }
 
     /**
      * getResult主要用于python函数主动通知，如果都是命令响应则可以不需要getResult
@@ -46,7 +57,7 @@ public class jxPython {
      * @param param
      * @return
      */
-    public static Object run(String pyFile, jxJson param,IDo eventDual) {
+    public static Object run(String pyFile, jxJson param) {
         jxLog.logger.debug("jxPython run: " + pyFile);
         pythonInfo pi = new pythonInfo();
         try {
@@ -74,13 +85,14 @@ public class jxPython {
                         String cmd = (String) json.getSubObjectValue("cmd");
                         int mid = Trans.TransToInteger(json.getSubObjectValue("msgid"));
                         if (cmd.compareTo("event") == 0){
-                            if(eventDual!=null)
-                                eventDual.Do(json);
+                            IDo dual = eventDual.get(json.getSubObjectValue("resFor"));
+                            if(dual!=null)
+                                dual.Do(json.GetSubObject("data"));
                         }
                         else
                             synchronized (pi.respons) {
                                 pi.respons.put(mid, json);
-                                pi.notify();
+                                pi.respons.notify();
                             }
                     }
                 }
@@ -91,7 +103,7 @@ public class jxPython {
             jxTimer.asyncRun(p2 -> {
                 String line = null;
                 while ((line = bstderr.readLine()) != null) {
-                    jxLog.error("jxPython exec error-" + pyFile + ":" + line);
+                    jxLog.logger.error("jxPython exec error-" + pyFile + ":" + line);
                 }
                 jxLog.logger.debug("jxPython read bstderr over");
                 bstderr.close();
@@ -105,53 +117,66 @@ public class jxPython {
 
     private static Integer msgid = 0;
 
-    public static jxJson getCmd(String funcName) throws Exception {
-        jxJson json = jxJson.GetObjectNode("rs");
-        json.AddValue("cmd", funcName);
+    public static void newCmd(Object pi, String funcName) throws Exception {
+        utils.Check(!(pi instanceof pythonInfo), "需送入run返回值");
+        pythonInfo p = (pythonInfo) pi;
+        p.param = jxJson.GetObjectNode("rs");
+        p.param.AddValue("cmd", funcName);
         synchronized (msgid) {
             msgid++;
             if (msgid == Integer.MAX_VALUE)
                 msgid = 1;
-            json.AddValue("msgid", msgid);
+            p.param.AddValue("msgid", msgid);
         }
-        return json;
+    }
+    public static void setParam(Object pi, String paramName,Object value) throws Exception {
+        utils.Check(!(pi instanceof pythonInfo), "需送入run返回值");
+        pythonInfo p = (pythonInfo) pi;
+        p.param.AddValue(paramName, value);
     }
 
     /**
-     * 执行某参数
+     * 执行某某命令，返回真，则getResult返回了值
      *
      * @param pi
-     * @param param 必须先调用getCmd
      * @throws Exception
      */
-    public static void exec(Object pi, jxJson param, IDo getResult) throws Exception {
-        jxLog.logger.debug("jxPython exec: " + param.getSubObjectValue("cmd"));
+    public static boolean exec(Object pi, IDo getResult) throws Exception {
         utils.Check(!(pi instanceof pythonInfo), "需送入run返回值");
         pythonInfo p = (pythonInfo) pi;
-        String pa = param.TransToString() + "\n";
+        jxLog.logger.debug("jxPython exec: " + p.param.getSubObjectValue("cmd"));
+        String pa = p.param.TransToString() + "\n";
 
         jxJson rs = null;
         p.bstdin.write(pa.getBytes());
         p.bstdin.flush();
         jxLog.logger.debug("jxPython bstdin write: " + pa);
+        if (getResult == null)
+            return true;
         try {
             synchronized (p.respons) {
-                p.wait(3000);
-                rs = p.respons.remove(param.GetSubValue("msgid"));
+                p.respons.wait(3000);
+                rs = p.respons.remove(p.param.GetSubValue("msgid"));
             }
+            Object s = null;
+            if (rs != null) {
+                jxLog.logger.debug("get result:" + rs.TransToString());
+                s = rs.getSubObjectValue("data");
+            }
+            getResult.Do(s);
+            return true;
         } catch (Exception e) {
             jxLog.error(e);
+            return false;
         }
-        if (getResult != null)
-            getResult.Do(rs);
-        jxLog.logger.debug("jxPython exec over");
     }
 
     public static void close(Object pi) throws Exception {
         utils.Check(!(pi instanceof pythonInfo), "需送入run返回值");
         pythonInfo p = (pythonInfo) pi;
-        jxJson param = getCmd("close");
-        exec(pi, param, null);
+        p.param = jxJson.GetObjectNode("rs");
+        p.param.AddValue("cmd", "close");
+        exec(pi, null);
         Thread.sleep(100);
         p.bstdin.close();
         p.process.destroy();

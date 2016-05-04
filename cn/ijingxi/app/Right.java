@@ -65,6 +65,10 @@ public class Right extends ObjTag {
      */
     public static boolean check(UUID objID,String res,String active,jxJson param) throws Exception {
         jxLog.logger.debug(active + ":" + active);
+
+        //如果系统配置NoLogin为true则系统不再进行登录控制
+        if(ObjTag.checkSystemLogin())return true;
+
         utils.Check(res == null, "资源名不能为空");
         //active则代表对整个资源的权限检查
         if (objID != null) {

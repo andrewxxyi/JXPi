@@ -1,11 +1,13 @@
-package cn.ijingxi.com.USRIO88;
+package cn.ijingxi.communication.USRIO88;
 
 import cn.ijingxi.communication.ComData;
 import cn.ijingxi.communication.comTrans_CmdResponse;
 import cn.ijingxi.communication.jxNIOTCPClient;
 import cn.ijingxi.intelControl.FrontCommunication;
 import cn.ijingxi.intelControl.jxLua;
-import cn.ijingxi.util.*;
+import cn.ijingxi.util.jxLog;
+import cn.ijingxi.util.jxStateMachine;
+import cn.ijingxi.util.jxTimer;
 
 /**
  * Created by andrew on 16-3-5.
@@ -17,13 +19,12 @@ public class luaFront_USRIO88 extends FrontCommunication {
 
     private jxStateMachine.realSM[] sms=null;
 
-    public luaFront_USRIO88(String devName,String devType,int ver,
+    public luaFront_USRIO88(String devName,String passwd,String devType,int ver,
                             jxNIOTCPClient client,boolean startRead) throws Exception {
-        super(devName, devType);
-        this.ver = ver;
-        trans = new comTrans_USR(client);
+        super(devName, devType,ver);
+        trans = new comTrans_USR(client,passwd);
         if (startRead)
-            startReadInput();
+            startReadInput_luaSM();
     }
 
     @Override
@@ -49,27 +50,27 @@ public class luaFront_USRIO88 extends FrontCommunication {
             Integer channel = (Integer) p2;
             switch (channel){
                 case 0:
-                    jxLog.debug("Channel 1:closed");
+                    jxLog.logger.debug("Channel 1:closed");
                     FrontUSR.call("setChannel","USR1","Close",1,null,0,0);
                     break;
                 case 1:
-                    jxLog.debug("Channel 2:closed");
+                    jxLog.logger.debug("Channel 2:closed");
                     FrontUSR.call("setChannel","USR1","Open",1,null,0,0);
                     break;
                 case 2:
-                    jxLog.debug("Channel 3:closed");
+                    jxLog.logger.debug("Channel 3:closed");
                     FrontUSR.call("setChannel","USR1","Close",2,null,0,0);
                     break;
                 case 3:
-                    jxLog.debug("Channel 4:closed");
+                    jxLog.logger.debug("Channel 4:closed");
                     FrontUSR.call("setChannel","USR1","Open",2,null,0,0);
                     break;
                 case 4:
-                    jxLog.debug("Channel 5:closed");
+                    jxLog.logger.debug("Channel 5:closed");
                     FrontUSR.call("setChannel","USR1","Close",3,null,0,0);
                     break;
                 case 5:
-                    jxLog.debug("Channel 6:closed");
+                    jxLog.logger.debug("Channel 6:closed");
                     FrontUSR.call("setChannel","USR1","Open",3,null,0,0);
                     break;
 
@@ -113,7 +114,7 @@ public class luaFront_USRIO88 extends FrontCommunication {
                         }
                     }
                 } else
-                    jxLog.debug((String) srs.error);
+                    jxLog.logger.debug((String) srs.error);
             }, null);
 
         });
@@ -152,7 +153,7 @@ public class luaFront_USRIO88 extends FrontCommunication {
                         }
                     }
                 } else
-                    jxLog.debug((String) srs.error);
+                    jxLog.logger.debug((String) srs.error);
             }, null);
 
         });
