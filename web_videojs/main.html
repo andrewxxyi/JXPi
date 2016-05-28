@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- 上述3个meta标签*必须*放在最前面，任何其他内容都*必须*跟随其后！ -->
+    <title>智能控制</title>
+    
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="/bower_components/bootstrap/dist/css/bootstrap.min.css">
+
+<script src="/bower_components/jquery/dist/jquery.min.js"></script>
+<script src="/bower_components/angular/angular.min.js"></script>
+<script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/bower_components/angular-route/angular-route.min.js"></script>
+<script src="/bower_components/angular-bootstrap/ui-bootstrap-tpls.min.js"></script>
+<script src="/js/jquery.json-2.4.min.js"></script>
+    
+  <link href="/bower_components/video.js/dist/video-js.min.css" rel="stylesheet" type="text/css">
+  <script src="/bower_components/video.js/dist/ie8/videojs-ie8.min.js"></script>
+  <script src="/bower_components/video.js/dist/video.min.js"></script>
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="js/html5shiv.min.js"></script>
+      <script src="js/respond.min.js"></script>
+    <![endif]-->
+  </head>
+  <body  ng-app="pi">
+
+<nav class="navbar navbar-default">
+  <div class="container-fluid">
+    <!-- Brand and toggle get grouped for better mobile display -->
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="#">JXPi</a>
+    </div>
+
+    <!-- Collect the nav links, forms, and other content for toggling -->
+    <!-- 动态生成应用导航条，在NavbarCtrl中定义 -->
+    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1"  ng-controller="NavbarCtrl">
+      <ul class="nav navbar-nav">
+        <li ng-repeat="a1 in navbar" class="dropdown">
+          <a ng-show="a1.children.length>0" href="{{ a1.href }}" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">{{ a1.label }}<span class="caret"></span></a>
+          <a ng-show="a1.children.length==0" href="{{ a1.href }}">{{ a1.label }}<span class="caret"></span></a>
+          <ul ng-show="a1.children.length>0" class="dropdown-menu">
+            <li ng-repeat="a2 in a1.children">
+              <a href="{{ a2.href }}">{{ a2.label }}</a>
+            </li>
+          </ul>
+        </li>
+      </ul>
+
+      <ul class="nav navbar-nav navbar-right">
+        <li><a href="#">修改密码</a></li>
+        <li><a href="#">退出</a></li>
+
+      </ul>
+    </div><!-- /.navbar-collapse -->
+  </div><!-- /.container-fluid -->
+</nav>
+
+    <div class="container">
+
+						<div class="row">
+  <!-- 
+<div class="col-sm-4 infobox-container">
+										<div class="infobox infobox-blue">
+
+											<div class="infobox-data">
+												<span id="value_x" class="infobox-data-number">0</span>
+												<div class="infobox-content">x坐标</div>
+											</div>
+
+										</div>
+										<div class="infobox infobox-blue">
+											<div class="infobox-data">
+												<span id="value_y" class="infobox-data-number">0</span>
+												<div class="infobox-content">y坐标</div>
+											</div>
+										</div>
+
+										<div class="infobox infobox-blue">
+											<div class="infobox-data">
+												<span id="value_angle" class="infobox-data-number">0</span>
+												<div class="infobox-content">倾斜角度</div>
+											</div>
+										</div>
+
+										<div class="infobox infobox-blue">
+											<div class="infobox-data">
+												<span id="value_length" class="infobox-data-number">0</span>
+												<div class="infobox-content">长度</div>
+											</div>
+										</div>
+											
+										
+</div>
+-->
+<div class="col-sm-4 infobox-container">
+										<div class="infobox infobox-blue">
+											<div class="infobox-data">
+												<span id="value_speed" class="infobox-data-number">0</span>
+												<div class="infobox-content">小车转速</div>
+											</div>
+</div>
+<div class="btn-group btn-group-lg">
+											<button class="btn btn-app btn-primary" onclick="test()">
+												直接调用lua脚本测试
+											</button>		
+											
+</div>
+											
+											
+								</div>
+								
+						<div class="row">
+									<div class="space-6"></div>
+						<div class="col-sm-8">
+<video id="course_live" class="video-js vjs-default-skin vjs-big-play-centered"  
+  controls preload="auto" width="720px" height="576px"
+  data-setup=''>
+
+ <p class="vjs-no-js">播放视频需要启用 JavaScript，推荐使用支持HTML5的浏览器访问。</p>
+</video>  
+			
+								</div>
+
+								
+								</div>
+								
+						<div class="row">
+						方向舵操纵板
+<div id="div_canvas">
+
+</div>
+
+
+								</div>
+								
+    </div> <!-- /container -->
+
+
+
+
+<script src="/js/JXCommon.js"></script>
+<script src="/js/jxCanvas.js"></script>
+<script src="/js/JXPlugin.js"></script>
+
+<script src="/js/app.js"></script>
+
+    <script type="text/javascript">
+
+      window.onload = function(){
+        checkSession();
+        $("#div_canvas").jxHelm({moveFunc:function (radian,length) {
+        	drive(radian,length)
+        	//alert("angel:"+angle+",length:"+length);
+        },stopOP:function () {
+        	stopdrive();
+        }});
+        live_start();
+      }
+      window.onunload = function(){
+        live_stop();
+      }
+      setSpeedCompute(function (speed) {
+      	$("#value_speed").html=speed;
+      })
+
+
+    </script>
+  </body>
+</html>

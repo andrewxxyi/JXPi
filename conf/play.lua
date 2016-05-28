@@ -1,0 +1,12 @@
+function exec()
+	local table={
+replay_flv={cmd="/usr/bin/vlc -I dummy -vvv %s.flv --sout '#transcode{vcodec=flv,vb=800,acodec=mp3,ab=64,channels=1,samplerate=44100}:std{access=http,mux=flv,dst=:%d/%s}' 2>/tmp/%s.log",devType="file",serverIPorDevName=false,ServerIP="wlan0",useNC=false,keyName=true,key="SDP",paramNum=4,p1="FilePath",p2="Port",p3="SDP",p4="SDP",pageName=false,Page="live",Type="video/x-flv"},
+live_flv={cmd="/usr/bin/vlc -I dummy -vvv stream:///dev/stdin --sout-transcode-width 720 --sout-transcode-height 576 --sout '#transcode{vcodec=flv,vb=800,acodec=mp3,ab=64,channels=1,samplerate=44100}:http{mux=flv,dst=:%d/%s}' :demux=mp4 2>/tmp/%s.log",serverIPorDevName=false,ServerIP="wlan0",useNC=false,keyName=true,key="SDP",paramNum=3,p1="Port",p2="SDP",p3="SDP",pageName=false,Page="live",Type="video/x-flv"},
+record={cmd="/usr/bin/vlc -I dummy -vvv stream:///dev/stdin --sout-transcode-width 720 --sout-transcode-height 576 --sout '#transcode{vcodec=flv,vb=800,acodec=mp3,ab=64,channels=1,samplerate=44100}:file{mux=flv,dst=/var/course/%s.flv}' 2>/tmp/%s.log",keyName=true,key="SDP",paramNum=2,p1="SDP",p2="SDP"},
+replay_ogg={cmd="/usr/bin/vlc -I dummy -vvv %s.flv --sout '#transcode{vcodec=theo,vb=800,acodec=vorb,ab=64,channels=1,samplerate=44100}:std{access=http,mux=ogg,dst=:%d/%s}' 2>/tmp/%s.log",devType="file",serverIPorDevName=false,ServerIP="wlan0",useNC=false,keyName=true,key="SDP",paramNum=4,p1="FilePath",p2="Port",p3="SDP",p4="SDP",pageName=false,Page="live",Type="video/ogg"},
+live_ogg={cmd="/usr/bin/vlc -I dummy -vvv stream:///dev/stdin --sout-transcode-width 720 --sout-transcode-height 576 --sout '#transcode{vcodec=theo,vb=800,acodec=vorb,ab=64,channels=1,samplerate=44100}:http{mux=ogg,dst=:%d/%s}' 2>/tmp/%s.log",serverIPorDevName=false,ServerIP="wlan0",useNC=true,keyName=true,key="SDP",paramNum=3,p1="Port",p2="SDP",p3="SDP",pageName=false,Page="live",Type="video/ogg"},
+live_HikVison_ogg={cmd="/usr/bin/vlc -I dummy -vvv rtsp://%s:%s@%s/h264/ch%d/main/av_stream --sout-transcode-width 720 --sout-transcode-height 576 --sout '#transcode{vcodec=theo,vb=800,acodec=vorb,ab=64,channels=1,samplerate=44100}:http{mux=ogg,dst=:%d/%s}' 2>/tmp/%s.log",devType="rtsp",serverIPorDevName=false,ServerIP="wlan0",useNC=false,keyName=true,key="SDP",paramNum=7,p1="UserName",p2="Passwd",p3="DevIP",p4="ChannelID",p5="Port",p6="SDP",p7="SDP",pageName=false,Page="live",Type="video/ogg"}
+	}
+	return table
+end
+
