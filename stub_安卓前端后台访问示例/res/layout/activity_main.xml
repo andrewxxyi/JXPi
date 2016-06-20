@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+		android:layout_width="fill_parent"
+		android:layout_height="fill_parent"
+		android:orientation="vertical"
+		xmlns:android="http://schemas.android.com/apk/res/android">
+	<TextView
+			android:layout_width="wrap_content"
+			android:layout_height="25dp"
+			android:text="&#33487;&#24030;&#25216;&#24072;&#23398;&#38498;&#26426;&#30005;&#31995;&#26426;&#30005;&#25511;&#21046;&#31995;&#32479;"
+			android:textSize="18sp"
+			android:layout_gravity="center_horizontal" />
+	<TableLayout
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:orientation="vertical"
+			android:layout_gravity="center_horizontal">
+		<TableRow
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:orientation="horizontal">
+			<Button
+					android:id="@+id/btn_active1"
+					android:layout_width="100dp"
+					android:layout_height="wrap_content"
+					android:text="6D301总电源开" />
+			<Button
+					android:id="@+id/btn_active2"
+					android:layout_width="100dp"
+					android:layout_height="wrap_content"
+					android:text="6D301总电源关" />
+		</TableRow>
+		<TableRow
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:orientation="horizontal">
+			<Button
+					android:id="@+id/btn_active3"
+					android:layout_width="100dp"
+					android:layout_height="wrap_content"
+					android:text="6D201总电源开" />
+			<Button
+					android:id="@+id/btn_active4"
+					android:layout_width="100dp"
+					android:layout_height="wrap_content"
+					android:text="6D201总电源关" />
+		</TableRow>
+		<TableRow
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:orientation="horizontal">
+			<Button
+					android:id="@+id/btn_active5"
+					android:layout_width="100dp"
+					android:layout_height="wrap_content"
+					android:text="6D303总电源开" />
+			<Button
+					android:id="@+id/btn_active6"
+					android:layout_width="100dp"
+					android:layout_height="wrap_content"
+					android:text="6D303总电源关" />
+		</TableRow>
+		<TableRow
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:orientation="horizontal">
+			<Button
+					android:id="@+id/btn_active7"
+					android:layout_width="100dp"
+					android:layout_height="wrap_content"
+					android:text="6D201吊杆开始升" />
+			<Button
+					android:id="@+id/btn_active8"
+					android:layout_width="100dp"
+					android:layout_height="wrap_content"
+					android:text="6D201吊杆停止升" />
+		</TableRow>
+		<TableRow
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:orientation="horizontal">
+			<Button
+					android:id="@+id/btn_active9"
+					android:layout_width="100dp"
+					android:layout_height="wrap_content"
+					android:text="6D201吊杆开始降" />
+			<Button
+					android:id="@+id/btn_active10"
+					android:layout_width="100dp"
+					android:layout_height="wrap_content"
+					android:text="6D201吊杆停止降" />
+		</TableRow>
+		<TableRow
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:orientation="horizontal">
+			<Button
+					android:id="@+id/btn_active11"
+					android:layout_width="100dp"
+					android:layout_height="wrap_content"
+					android:text="电工桌面开始升" />
+			<Button
+					android:id="@+id/btn_active12"
+					android:layout_width="100dp"
+					android:layout_height="wrap_content"
+					android:text="电工桌面停止升" />
+		</TableRow>
+		<TableRow
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:orientation="horizontal">
+			<Button
+					android:id="@+id/btn_active13"
+					android:layout_width="100dp"
+					android:layout_height="wrap_content"
+					android:text="电工桌面开始降" />
+			<Button
+					android:id="@+id/btn_active14"
+					android:layout_width="100dp"
+					android:layout_height="wrap_content"
+					android:text="电工桌面停止降" />
+		</TableRow>
+	</TableLayout>
+</LinearLayout>
