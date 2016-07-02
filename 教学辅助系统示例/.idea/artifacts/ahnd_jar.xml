@@ -1,0 +1,26 @@
+<component name="ArtifactManager">
+  <artifact type="jar" build-on-make="true" name="ahnd:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/ahnd_jar</output-path>
+    <root id="archive" name="ahnd.jar">
+      <element id="module-output" name="ahnd" />
+      <element id="module-output" name="cn.ijingxi" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/../ref/apache-mime4j-core-0.7.2.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/../ref/log4j-core-2.5.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/../ref/pi4j-service.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/../ref/luaj-jse-3.0.1.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/../ref/pi4j-device.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/../ref/log4j-api-2.5.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/../ref/pi4j-core.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/../ref/commons-logging-1.2.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/../ref/apache-mime4j-dom-0.7.2.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/../ref/commons-codec-1.9.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/../ref/pi4j-gpio-extension.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/../ref/httpclient-4.5.1.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/../ref/httpmime-4.4.1.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/../ref/httpcore-4.4.1.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/../ref/sqlite-jdbc-3.7.2.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/../ref/sqlite-jdbc-3.8.11.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/../ref/commons-io-2.4.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>

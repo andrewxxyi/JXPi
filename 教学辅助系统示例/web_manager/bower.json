@@ -1,0 +1,12 @@
+{
+  "name": "angular-SSTS",
+  "version": "0.0.1",
+  "author": "Andrew Xu",
+  "dependencies": {
+    "bootstrap": "^3.3.6",
+    "angular": "^1.4.9",
+    "angular-route": "^1.4.9",
+    "angular-bootstrap": "^1.1.1",
+    "jquery": "^2.2.3"
+  }
+}

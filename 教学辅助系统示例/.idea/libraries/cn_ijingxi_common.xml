@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="cn.ijingxi.common">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../cn.ijingxi.common/classes/artifacts/cn_ijingxi_common_jar/cn.ijingxi.common.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

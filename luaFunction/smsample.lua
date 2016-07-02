@@ -74,6 +74,17 @@ function init()
 	end)
 end
 
+function andriodClick(paramTable)
+	jxLua.log("paramTable:"..paramTable)
+	if(paramTable.State)
+	then
+		luaStateMachine.happen(smName,sm_Event_SW2Close)
+	then
+		luaStateMachine.happen(smName,sm_Event_SW2Open)
+	end
+	luaStateMachine.clear(smName)
+end
+
 function close()
 	luaStateMachine.clear(smName)
 end

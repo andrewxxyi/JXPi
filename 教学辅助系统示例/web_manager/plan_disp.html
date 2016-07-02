@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- 上述3个meta标签*必须*放在最前面，任何其他内容都*必须*跟随其后！ -->
+    <title>课程计划</title>
+    
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="/bower_components/bootstrap/dist/css/bootstrap.min.css">
+
+		<link rel="stylesheet" href="/css/font-awesome.min.css" />
+		<link rel="stylesheet" href="/css/jquery-ui-1.10.3.custom.min.css" />
+
+		<link rel="stylesheet" href="/css/ace.min.css" />
+		<link rel="stylesheet" href="/css/ace-rtl.min.css" />
+		<link rel="stylesheet" href="/css/ace-skins.min.css" />
+				<style type="text/css">
+
+		 table,tr,td{
+			padding:0;
+			margin:0;
+		 }
+
+		#image{
+		    background:url("登录背景.jpg no-repeat" );
+		}
+
+		 table{
+		   
+		   text-align:center;
+		   height:700px;
+		   width:1438px;
+     
+		 }
+		 #wang{
+			height:60px;
+		 }
+		 body{
+		   margin:0;
+		   width:100%;
+		 }
+		 
+		 
+		  #editor2{
+		     padding-top:53px;
+			 
+		 }
+		  #queren{
+		     height:50px;
+             padding-left:15px;
+		    
+		 }
+		 #lianxi{
+		   height:40px;
+		   color:#3366ff;
+		 
+		  }
+		   #shijian{
+		   
+		   color:#3366ff;
+		 
+		  }
+		   #wanzx{
+		 
+		   color:#3366ff;
+		 
+		  }
+		#mei{
+		   width:15px;
+		   font-size:10px;
+           
+		}
+
+        #tj1,#tj2,#tj3{
+		    background-color:#ccccff;
+		    
+		}
+
+		#tj4{
+		height:60px;
+		  
+		}
+		 #ri{
+		   height:50px;
+		   color:#3366ff;
+		   font-size:15px;
+		 }
+		 #queren2{
+		   background-color:#ccccff;
+		 }
+		
+	 </style>
+
+		
+		
+		
+		
+		<script src="/js/ace-extra.min.js"></script>
+		
+		
+		
+		
+<script src="/bower_components/jquery/dist/jquery.min.js"></script>
+<script src="/bower_components/angular/angular.min.js"></script>
+<script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/bower_components/angular-route/angular-route.min.js"></script>
+<script src="/bower_components/angular-bootstrap/ui-bootstrap-tpls.min.js"></script>
+<script src="/bower_components/jquery.base64.js/jquery.base64.js"></script>
+<script src="/js/jquery.json-2.4.min.js"></script>
+  
+		<script src="/js/typeahead-bs2.min.js"></script>
+
+		<!-- page specific plugin scripts -->
+
+		<script src="/js/jquery-ui-1.10.3.custom.min.js"></script>
+		<script src="/js/jquery.ui.touch-punch.min.js"></script>
+		<script src="/js/markdown/markdown.min.js"></script>
+		<script src="/js/markdown/bootstrap-markdown.min.js"></script>
+		<script src="/js/jquery.hotkeys.min.js"></script>
+		<script src="/js/bootstrap-wysiwyg.min.js"></script>
+		<script src="/js/bootbox.min.js"></script>
+
+		<script src="/js/fullcalendar.min.js"></script>
+		<!-- ace scripts -->
+
+		<script src="/js/ace-elements.min.js"></script>
+		<script src="/js/ace.min.js"></script>
+		
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="js/html5shiv.min.js"></script>
+      <script src="js/respond.min.js"></script>
+    <![endif]-->
+  </head>
+  <body  ng-app="ahnd">
+
+<nav class="navbar navbar-default">
+  <div class="container-fluid">
+    <!-- Brand and toggle get grouped for better mobile display -->
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="#">JXPi</a>
+    </div>
+
+    <!-- Collect the nav links, forms, and other content for toggling -->
+    <!-- 动态生成应用导航条，在NavbarCtrl中定义 -->
+    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1"  ng-controller="NavbarCtrl">
+      <ul class="nav navbar-nav">
+        <li ng-repeat="a1 in navbar" class="dropdown">
+          <a ng-show="a1.children.length>0" href="{{ a1.href }}" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">{{ a1.label }}<span class="caret"></span></a>
+          <a ng-show="a1.children.length==0" href="{{ a1.href }}">{{ a1.label }}<span class="caret"></span></a>
+          <ul ng-show="a1.children.length>0" class="dropdown-menu">
+            <li ng-repeat="a2 in a1.children">
+              <a href="{{ a2.href }}">{{ a2.label }}</a>
+            </li>
+          </ul>
+        </li>
+      </ul>
+
+      <ul class="nav navbar-nav navbar-right">
+        <li><a  data-toggle="modal" href="#modal_question" >问题登记</a></li>
+        <li><a href="changePasswd.html">修改密码</a></li>
+        <li><a href="login.html">退出</a></li>
+
+      </ul>
+    </div><!-- /.navbar-collapse -->
+  </div><!-- /.container-fluid -->
+</nav>
+
+
+<!-- 模态框（Modal） -->
+<div class="modal fade" id="modal_question" tabindex="-1" role="dialog" 
+   aria-labelledby="myModalLabel" aria-hidden="true">
+   <div class="modal-dialog">
+      <div class="modal-content">
+         <div class="modal-header">
+            <button type="button" class="close" 
+               data-dismiss="modal" aria-hidden="true">
+                  &times;
+            </button>
+            <h4 class="modal-title" id="myModalLabel">
+               问题记录
+            </h4>
+         </div>
+                              <input type="text" placeholder="请输入您所遇到的问题" class="nav-search-input" id="txt_question" autocomplete="off" />
+         <div class="modal-footer">
+            <button type="button" class="btn btn-default" 
+               data-dismiss="modal">关闭
+            </button>
+            <button type="button" class="btn btn-primary" onclick="question_commit()" >
+               提交更改
+            </button>
+         </div>
+      </div><!-- /.modal-content -->
+</div><!-- /.modal -->
+</div>
+
+
+
+
+
+
+    <div class="container">
+								
+						<div class="row">
+						
+						<div class="col-sm-4">
+<div id="calendar"></div>
+									</div>
+								</div>
+						<div class="col-sm-1">
+上午
+								</div>
+						<div class="col-sm-7">
+
+						<div class="row">
+模块一：9:00-10:30基础练习
+<div class="wysiwyg-editor" id="plan_disp_editor1" >基础训练。。。。</div>
+
+								</div>
+						<div class="row">
+模块二：10:30-11:30问题灭除
+<div class="wysiwyg-editor" id="plan_disp_editor2" >问题灭除。。。。</div>
+
+								</div>
+								</div>
+
+						<div class="col-sm-1">
+
+								</div>
+								</div>
+														<div class="row">
+						
+						<div class="col-sm-4">
+
+								</div>
+						<div class="col-sm-1">
+下午
+								</div>
+						<div class="col-sm-7">
+
+						<div class="row">
+模块三：13:30-16:30项目实训
+<div class="wysiwyg-editor" id="plan_disp_editor3" >项目实训。。。。</div>
+
+								</div>
+						<div class="row">
+模块四：16:30-17:00文体活动
+<div class="wysiwyg-editor" id="plan_disp_editor4" >文体活动。。。。</div>
+
+								</div>
+								</div>
+
+						<div class="col-sm-1">
+
+								</div>
+								</div>
+						<div class="row">
+						
+						<div class="col-sm-4">
+
+								</div>
+						<div class="col-sm-1">
+晚上
+								</div>
+						<div class="col-sm-7">
+
+						<div class="row">
+模块五：18:30-20:00讲座
+<div class="wysiwyg-editor" id="plan_disp_editor5" >讲座。。。。</div>
+
+								</div>
+								</div>
+
+						<div class="col-sm-4">
+
+								</div>
+								</div>								
+								
+						<div class="row">
+						<div class="col-sm-1">
+
+						<div class="col-sm-7">
+
+								</div>
+
+								</div>
+
+
+						<div class="col-sm-1">
+
+								</div>
+								</div>
+								
+    </div> <!-- /container -->
+
+
+
+
+<script src="/js/JXCommon.js"></script>
+<script src="/js/jxCanvas.js"></script>
+<script src="/js/JXPlugin.js"></script>
+
+<script src="/js/app.js"></script>
+
+    <script type="text/javascript">
+    
+      window.onload = function(){
+        //checkSession();
+        
+        }
+        
+        
+			jQuery(function($){
+	
+	function showErrorAlert (reason, detail) {
+		var msg='';
+		if (reason==='unsupported-file-type') { msg = "Unsupported format " +detail; }
+		else {
+			console.log("error uploading file", reason, detail);
+		}
+		$('<div class="alert"> <button type="button" class="close" data-dismiss="alert">&times;</button>'+ 
+		 '<strong>File upload error</strong> '+msg+' </div>').prependTo('#alerts');
+	}
+
+	$('#plan_disp_editor1').ace_wysiwyg({
+		toolbar:
+		[
+			'font',
+			null,
+			'fontSize',
+			null,
+			{name:'bold', className:'btn-info'},
+			{name:'italic', className:'btn-info'},
+			{name:'strikethrough', className:'btn-info'},
+			{name:'underline', className:'btn-info'},
+			null,
+			{name:'insertunorderedlist', className:'btn-success'},
+			{name:'insertorderedlist', className:'btn-success'},
+			{name:'outdent', className:'btn-purple'},
+			{name:'indent', className:'btn-purple'},
+			null,
+			{name:'justifyleft', className:'btn-primary'},
+			{name:'justifycenter', className:'btn-primary'},
+			{name:'justifyright', className:'btn-primary'},
+			{name:'justifyfull', className:'btn-inverse'},
+			null,
+			{name:'createLink', className:'btn-pink'},
+			{name:'unlink', className:'btn-pink'},
+			null,
+			{name:'insertImage', className:'btn-success'},
+			null,
+			'foreColor',
+			null,
+			{name:'undo', className:'btn-grey'},
+			{name:'redo', className:'btn-grey'}
+		],
+		'wysiwyg': {
+			fileUploadError: showErrorAlert
+		}
+	}).prev().addClass('wysiwyg-style2');
+	
+	$('#plan_disp_editor2').ace_wysiwyg({
+		toolbar:
+		[
+			'font',
+			null,
+			'fontSize',
+			null,
+			{name:'bold', className:'btn-info'},
+			{name:'italic', className:'btn-info'},
+			{name:'strikethrough', className:'btn-info'},
+			{name:'underline', className:'btn-info'},
+			null,
+			{name:'insertunorderedlist', className:'btn-success'},
+			{name:'insertorderedlist', className:'btn-success'},
+			{name:'outdent', className:'btn-purple'},
+			{name:'indent', className:'btn-purple'},
+			null,
+			{name:'justifyleft', className:'btn-primary'},
+			{name:'justifycenter', className:'btn-primary'},
+			{name:'justifyright', className:'btn-primary'},
+			{name:'justifyfull', className:'btn-inverse'},
+			null,
+			{name:'createLink', className:'btn-pink'},
+			{name:'unlink', className:'btn-pink'},
+			null,
+			{name:'insertImage', className:'btn-success'},
+			null,
+			'foreColor',
+			null,
+			{name:'undo', className:'btn-grey'},
+			{name:'redo', className:'btn-grey'}
+		],
+		'wysiwyg': {
+			fileUploadError: showErrorAlert
+		}
+	}).prev().addClass('wysiwyg-style2');
+
+	  $('#plan_disp_editor3').ace_wysiwyg({
+		toolbar:
+		[
+			'font',
+			null,
+			'fontSize',
+			null,
+			{name:'bold', className:'btn-info'},
+			{name:'italic', className:'btn-info'},
+			{name:'strikethrough', className:'btn-info'},
+			{name:'underline', className:'btn-info'},
+			null,
+			{name:'insertunorderedlist', className:'btn-success'},
+			{name:'insertorderedlist', className:'btn-success'},
+			{name:'outdent', className:'btn-purple'},
+			{name:'indent', className:'btn-purple'},
+			null,
+			{name:'justifyleft', className:'btn-primary'},
+			{name:'justifycenter', className:'btn-primary'},
+			{name:'justifyright', className:'btn-primary'},
+			{name:'justifyfull', className:'btn-inverse'},
+			null,
+			{name:'createLink', className:'btn-pink'},
+			{name:'unlink', className:'btn-pink'},
+			null,
+			{name:'insertImage', className:'btn-success'},
+			null,
+			'foreColor',
+			null,
+			{name:'undo', className:'btn-grey'},
+			{name:'redo', className:'btn-grey'}
+		],
+		'wysiwyg': {
+			fileUploadError: showErrorAlert
+		}
+	}).prev().addClass('wysiwyg-style2');
+
+
+	  $('#plan_disp_editor4').ace_wysiwyg({
+		toolbar:
+		[
+			'font',
+			null,
+			'fontSize',
+			null,
+			{name:'bold', className:'btn-info'},
+			{name:'italic', className:'btn-info'},
+			{name:'strikethrough', className:'btn-info'},
+			{name:'underline', className:'btn-info'},
+			null,
+			{name:'insertunorderedlist', className:'btn-success'},
+			{name:'insertorderedlist', className:'btn-success'},
+			{name:'outdent', className:'btn-purple'},
+			{name:'indent', className:'btn-purple'},
+			null,
+			{name:'justifyleft', className:'btn-primary'},
+			{name:'justifycenter', className:'btn-primary'},
+			{name:'justifyright', className:'btn-primary'},
+			{name:'justifyfull', className:'btn-inverse'},
+			null,
+			{name:'createLink', className:'btn-pink'},
+			{name:'unlink', className:'btn-pink'},
+			null,
+			{name:'insertImage', className:'btn-success'},
+			null,
+			'foreColor',
+			null,
+			{name:'undo', className:'btn-grey'},
+			{name:'redo', className:'btn-grey'}
+		],
+		'wysiwyg': {
+			fileUploadError: showErrorAlert
+		}
+	}).prev().addClass('wysiwyg-style2');
+
+
+	  $('#plan_disp_editor5').ace_wysiwyg({
+		toolbar:
+		[
+			'font',
+			null,
+			'fontSize',
+			null,
+			{name:'bold', className:'btn-info'},
+			{name:'italic', className:'btn-info'},
+			{name:'strikethrough', className:'btn-info'},
+			{name:'underline', className:'btn-info'},
+			null,
+			{name:'insertunorderedlist', className:'btn-success'},
+			{name:'insertorderedlist', className:'btn-success'},
+			{name:'outdent', className:'btn-purple'},
+			{name:'indent', className:'btn-purple'},
+			null,
+			{name:'justifyleft', className:'btn-primary'},
+			{name:'justifycenter', className:'btn-primary'},
+			{name:'justifyright', className:'btn-primary'},
+			{name:'justifyfull', className:'btn-inverse'},
+			null,
+			{name:'createLink', className:'btn-pink'},
+			{name:'unlink', className:'btn-pink'},
+			null,
+			{name:'insertImage', className:'btn-success'},
+			null,
+			'foreColor',
+			null,
+			{name:'undo', className:'btn-grey'},
+			{name:'redo', className:'btn-grey'}
+		],
+		'wysiwyg': {
+			fileUploadError: showErrorAlert
+		}
+	}).prev().addClass('wysiwyg-style2');
+
+
+
+	/* initialize the calendar
+	-----------------------------------------------------------------*/
+
+	var date = new Date();
+	var d = date.getDate();
+	var m = date.getMonth();
+	var y = date.getFullYear();
+
+	
+	var calendar = $('#calendar').fullCalendar({
+		 buttonText: {
+			prev: '<i class="icon-chevron-left"></i>',
+			next: '<i class="icon-chevron-right"></i>'
+		},
+	
+		header: {
+			left: 'prev,next',
+			center: 'title',
+			right: 'month'
+		}
+		,
+		selectable: true,
+		selectHelper: true,
+		select: function(start, end, allDay) {
+			//alert(start);			
+			plan_disp(start);
+		}
+		
+	});
+
+
+
+	$('[data-toggle="buttons"] .btn').on('click', function(e){
+		var target = $(this).find('input[type=radio]');
+		var which = parseInt(target.val());
+		var toolbar = $('#editor1').prev().get(0);
+		if(which == 1 || which == 2 || which == 3) {
+			toolbar.className = toolbar.className.replace(/wysiwyg\-style(1|2)/g , '');
+			if(which == 1) $(toolbar).addClass('wysiwyg-style1');
+			else if(which == 2) $(toolbar).addClass('wysiwyg-style2');
+		}
+	});
+
+	if ( typeof jQuery.ui !== 'undefined' && /applewebkit/.test(navigator.userAgent.toLowerCase()) ) {
+		
+		var lastResizableImg = null;
+		function destroyResizable() {
+			if(lastResizableImg == null) return;
+			lastResizableImg.resizable( "destroy" );
+			lastResizableImg.removeData('resizable');
+			lastResizableImg = null;
+		}
+
+		var enableImageResize = function() {
+			$('.wysiwyg-editor')
+			.on('mousedown', function(e) {
+				var target = $(e.target);
+				if( e.target instanceof HTMLImageElement ) {
+					if( !target.data('resizable') ) {
+						target.resizable({
+							aspectRatio: e.target.width / e.target.height,
+						});
+						target.data('resizable', true);
+						
+						if( lastResizableImg != null ) {//disable previous resizable image
+							lastResizableImg.resizable( "destroy" );
+							lastResizableImg.removeData('resizable');
+						}
+						lastResizableImg = target;
+					}
+				}
+			})
+			.on('click', function(e) {
+				if( lastResizableImg != null && !(e.target instanceof HTMLImageElement) ) {
+					destroyResizable();
+				}
+			})
+			.on('keydown', function() {
+				destroyResizable();
+			});
+	    }
+		
+		enableImageResize();
+
+	}
+
+
+});
+
+    </script>
+  </body>
+</html>

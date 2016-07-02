@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- 上述3个meta标签*必须*放在最前面，任何其他内容都*必须*跟随其后！ -->
+    <title>登录</title>
+    
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="/bower_components/bootstrap/dist/css/bootstrap.min.css">
+
+<script src="/bower_components/jquery/dist/jquery.min.js"></script>
+<script src="/bower_components/angular/angular.min.js"></script>
+<script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/bower_components/angular-route/angular-route.min.js"></script>
+<script src="/bower_components/angular-bootstrap/ui-bootstrap-tpls.min.js"></script>
+<script src="/js/jquery.json-2.4.min.js"></script>
+  
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="js/html5shiv.min.js"></script>
+      <script src="js/respond.min.js"></script>
+    <![endif]-->
+  </head>
+  </head>
+  <body>
+
+    <div class="container">
+
+        <h2 class="form-signin-heading">登录</h2>
+        <label for="login_name" class="sr-only">名字</label>
+        <input type="email" id="login_name" class="form-control" placeholder="名字" required autofocus>
+        <P>
+        <P>
+        <label for="login_passwd" class="sr-only">密码</label>
+        <input type="password" id="login_passwd" class="form-control" placeholder="密码" required>
+        <P>
+        <button type="button" class="btn btn-lg btn-primary" onclick="login_ok()">登录</button>
+
+    </div> <!-- /container -->
+
+<script src="/js/JXCommon.js"></script>
+<script src="/js/jxCanvas.js"></script>
+<script src="/js/JXPlugin.js"></script>
+
+    <script src="js/login.js"></script>
+  </body>
+</html>

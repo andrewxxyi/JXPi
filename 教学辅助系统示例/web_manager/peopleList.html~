@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- 上述3个meta标签*必须*放在最前面，任何其他内容都*必须*跟随其后！ -->
+    <title>学生列表</title>
+
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="/bower_components/bootstrap/dist/css/bootstrap.min.css">
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="js/html5shiv.min.js"></script>
+      <script src="js/respond.min.js"></script>
+    <![endif]-->
+  </head>
+  <body  ng-app="ahnd">
+
+<nav class="navbar navbar-default">
+  <div class="container-fluid">
+    <!-- Brand and toggle get grouped for better mobile display -->
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="#">智翔安徽国防班</a>
+    </div>
+
+    <!-- Collect the nav links, forms, and other content for toggling -->
+    <!-- 动态生成应用导航条，在NavbarCtrl中定义 -->
+    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1"  ng-controller="NavbarCtrl">
+      <ul class="nav navbar-nav">
+        <li ng-repeat="a1 in navbar" class="dropdown">
+          <a ng-show="a1.children.length>0" href="{{ a1.href }}" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">{{ a1.label }}<span class="caret"></span></a>
+          <a ng-show="a1.children.length==0" href="{{ a1.href }}">{{ a1.label }}<span class="caret"></span></a>
+          <ul ng-show="a1.children.length>0" class="dropdown-menu">
+            <li ng-repeat="a2 in a1.children">
+              <a href="{{ a2.href }}">{{ a2.label }}</a>
+            </li>
+          </ul>
+        </li>
+      </ul>
+
+      <ul class="nav navbar-nav navbar-right">
+        <li><a  data-toggle="modal" href="#modal_question" >问题登记</a></li>
+        <li><a href="changePasswd.html">修改密码</a></li>
+        <li><a href="login.html">退出</a></li>
+      </ul>
+
+    </div><!-- /.navbar-collapse -->
+  </div><!-- /.container-fluid -->
+</nav>
+
+
+<!-- 模态框（Modal） -->
+<div class="modal fade" id="modal_question" tabindex="-1" role="dialog" 
+   aria-labelledby="myModalLabel" aria-hidden="true">
+   <div class="modal-dialog">
+      <div class="modal-content">
+         <div class="modal-header">
+            <button type="button" class="close" 
+               data-dismiss="modal" aria-hidden="true">
+                  &times;
+            </button>
+            <h4 class="modal-title" id="myModalLabel">
+               问题记录
+            </h4>
+         </div>
+                              <input type="text" placeholder="请输入您所遇到的问题" class="nav-search-input" id="txt_question" autocomplete="off" />
+         <div class="modal-footer">
+            <button type="button" class="btn btn-default" 
+               data-dismiss="modal">关闭
+            </button>
+            <button type="button" class="btn btn-primary" onclick="question_commit()" >
+               提交更改
+            </button>
+         </div>
+      </div><!-- /.modal-content -->
+</div><!-- /.modal -->
+</div>
+
+
+
+
+
+
+    <div class="container">
+
+    <div class="row">
+    <div class="col-sm-1">
+    </div>
+
+    <div class="col-sm-10">
+        <div class="btn-toolbar">
+                      <div class="btn-group">
+                        <div class="nav-search">
+                            <span class="input-icon">
+                              <input type="text" placeholder="Search ..." class="nav-search-input" id="peopleList_search" autocomplete="off" />
+                            </span>
+                        </div><!-- #nav-search -->       
+                      </div>         
+                      <div class="btn-group">      
+                      <a href="#" class="btn btn-inverse btn-sm" onclick="peopleList_search()">
+                        <i class="glyphicon glyphicon-search"></i>
+                        搜索
+                      </a>            
+                      </div>               
+        </div>
+    </div>
+
+    <div class="col-sm-1">
+    </div> 
+    </div> 
+
+    <div class="row">
+    <div class="col-sm-1">
+    </div> <!-- 左侧 -->
+
+    <div class="col-sm-10">
+      <table class="table table-hover" ng-controller="controller_peopleList">
+         <caption>人员列表</caption>
+         <thead>
+            <tr>
+               <th>姓名</th>
+               <th>学习汇报</th>
+               <th>问题清单</th>
+               <th>任务清单</th>
+            </tr>
+         </thead>
+         <tbody>
+            <tr ng-repeat="people in list">
+               <td>{{people.Name}}</td>
+               <td>
+                  <div class="btn-toolbar">
+                                    <div class="btn-group">
+                                          <a class="btn btn-inverse btn-xs" href="{{people.href}}" >查看学习情况
+                                              <i class="glyphicon glyphicon-play "></i>
+                                          </a>
+                                    </div>
+                  </div>
+               </td>
+               <td>
+                  <div class="btn-toolbar">
+                                    <div class="btn-group">
+                                          <a class="btn btn-inverse btn-xs" href="{{people.href2}}">查看问题清单
+                                              <i class="glyphicon glyphicon-play"></i>
+                                          </a>
+                                    </div>
+                  </div>
+               </td>
+               <td>
+                  <div class="btn-toolbar">
+                                    <div class="btn-group">
+                                          <a class="btn btn-inverse btn-xs  {{people.MissionState}}" href="{{people.href3}}">查看未完成任务
+                                              <i class="glyphicon glyphicon-play"></i>
+                                          </a>
+                                    </div>
+                  </div>
+               </td>
+            </tr>
+         </tbody>
+      </table>
+
+    </div> <!-- 主工作区 -->
+
+    <div class="col-sm-1"><!-- 右侧 -->
+    </div> 
+
+    </div> <!-- row -->
+
+    </div> <!-- /container -->
+
+
+
+
+<script src="/bower_components/jquery/dist/jquery.min.js"></script>
+<script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/bower_components/angular/angular.min.js"></script>
+<script src="/bower_components/angular-route/angular-route.min.js"></script>
+<script src="/bower_components/angular-bootstrap/ui-bootstrap-tpls.min.js"></script>
+<script src="/bower_components/jquery.base64.js/jquery.base64.js"></script>
+<script src="/js/jquery.json-2.4.min.js"></script>
+<script src="/js/JXCommon.js"></script>
+
+<script src="/js/app.js"></script>
+
+    <script type="text/javascript">
+
+      window.onload = function(){
+        //checkSession();
+
+        
+      }
+
+
+    </script>
+  </body>
+</html>
