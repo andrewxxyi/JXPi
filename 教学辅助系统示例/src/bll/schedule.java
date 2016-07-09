@@ -1,6 +1,6 @@
 package bll;
 
-import cn.ijingxi.Rest.httpServer.RES;
+import cn.ijingxi.Rest.httpServer.REST;
 import cn.ijingxi.Rest.httpServer.jxHttpData;
 import cn.ijingxi.Rest.httpServer.jxSession;
 import cn.ijingxi.app.ActiveRight;
@@ -19,10 +19,16 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.UUID;
 
+/**
+ * 参考下coding的说明
+ *
+ * 计划完成情况的记录
+ *
+ */
 public class schedule {
 
 	@ActiveRight(policy = ActiveRight.Policy.Accept)
-	@RES
+	@REST
 	public jxHttpData disp(Map<String, Object> ps, jxJson Param) throws Exception {
 		UUID id = Trans.TransToUUID((String) Param.GetSubValue("PeopleID"));
 		if (id == null)

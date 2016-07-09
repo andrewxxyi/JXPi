@@ -12,21 +12,37 @@ import java.util.Queue;
 import java.util.UUID;
 
 /**
- * 由于没有单独给出项目组的定义，而是采取给people打标记的方式来定义项目组，所以项目组在本系统中不表示为一个实体，没有
- * 对应的实体表来存储相关信息！！
+ * 参考下Mission和Exercise的说明
+ *
+ * 项目实训按小组来做
  *
  * Created by andrew on 15-9-19.
  */
 public class PrjTeam extends jxObj {
 
+    //项目组内的身份
     public static final Integer teamRole_manager = 1;
     public static final Integer teamRole_member = 2;
 
+    /**
+     * 创建一个项目组
+     * @param name
+     * @return
+     * @throws Exception
+     */
     public static PrjTeam New(String name) throws Exception {
         PrjTeam item = (PrjTeam) Relation.Create(PrjTeam.class);
         item.Name=name;
         return item;
     }
+
+    /**
+     * 给某人指定在某项目组内的身份
+     * @param teamID
+     * @param peopleID
+     * @param role 是组长还是组员
+     * @throws Exception
+     */
     public static void setTeamToPeople(UUID teamID, UUID peopleID, Integer role) throws Exception {
         Relation rl = (Relation) Relation.Create(Relation.class);
         rl.ObjTypeID = CommonObjTypeID.PrjTeam;
@@ -54,6 +70,7 @@ public class PrjTeam extends jxObj {
 
     public static Queue<jxORMobj> listMember(UUID teamID, String role) throws Exception {
         SelectSql s = new SelectSql();
+        //多表查询
         s.AddTable("Relation");
         s.AddTable("People");
         s.AddContion("Relation", "ObjID", jxCompare.Equal, teamID);

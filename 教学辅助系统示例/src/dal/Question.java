@@ -11,6 +11,10 @@ import java.util.Queue;
 import java.util.UUID;
 
 /**
+ * 参考下Mission和Exercise的说明
+ *
+ * 学生在学习过程中暴露出来的问题
+ *
  * Created by andrew on 15-9-19.
  */
 public class Question extends ObjTag {
@@ -25,12 +29,14 @@ public class Question extends ObjTag {
         return item;
     }
 
-    public static Queue<jxORMobj> listQuestion(UUID peopleID) throws Exception {
+    public static Queue<jxORMobj> listQuestion(UUID peopleID,QuestionState state) throws Exception {
         SelectSql s = new SelectSql();
         s.AddTable("ObjTag");
         s.AddContion("ObjTag", "TagID", jxCompare.Equal, ObjTag.getTagID("问题"));
         if (peopleID != null)
             s.AddContion("ObjTag", "ObjID", jxCompare.Equal, peopleID);
+        if(state!=QuestionState.None)
+            s.AddContion("ObjTag", "TagState", jxCompare.Equal, state);
         return Question.Select(Question.class, s);
     }
 

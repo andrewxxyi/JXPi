@@ -1,6 +1,6 @@
 package bll;
 
-import cn.ijingxi.Rest.httpServer.RES;
+import cn.ijingxi.Rest.httpServer.REST;
 import cn.ijingxi.Rest.httpServer.jxHttpData;
 import cn.ijingxi.app.ActiveRight;
 import cn.ijingxi.app.ObjTag;
@@ -17,10 +17,23 @@ import java.util.Date;
 import java.util.Map;
 import java.util.Queue;
 
+/**
+ * 参考下coding的说明
+ *
+ * 每天需要执行的计划
+ *
+ */
 public class plan {
 
+	/**
+	 * 一个计划是由5个活动模块所组成
+	 * @param ps
+	 * @param Param
+	 * @return
+	 * @throws Exception
+     */
 	@ActiveRight(policy = ActiveRight.Policy.Accept)
-	@RES
+	@REST
 	public jxHttpData disp(Map<String, Object> ps, jxJson Param) throws Exception {
 
 
@@ -39,14 +52,20 @@ public class plan {
 		Plan plan =getPlan(date);
 		if(plan!=null) {
 			Queue<jxORMobj> os = Mission.listMission(plan.ID);
-			jxLog.logger.debug("os size:"+os.size());
+			//jxLog.logger.debug("os size:"+os.size());
 			jxJson ol = rs.addObjList(os);
-			jxLog.logger.debug("rs:"+rs.getString());
+			//jxLog.logger.debug("rs:"+rs.getString());
 
 		}
 		return rs;
 	}
 
+	/**
+	 * 取的是当天的计划
+	 * @param date
+	 * @return
+	 * @throws Exception
+     */
 	private Plan getPlan(Date date) throws Exception {
 
 		Date d1=utils.addSecond(date,3600*24);
@@ -60,19 +79,26 @@ public class plan {
 		return plan;
 	}
 
+	/**
+	 * 创建计划
+	 * @param ps
+	 * @param Param
+	 * @return
+	 * @throws Exception
+     */
 	@ActiveRight(policy = ActiveRight.Policy.NormalUser)
 	public jxHttpData POST(Map<String, Object> ps, jxJson Param) throws Exception {
 
 		String c1 = (String) Param.GetSubValue("content1");
-		jxLog.logger.debug("plan con1:"+c1);
+		//jxLog.logger.debug("plan con1:"+c1);
 		String c2 = (String) Param.GetSubValue("content2");
-		jxLog.logger.debug("plan con2:"+c2);
+		//jxLog.logger.debug("plan con2:"+c2);
 		String c3 = (String) Param.GetSubValue("content3");
-		jxLog.logger.debug("plan con3:"+c3);
+		//jxLog.logger.debug("plan con3:"+c3);
 		String c4 = (String) Param.GetSubValue("content4");
-		jxLog.logger.debug("plan con4:"+c4);
+		//jxLog.logger.debug("plan con4:"+c4);
 		String c5 = (String) Param.GetSubValue("content5");
-		jxLog.logger.debug("plan con5:"+c5);
+		//jxLog.logger.debug("plan con5:"+c5);
 
 		Date day=utils.Now_Date();
 		//jxLog.logger.debug("day:"+day);
@@ -99,6 +125,7 @@ public class plan {
 		m5.Name=Mission.mk5;
 		m5.Descr=c5;
 
+		//由于是一次需往数据库中插入多条数据，所以采用了事务功能
 		DB db = JdbcUtils.GetDB(null, this);
 		db.Trans_Begin();
 		try {
@@ -112,9 +139,11 @@ public class plan {
 				m5.Insert(db);
 
 			}
+			//正确提交
 			db.Trans_Commit();
 		} catch (Exception e) {
 			jxLog.error(e);
+			//错误回退
 			db.Trans_Cancel();
 			jxHttpData rs = new jxHttpData(503, "内部错误：" + e.getMessage());
 			return rs;

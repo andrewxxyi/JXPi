@@ -1,6 +1,6 @@
 package bll;
 
-import cn.ijingxi.Rest.httpServer.RES;
+import cn.ijingxi.Rest.httpServer.REST;
 import cn.ijingxi.Rest.httpServer.jxHttpData;
 import cn.ijingxi.app.ActiveRight;
 import cn.ijingxi.orm.jxJson;
@@ -17,10 +17,22 @@ import java.util.UUID;
 import static dal.PrjTeam.teamRole_manager;
 import static dal.PrjTeam.teamRole_member;
 
+/**
+ * 参考下coding的说明
+ *
+ * 项目组管理
+ */
 public class team {
 
+	/**
+	 * 获取自己所在的项目组，目前一个人只能属于一个项目组
+	 * @param ps
+	 * @param Param
+	 * @return
+	 * @throws Exception
+     */
 	@ActiveRight(policy = ActiveRight.Policy.Accept)
-	@RES
+	@REST
 	public jxHttpData getMyTeam(Map<String, Object> ps, jxJson Param) throws Exception {
 
 		UUID tn = Trans.TransToUUID(Param.GetSubValue_String("PeopleID"));
@@ -32,8 +44,15 @@ public class team {
 		return rs;
 	}
 
+	/**
+	 * 列表本项目组的所有成员
+	 * @param ps
+	 * @param Param
+	 * @return
+	 * @throws Exception
+     */
 	@ActiveRight(policy = ActiveRight.Policy.Accept)
-	@RES
+	@REST
 	public jxHttpData listTeamMember(Map<String, Object> ps, jxJson Param) throws Exception {
 
 		UUID tn = Trans.TransToUUID(Param.GetSubValue_String("TeamID"));
@@ -45,8 +64,15 @@ public class team {
 		return rs;
 	}
 
+	/**
+	 * 列表某项目组中担任某角色的所有人员
+	 * @param ps
+	 * @param Param
+	 * @return
+	 * @throws Exception
+     */
 	@ActiveRight(policy = ActiveRight.Policy.Accept)
-	@RES
+	@REST
 	public jxHttpData listTeamMemberByRole(Map<String, Object> ps, jxJson Param) throws Exception {
 
 		UUID tn = Trans.TransToUUID(Param.GetSubValue_String("TeamID"));
@@ -62,7 +88,7 @@ public class team {
 	}
 
 	@ActiveRight(policy = ActiveRight.Policy.Accept)
-	@RES
+	@REST
 	public jxHttpData listMyRole(Map<String, Object> ps, jxJson Param) throws Exception {
 
 		UUID tn = Trans.TransToUUID(Param.GetSubValue_String("PeopleID"));
@@ -76,7 +102,7 @@ public class team {
 	}
 
 	@ActiveRight(policy = ActiveRight.Policy.NormalUser)
-	@RES
+	@REST
 	public jxHttpData removeRole(Map<String, Object> ps, jxJson Param) throws Exception {
 
 		UUID id = Trans.TransToUUID(Param.GetSubValue_String("RoleID"));
@@ -92,8 +118,15 @@ public class team {
 		return rs;
 	}
 
+	/**
+	 * role是项目组内的角色、工作职责（岗位）如：开发、测试、需求分析、界面设计等等
+	 * @param ps
+	 * @param Param
+	 * @return
+	 * @throws Exception
+     */
 	@ActiveRight(policy = ActiveRight.Policy.NormalUser)
-	@RES
+	@REST
 	public jxHttpData setRole(Map<String, Object> ps, jxJson Param) throws Exception {
 
 		UUID tn = Trans.TransToUUID(Param.GetSubValue_String("PeopleID"));
@@ -111,7 +144,7 @@ public class team {
 	}
 
 	@ActiveRight(policy = ActiveRight.Policy.Manager)
-	@RES
+	@REST
 	public jxHttpData createTeam(Map<String, Object> ps, jxJson Param) throws Exception {
 
 		String tn = Param.GetSubValue_String("Name");
@@ -126,7 +159,7 @@ public class team {
 	}
 
 	@ActiveRight(policy = ActiveRight.Policy.NormalUser)
-	@RES
+	@REST
 	public jxHttpData assignToTeam(Map<String, Object> ps, jxJson Param) throws Exception {
 
 		jxLog.logger.debug("TeamID:"+ps.get("TeamID"));
@@ -153,7 +186,7 @@ public class team {
 	}
 
 	@ActiveRight(policy = ActiveRight.Policy.Accept)
-	@RES
+	@REST
 	public static jxHttpData list(Map<String, Object> ps, jxJson Param) throws Exception {
 
 		Queue<jxORMobj> rl = PrjTeam.list();

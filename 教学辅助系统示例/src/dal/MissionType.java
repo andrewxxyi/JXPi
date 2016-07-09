@@ -2,6 +2,12 @@ package dal;
 
 import cn.ijingxi.util.IjxEnum;
 
+/**
+ * 参考下MissionState中的说明
+ *
+ * Mission的类型
+ *
+ */
 public enum  MissionType  implements IjxEnum {
 
     None,

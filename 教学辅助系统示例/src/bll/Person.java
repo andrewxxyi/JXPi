@@ -1,6 +1,6 @@
 package bll;
 
-import cn.ijingxi.Rest.httpServer.RES;
+import cn.ijingxi.Rest.httpServer.REST;
 import cn.ijingxi.Rest.httpServer.jxHttpData;
 import cn.ijingxi.Rest.httpServer.jxHttpServer;
 import cn.ijingxi.Rest.httpServer.jxSession;
@@ -20,19 +20,26 @@ import org.apache.http.ParseException;
 import java.util.*;
 
 /**
- * 扩展列为：info
- * 	其中：ear为代数，始祖为1
- * 				order为兄弟姐妹中的排行，男女分开排
- * @author andrew
+ * 参考下coding的说明
+ *
+ * 关于人的处理
  *
  */
 public class Person {
 
+	//用于基于身份的权限访问控制，一定是标志位的定义方法
 	public static final int peopleType_teacher = 0x10;
 	public static final int peopleType_student = 0x100;
 
-	@ActiveRight(policy = ActiveRight.Policy.Accept, peopleType = peopleType_student)
-	@RES
+	/**
+	 * 当是学生时，打开某些页面需要提醒他现在有任务没有完成，这种提醒是将菜单项标红来完成的
+	 * @param ps
+	 * @param Param
+	 * @return
+	 * @throws Exception
+     */
+	@ActiveRight(policy = ActiveRight.Policy.PeopleType, peopleType = peopleType_student)
+	@REST
 	public jxHttpData getMyState(Map<String, Object> ps, jxJson Param) throws Exception {
 
 		String sid = (String) ps.get("SessionID");
@@ -41,20 +48,22 @@ public class Person {
 			return new jxHttpData(404, "ID所对应的用户不存在");
 
 		jxHttpData rs = new jxHttpData(200, "处理完毕");
-		jxJson json = rs.getDataNode();
 
 		People p = (People) People.GetByID(People.class, pid);
 		List<jxJson> tl = listAllMission(p);
 		List<jxJson> todaylist = listTodayMission(p);
 		if (todaylist != null) {
 			if (tl.size() > todaylist.size())
-				json.setSubObjectValue("leave", true);
+				//有历史遗留的任务没有完成
+				rs.addValue("leave", true);
 			tl = listMission_WithType(p,"Coding");
 			if (tl.size() > 0)
-				json.setSubObjectValue("Coding", true);
+				//有敲代码的任务没有完成
+				rs.addValue("Coding", true);
 			tl = listMission_WithType(p,"Testing");
 			if (tl.size() > 0)
-				json.setSubObjectValue("Testing", true);
+				//有测验题的任务没有完成
+				rs.addValue("Testing", true);
 		}
 		return rs;
 	}
@@ -63,7 +72,7 @@ public class Person {
 	/**
 	 * 读取个人基本信息
 	 */
-	@ActiveRight(policy = ActiveRight.Policy.Manager)
+	@ActiveRight(policy = ActiveRight.Policy.Accept)
 	public jxHttpData GET(Map<String, Object> ps, jxJson Param) throws Exception {
 		UUID id = Trans.TransToUUID((String) ps.get("PeopleID"));
 		if (id == null)
@@ -76,18 +85,21 @@ public class Person {
 	}
 
 	/**
-	 * 创建个人基本信息
+	 * 创建个人
+	 * 只有管理员才能执行后面的两个操作
 	 */
 	@ActiveRight(policy = ActiveRight.Policy.Manager)
 	public jxHttpData POST(Map<String, Object> ps, jxJson Param) throws Exception {
 
+		//这里是要求名字不重复
 		String name = (String) Param.GetSubValue("Name");
 		People p = People.getPeopleByName(name);
 		if (p != null)
-			return new jxHttpData(401, "用户已存在");
+			return new jxHttpData(401, "用户已存在："+name);
 		p = (People) jxORMobj.Create(People.class);
 		p.Name = name;
 		p.Descr = (String) Param.GetSubValue("Descr");
+		//性别
 		p.IsMale = Trans.TransToBoolean(Param.GetSubValue("IsMale"));
 
 		String pt = Param.GetSubValue_String("PeopleType");
@@ -117,27 +129,29 @@ public class Person {
 			return new jxHttpData(404, "ID所对应的用户不存在");
 		//p.Name = (String) Param.GetSubValue("Name");
 		p.Descr = (String) Param.GetSubValue("Descr");
+		//性别
+		p.IsMale = Trans.TransToBoolean(Param.GetSubValue("IsMale"));
+		String pt = Param.GetSubValue_String("PeopleType");
+		if (pt != null && pt.compareTo("teacher") == 0)
+			p.PeopleType = Person.peopleType_teacher;
+		else
+			p.PeopleType = Person.peopleType_student;
+		p.Update();
 
-
-		DB db = JdbcUtils.GetDB(null, this);
-		db.Trans_Begin();
-		try {
-			synchronized (db) {
-				p.Update(db);
-			}
-			db.Trans_Commit();
-			jxHttpData rs = new jxHttpData(200, "更新完毕");
-			rs.addObj(p);
-			return rs;
-		} catch (Exception e) {
-			db.Trans_Cancel();
-			jxHttpData rs = new jxHttpData(503, "内部错误：" + e.getMessage());
-			return rs;
-		}
+		jxHttpData rs = new jxHttpData(200, "更新完毕");
+		rs.addObj(p);
+		return rs;
 	}
 
+	/**
+	 * 登陆
+	 * @param ps
+	 * @param Param
+	 * @return
+	 * @throws Exception
+     */
 	@ActiveRight(policy = ActiveRight.Policy.Accept)
-	@RES
+	@REST
 	public jxHttpData login(Map<String, Object> ps, jxJson Param) throws Exception {
 		String name = (String) Param.GetSubValue("Name");
 		String pass = Param.GetSubValue("Passwd").toString();
@@ -148,10 +162,12 @@ public class Person {
 		if (!p.checkPasswd(pass))
 			return new jxHttpData(403, "密码错误");
 
-
+		//登陆成功之后，需要为其设置一个session
 		final jxSession s = jxSession.create();
 		s.setPeopleID(p.ID);
+		//将sessionID放入返回的响应的http头中
 		jxHttpData rs = new jxHttpData(200, "OK");
+		//响应其实也被放到了ps的Response项中
 		HttpResponse fp = (HttpResponse) ps.get("Response");
 		fp.setHeader(new Header() {
 			@Override
@@ -173,10 +189,18 @@ public class Person {
 		return rs;
 	}
 
+	/**
+	 * 登出，只要是登陆的正常用户都可以操作
+	 * @param ps
+	 * @param Param
+	 * @return
+	 * @throws Exception
+     */
 	@ActiveRight(policy = ActiveRight.Policy.NormalUser)
-	@RES
+	@REST
 	public jxHttpData logout(Map<String, Object> ps, jxJson Param) throws Exception {
 
+		//主要是清理session
 		String sid = (String) ps.get("SessionID");
 		jxSession.clear(sid);
 		jxHttpData rs = new jxHttpData(200, "OK");
@@ -184,66 +208,50 @@ public class Person {
 		return rs;
 	}
 
-	@ActiveRight(policy = ActiveRight.Policy.Accept)
-	@RES
+	/**
+	 * 修改密码
+	 * @param ps
+	 * @param Param
+	 * @return
+	 * @throws Exception
+     */
+	@ActiveRight(policy = ActiveRight.Policy.NormalUser)
+	@REST
 	public jxHttpData setPasswd(Map<String, Object> ps, jxJson Param) throws Exception {
 
 		String sid = (String) ps.get("SessionID");
 		UUID pid = jxSession.getPeopleID(sid);
-
 		UUID id = Trans.TransToUUID((String) ps.get("PeopleID"));
-		if (id == null) return new jxHttpData(401, "需要给出用户ID");
-
-		//可以自己修改自己的密码，也可以是admin修改任何人的密码
-		if (pid.compareTo(id) == 0 || pid.compareTo(ObjTag.SystemID) == 0) {
-
-			People p = (People) People.GetByID(People.class, id);
-			if (p == null) return new jxHttpData(401, "用户不存在");
-
-			jxLog.logger.debug(p.Name);
-
-			String pass = (String) Param.GetSubValue("Passwd");
+		String pass = (String) Param.GetSubValue("Passwd");
+		if (id == null) {
+			//修改自己的密码
+			People p = (People) People.GetByID(People.class, pid);
 			p.setPasswd(pass);
 			p.Update();
-
-			jxHttpData rs = new jxHttpData(200, "OK");
-			rs.addValue("result", true);
-			return rs;
+		} else if (pid.compareTo(ObjTag.SystemID) == 0) {
+			//admin修改任何人的密码
+			People p = (People) People.GetByID(People.class, id);
+			p.setPasswd(pass);
+			p.Update();
 		} else
 			return new jxHttpData(403, "您无权修改他人的密码");
 
+		jxHttpData rs = new jxHttpData(200, "OK");
+		rs.addValue("result", true);
+		return rs;
 	}
 
 
 	@ActiveRight(policy = ActiveRight.Policy.Accept)
-	@RES
+	@REST
 	public static jxHttpData list(Map<String, Object> ps, jxJson Param) throws Exception {
 		try {
-			//jxLog.logger.debug("Param:" + Param.TransToStringWithName());
-
-			/*
-			Queue<jxORMobj> rl = list(12, Param.GetSubValue_Integer("Limit"), Param.GetSubValue_Integer("Offset"));
-
-			for(jxORMobj obj:rl){
-				People p=(People)obj;
-				p.PeopleType=Person.peopleType_student;
-				p.Update();
-			}
-			rl = list(11, Param.GetSubValue_Integer("Limit"), Param.GetSubValue_Integer("Offset"));
-
-			for(jxORMobj obj:rl){
-				People p=(People)obj;
-				p.PeopleType=Person.peopleType_teacher;
-				p.Update();
-			}
-
-			*/
-
-			int limit=0;
-			int offset=0;
-			if(Param!=null){
-				limit=Param.GetSubValue_Integer("Limit");
-				offset=Param.GetSubValue_Integer("Offset");
+			int limit = 0;
+			int offset = 0;
+			if (Param != null) {
+				//可以分页显示
+				limit = Param.GetSubValue_Integer("Limit");
+				offset = Param.GetSubValue_Integer("Offset");
 			}
 			Queue<jxORMobj> rl = list(Person.peopleType_student, limit, offset);
 
@@ -261,9 +269,11 @@ public class Person {
 		SelectSql s = new SelectSql();
 		s.AddTable("People");
 		s.AddContion("People", "PeopleType", jxCompare.Equal, peopleType);
+		//如果limit为0则不进行分页显示
 		s.setLimit(limit);
 		s.setOffset(offset);
 		return People.Select(People.class, s, false, (obj, key, v) -> {
+			//检查是否有任务还未执行完毕，并进行提示
             if ("Info".compareTo(key) == 0) {
                 List<jxJson> list = listAllMission((People) obj);
                 if (list != null && list.size() > 0)
@@ -272,8 +282,15 @@ public class Person {
         });
 	}
 
-	@ActiveRight(policy = ActiveRight.Policy.Accept)
-	@RES
+	/**
+	 * 列表我所有的任务
+	 * @param ps
+	 * @param Param
+	 * @return
+	 * @throws Exception
+     */
+	@ActiveRight(policy = ActiveRight.Policy.NormalUser)
+	@REST
 	public jxHttpData listMyMission(Map<String, Object> ps, jxJson Param) throws Exception {
 
 		String sid = (String) ps.get("SessionID");
@@ -286,6 +303,16 @@ public class Person {
 		return rs;
 	}
 
+	/**
+	 * 增加一个需要执行的任务的信息
+	 * @param p
+	 * @param date
+	 * @param missionName
+	 * @param type
+	 * @param Order
+	 * @param missionid
+     * @throws Exception
+     */
 	public static void addMission(People p, String date, String missionName, MissionType type, Integer Order,String missionid) throws Exception {
 		Map<String, String> ks = new HashMap<String, String>();
 		ks.put("date", date);

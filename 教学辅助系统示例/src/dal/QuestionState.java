@@ -2,6 +2,9 @@ package dal;
 
 import cn.ijingxi.util.IjxEnum;
 
+/**
+ * 参考下MissionState中的说明
+ */
 public enum QuestionState implements IjxEnum {
 
     None,

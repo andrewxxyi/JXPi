@@ -7,6 +7,12 @@ import dal.Subject;
 
 import java.util.Map;
 
+/**
+ * 参考下coding的说明
+ *
+ * 向题库中录入题目
+ *
+ */
 public class subject {
 
 	@ActiveRight(policy = ActiveRight.Policy.Manager)

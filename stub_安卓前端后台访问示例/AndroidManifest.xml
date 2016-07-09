@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-      package="com.example.myapp"
+      package="cn.ijingxi.stub"
       android:versionCode="1"
       android:versionName="1.0">
 
@@ -10,23 +10,4 @@
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE"/>
     <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE"/>
 
-    <application android:label="@string/app_name" android:icon="@drawable/sstsme">
-        <activity
-                android:name="com.example.myapp.MainActivity"
-                android:label="智能控制" >
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-        <activity
-                android:name="com.example.myapp.web" >
-        </activity>
-        <activity
-                android:name="com.example.myapp.conf" >
-        </activity>
-        <activity
-                android:name="com.example.myapp.login" >
-        </activity>
-    </application>
 </manifest>

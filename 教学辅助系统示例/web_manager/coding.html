@@ -179,10 +179,15 @@
             
 dispACEEditor("coding_teacher");
 dispACEEditor("coding_student");
+//不准学生复制粘贴
 closePaste("coding_student");
+//不准对老师发布内容有输入
 inhibitInput("coding_teacher");
+//不准对老师发布内容有剪切
 inhibitCut("coding_teacher");
+//不准对老师发布内容有右击，即通过右击弹出菜单进行全选、剪切、复制、删除等操作
 inhibitRightClick("coding_teacher");
+//不准对老师发布内容有鼠标操作，基本就关闭了学生对教师发布内容的操作，但还可以通过tab键进行选择
 inhibitMouse("coding_teacher");
 
 dispCode();

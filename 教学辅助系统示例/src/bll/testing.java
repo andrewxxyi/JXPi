@@ -1,6 +1,6 @@
 package bll;
 
-import cn.ijingxi.Rest.httpServer.RES;
+import cn.ijingxi.Rest.httpServer.REST;
 import cn.ijingxi.Rest.httpServer.jxHttpData;
 import cn.ijingxi.Rest.httpServer.jxSession;
 import cn.ijingxi.app.ActiveRight;
@@ -21,10 +21,22 @@ import java.util.*;
 import static bll.Person.peopleType_student;
 import static bll.Person.peopleType_teacher;
 
+/**
+ * 参考下coding的说明
+ *
+ * 测验
+ */
 public class testing {
 
+    /**
+     * 发布一张试卷，老师可以发布给全班，学生只能给自己发布自测题
+     * @param ps
+     * @param Param
+     * @return
+     * @throws Exception
+     */
     @ActiveRight(policy = ActiveRight.Policy.PeopleType, peopleType = peopleType_student | peopleType_teacher)
-    @RES
+    @REST
     public jxHttpData issuePaper(Map<String, Object> ps, jxJson Param) throws Exception {
 
         String sid = (String) ps.get("SessionID");
@@ -111,7 +123,7 @@ public class testing {
     }
 
     @ActiveRight(policy = ActiveRight.Policy.PeopleType,peopleType = Person.peopleType_student)
-    @RES
+    @REST
     public jxHttpData listMyTesting(Map<String, Object> ps, jxJson Param) throws Exception {
 
         String sid = (String) ps.get("SessionID");
@@ -125,7 +137,7 @@ public class testing {
     }
 
     @ActiveRight(policy = ActiveRight.Policy.Accept)
-    @RES
+    @REST
     public jxHttpData getPaper(Map<String, Object> ps, jxJson Param) throws Exception {
 
         String sid = (String) ps.get("PaperID");
@@ -141,7 +153,7 @@ public class testing {
     }
 
     @ActiveRight(policy = ActiveRight.Policy.Accept)
-    @RES
+    @REST
     public jxHttpData listSubject(Map<String, Object> ps, jxJson Param) throws Exception {
 
         String sid = (String) ps.get("PaperID");
@@ -157,7 +169,7 @@ public class testing {
     }
 
     @ActiveRight(policy = ActiveRight.Policy.Accept)
-    @RES
+    @REST
     public jxHttpData getSubject(Map<String, Object> ps, jxJson Param) throws Exception {
 
         String sid = Param.GetSubValue_String("SubjectID");
@@ -175,38 +187,16 @@ public class testing {
 
 
     @ActiveRight(policy = ActiveRight.Policy.PeopleType, peopleType = Person.peopleType_student)
-    @RES
+    @REST
     public jxHttpData commit(Map<String, Object> ps, jxJson Param) throws Exception {
 
         String sid = (String) ps.get("SessionID");
         UUID peopleID = jxSession.getPeopleID(sid);
+        String pid = (String) ps.get("PaperID");
+        UUID paperID = jxSession.getPeopleID(pid);
 
         jxJson answerlist = Param.GetSubObject("AnswerList");
         jxJson oplist = Param.GetSubObject("OPList");
-
-
-        /*
-
-        UUID subid = Param.GetSubValue_UUID("SubjectID");
-        if (subid == null)
-            return new jxHttpData(404, "应提供有效的试题ID！");
-        boolean mistake = false;
-        Subject s = (Subject) Subject.GetByID(Subject.class, subid);
-        if (s.getMultiSelect()) {
-            String[] ss = utils.StringSplit(answer, " ");
-            for (String a : ss) {
-                if (s.Name.indexOf(a) < 0) {
-                    mistake = true;
-                    break;
-                }
-            }
-        } else if (s.Name.compareTo(answer) != 0)
-            mistake = true;
-
-        Exercise e = Exercise.New(Param.GetSubValue_UUID("PaperID"), subid, peopleID, answer, mistake, Param.GetSubValue_Integer("Duration"), Param.GetSubValue_Boolean("MultiSelect"), Param.GetSubValue_Integer("SelectNumber"), Param.GetSubValue_Integer("Dealy"));
-        e.Update();
-
-        */
 
         jxHttpData rs = new jxHttpData(200, "处理完毕");
         rs.setResult(true);

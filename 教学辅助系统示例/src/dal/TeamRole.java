@@ -13,8 +13,9 @@ import java.util.Queue;
 import java.util.UUID;
 
 /**
- * 由于没有单独给出项目组的定义，而是采取给people打标记的方式来定义项目组，所以项目组在本系统中不表示为一个实体，没有
- * 对应的实体表来存储相关信息！！
+ * 参考下Mission和Exercise的说明
+ *
+ * 项目组内岗位职责、角色
  *
  * Created by andrew on 15-9-19.
  */
@@ -28,6 +29,7 @@ public class TeamRole extends ObjTag {
     public static final String teamRole_Deployment = "部署";
     public static final String teamRole_PM = "项目经理";
 
+    //目前的实现一个人就只能在一个小组，是无法区分不同小组岗位的
     public static TeamRole setTeamRoleToPeople(UUID peopleID, String role) throws Exception {
         TeamRole item = (TeamRole) TeamRole.Create(TeamRole.class);
         item.ObjTypeID = ORMType.People.ordinal();
@@ -40,6 +42,7 @@ public class TeamRole extends ObjTag {
 
     public static Queue<jxORMobj> listMember(UUID teamID, String role) throws Exception {
         SelectSql s = new SelectSql();
+        //如何进行多表联合查询
         s.AddTable("Relation");
         s.AddTable("ObjTag");
         s.AddTable("People");
@@ -48,7 +51,8 @@ public class TeamRole extends ObjTag {
         s.AddContion("Relation", "TargetID", "People", "ID");
         s.AddContion("People", "ID", "ObjTag", "ObjID");
         s.AddContion("ObjTag", "TagID", jxCompare.Equal, ObjTag.getTagID("项目角色"));
-        s.AddContion("ObjTag", "Category", jxCompare.Equal, role);
+        if (role != null && role.length() > 0)
+            s.AddContion("ObjTag", "Category", jxCompare.Equal, role);
         return People.Select(People.class, s);
     }
 

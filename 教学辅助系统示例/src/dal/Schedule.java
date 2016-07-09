@@ -8,14 +8,16 @@ import java.util.Date;
 import java.util.UUID;
 
 /**
+ * 参考下Mission和Exercise的说明
+ *
  * Created by andrew on 15-9-19.
  */
 public class Schedule extends ObjTag {
 
-    public static Schedule New(UUID peopleID,Date date) throws Exception {
+    public static Schedule New(UUID peopleID, Date date) throws Exception {
         Schedule item = (Schedule) Schedule.Create(Schedule.class);
-        item.ObjTypeID= ORMType.People.ordinal();
-        item.ObjID=peopleID;
+        item.ObjTypeID = ORMType.People.ordinal();
+        item.ObjID = peopleID;
         item.TagID = ObjTag.getTagID("日程");
         item.Category = "日程";
         item.Time = date;
@@ -32,6 +34,6 @@ public class Schedule extends ObjTag {
     }
 
     public static void CreateDB() throws Exception {
-        if(!CreateTableInDB(Schedule.class))return;
+        if (!CreateTableInDB(Schedule.class)) return;
     }
 }

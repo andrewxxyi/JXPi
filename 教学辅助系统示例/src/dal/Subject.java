@@ -10,6 +10,8 @@ import java.util.Queue;
 import java.util.UUID;
 
 /**
+ * 参考下Mission和Exercise的说明
+ *
  * 题目不管单选多选、难度大小，分数是不重要的，可假定为一题一分
  *
  * 试卷和题目是一对多的情况，也就是一个试卷是由多个题目组成的
@@ -17,8 +19,6 @@ import java.util.UUID;
  * Created by andrew on 16-6-21.
  */
 public class Subject extends ObjTag {
-
-
 
     public static Queue<jxORMobj> list(String Category, float difficulty) throws Exception {
         SelectSql s = new SelectSql();
@@ -31,9 +31,11 @@ public class Subject extends ObjTag {
         return Subject.Select(Subject.class, s);
     }
 
-    public boolean getMultiSelect() throws Exception {return Boolean.parseBoolean(getExtendValue("Info","multiSelect"));}
+    public boolean getMultiSelect() throws Exception {
+        return Boolean.parseBoolean(getExtendValue("Info", "multiSelect"));
+    }
 
-    public static Subject New(String Category, String Descr,int answerTotal, String answer, float difficulty,boolean multiSelect) throws Exception {
+    public static Subject New(String Category, String Descr, int answerTotal, String answer, float difficulty, boolean multiSelect) throws Exception {
         Subject item = (Subject) Subject.Create(Subject.class);
         item.TagID = ObjTag.getTagID("测验题目");
         item.Category = Category;
@@ -60,6 +62,6 @@ public class Subject extends ObjTag {
     }
 
     public static void CreateDB() throws Exception {
-        if(!CreateTableInDB(Subject.class))return;
+        if (!CreateTableInDB(Subject.class)) return;
     }
 }

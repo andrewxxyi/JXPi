@@ -7,6 +7,10 @@ import java.util.Date;
 import java.util.UUID;
 
 /**
+ * 参考下Mission和Exercise的说明
+ *
+ * 一天5个模块（Mission中有说明）都是要做什么的
+ *
  * Created by andrew on 15-9-19.
  */
 public class Plan extends ObjTag {

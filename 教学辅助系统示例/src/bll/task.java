@@ -1,6 +1,6 @@
 package bll;
 
-import cn.ijingxi.Rest.httpServer.RES;
+import cn.ijingxi.Rest.httpServer.REST;
 import cn.ijingxi.Rest.httpServer.jxHttpData;
 import cn.ijingxi.app.ActiveRight;
 import cn.ijingxi.app.ObjTag;
@@ -18,8 +18,20 @@ import dal.PrjTeam;
 
 import java.util.*;
 
+/**
+ * 参考下coding的说明
+ *
+ * 任务管理
+ */
 public class task {
 
+	/**
+	 * 获取任务的信息
+	 * @param ps
+	 * @param Param
+	 * @return
+	 * @throws Exception
+     */
 	@ActiveRight(policy = ActiveRight.Policy.Accept)
 	public jxHttpData GET(Map<String, Object> ps, jxJson Param) throws Exception {
 
@@ -29,6 +41,7 @@ public class task {
 		Mission q = (Mission) Mission.GetByID(Mission.class, qid);
 		if (q == null)
 			return new jxHttpData(404, "没找到指定的任务");
+		//用中文显示给前端
 		q.addExtJsonAttr("StarTime", Trans.TransToChinese(q.Time));
 		q.addExtJsonAttr("EndTime", Trans.TransToChinese(q.ToTime));
 		q.addExtJsonAttr("Type", ObjTag.getTagName(q.TagID));
@@ -44,6 +57,13 @@ public class task {
 		return rs;
 	}
 
+	/**
+	 * 执行完毕
+	 * @param ps
+	 * @param Param
+	 * @return
+	 * @throws Exception
+     */
 	@ActiveRight(policy = ActiveRight.Policy.NormalUser)
 	public jxHttpData PUT(Map<String, Object> ps, jxJson Param) throws Exception {
 
@@ -61,6 +81,13 @@ public class task {
 		return rs;
 	}
 
+	/**
+	 * 创建任务
+	 * @param ps
+	 * @param Param
+	 * @return
+	 * @throws Exception
+     */
 	@ActiveRight(policy = ActiveRight.Policy.NormalUser)
 	public jxHttpData POST(Map<String, Object> ps, jxJson Param) throws Exception {
 
@@ -84,7 +111,7 @@ public class task {
 	}
 
 	@ActiveRight(policy = ActiveRight.Policy.Accept)
-	@RES
+	@REST
 	public jxHttpData listMyTask(Map<String, Object> ps, jxJson Param) throws Exception {
 
 		UUID peopleID = Trans.TransToUUID((String) Param.getSubObjectValue("PeopleID"));
@@ -120,7 +147,7 @@ public class task {
 	}
 
 	@ActiveRight(policy = ActiveRight.Policy.Accept)
-	@RES
+	@REST
 	public jxHttpData listTeamTask(Map<String, Object> ps, jxJson Param) throws Exception {
 
 		UUID tID = Trans.TransToUUID((String) Param.getSubObjectValue("TeamID"));
@@ -141,6 +168,12 @@ public class task {
 		return rs;
 	}
 
+	/**
+	 * 对查找出来的信息也get一样也对某些信息转为中文
+	 * @param s
+	 * @return
+	 * @throws Exception
+     */
 	private Queue<jxORMobj> selectTask(SelectSql s) throws Exception {
 
 		return Mission.Select(Mission.class,s,false, (obj, key, v) -> {
