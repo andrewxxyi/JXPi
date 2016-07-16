@@ -1,5 +1,5 @@
 import bll.*;
-import cn.ijingxi.Rest.httpServer.jxHttpRes;
+import cn.ijingxi.Rest.httpServer.jxHttpREST;
 import cn.ijingxi.Rest.httpServer.jxHttpServer;
 import cn.ijingxi.app.ObjTag;
 import cn.ijingxi.data.JdbcSqlite.JdbcSqlite;
@@ -49,18 +49,18 @@ public class ahnd {
                 utils.checkAssert(wport>0,"WebServerPort应大于0，程序结束");
 
                 //如果系统提供了REST接口，则每一个REST资源类都必须先进行初始化
-                jxHttpRes.InitResClass(system.class);
+                jxHttpREST.InitResClass(system.class);
 
-                jxHttpRes.InitResClass(Person.class);
-                jxHttpRes.InitResClass(plan.class);
-                jxHttpRes.InitResClass(schedule.class);
-                jxHttpRes.InitResClass(question.class);
-                jxHttpRes.InitResClass(team.class);
+                jxHttpREST.InitResClass(Person.class);
+                jxHttpREST.InitResClass(plan.class);
+                jxHttpREST.InitResClass(schedule.class);
+                jxHttpREST.InitResClass(question.class);
+                jxHttpREST.InitResClass(team.class);
 
-                jxHttpRes.InitResClass(task.class);
-                jxHttpRes.InitResClass(coding.class);
-                jxHttpRes.InitResClass(testing.class);
-                jxHttpRes.InitResClass(subject.class);
+                jxHttpREST.InitResClass(task.class);
+                jxHttpREST.InitResClass(coding.class);
+                jxHttpREST.InitResClass(testing.class);
+                jxHttpREST.InitResClass(subject.class);
 
                 //以配置的端口号启动web服务，并指定web服务的根目录为./web_manager/
                 jxHttpServer server3 = new jxHttpServer(wport, "./web_manager/", null);
