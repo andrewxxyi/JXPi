@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- 上述3个meta标签*必须*放在最前面，任何其他内容都*必须*跟随其后！ -->
+    <title>下载文件列表</title>
+
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="/bower_components/bootstrap/dist/css/bootstrap.min.css">
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="js/html5shiv.min.js"></script>
+      <script src="js/respond.min.js"></script>
+    <![endif]-->
+  </head>
+  <body  ng-app="ahnd">
+
+    <div class="container">
+
+    <div class="row">
+    <div class="col-sm-1">
+    </div> <!-- 左侧 -->
+
+    <div class="col-sm-10">
+      <table class="table table-hover" ng-controller="controller_fileList">
+         <caption>文件列表</caption>
+         <thead>
+            <tr>
+               <th>文件名</th>
+            </tr>
+         </thead>
+         <tbody>
+            <tr ng-repeat="file in list">
+               <td>
+                  <div class="btn-toolbar">
+                                    <div class="btn-group">
+                                          <a class="btn btn-inverse btn-xs" href="{{file.Path}}">{{ file.Name }}
+                                          </a>
+                                    </div>
+                  </div>
+               </td>
+            </tr>
+         </tbody>
+      </table>
+
+    </div> <!-- 主工作区 -->
+
+    <div class="col-sm-1"><!-- 右侧 -->
+    </div> 
+
+    </div> <!-- row -->
+
+    </div> <!-- /container -->
+
+
+
+
+<script src="/bower_components/jquery/dist/jquery.min.js"></script>
+<script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/bower_components/angular/angular.min.js"></script>
+<script src="/bower_components/angular-route/angular-route.min.js"></script>
+<script src="/bower_components/angular-bootstrap/ui-bootstrap-tpls.min.js"></script>
+<script src="/bower_components/jquery.base64.js/jquery.base64.js"></script>
+<script src="/js/jquery.json-2.4.min.js"></script>
+<script src="/js/JXCommon.js"></script>
+
+<script src="/js/app.js"></script>
+
+  </body>
+</html>

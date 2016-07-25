@@ -176,3 +176,13 @@ pi.controller('controller_roomList', function ($scope,$http,$location) {
 
 
 });
+
+//
+//下载文件列表
+//
+pi.controller('controller_fileList', function ($scope,$http,$location) {
+	    var url="/system/listDownloadFile/";
+    $.jxREST(url,null, function (json) {
+        $scope.list=json;
+    });
+});
