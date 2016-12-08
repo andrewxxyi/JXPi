@@ -1,0 +1,816 @@
+
+var editor;
+var editorLogs;
+
+var intervalState;
+var intervalLogs;
+
+var editorForInit=false;
+var scriptInit=null;
+var cn=0;
+var currentControlID=0;
+var currentButtonID=0;
+var ControlsType=new Array();
+var allControls=new Array();
+
+function changeServerPasswd(){
+    var node=document.getElementById("changepwd_pass");
+    var pass=$(node).val();
+    node=document.getElementById("changepwd_again");
+    var again=$(node).val();
+    
+    if(pass.Trim()!=""&&pass==again){
+    var url="/ui/changePasswd";
+    //alert(url)
+    $.jxREST(url,{Passwd:pass}, function () {
+    	alert("密码修改成功");
+    });
+    }else {
+    	alert("密码不能为空，且两次应输入一致！");
+    }
+}
+
+
+function live_ms(){
+    var url="/medium/live_ms/";
+    $.jxREST(url,null,function () {
+    	var str="http://"+window.location.hostname+':8080/?action=stream';
+    	//alert(str);
+    	window.open(str); 
+    });
+}
+
+function stop_ms(){
+    var url="/medium/stop_ms/";
+    $.jxREST(url);
+}
+
+function startdrive(){
+    var url="/wheel/start";
+    $.jxREST(url);
+}
+function stopdrive(){
+    var url="/wheel/stop";
+    $.jxREST(url);
+}
+
+function drive(radian,speed){
+    var url="/wheel/drive";
+    $.jxREST(url,{Radian:radian,Speed:speed});
+}
+
+function startLogs(){
+    editorLogs.setValue("");
+    intervalLogs = setInterval("getLogs()",1000);
+    var url="/jxpy/startLogs";
+    $.jxREST(url);
+}
+function stopLogs(){
+		
+	if(intervalLogs){
+		clearInterval(intervalLogs);
+		intervalLogs=null;
+	}
+    var url="/jxpy/stopLogs";
+    $.jxREST(url);
+}
+
+function getLogs(){
+        var url="/jxpy/getLogs/";
+        $.jxREST(url,null,function (json) {
+    	    if(json && json.StdLogs){
+    	        var d=editorLogs.getValue();    	        
+    	        var s=$.base64.atob(json.StdLogs,true);
+    	        //alert(s);
+    	    	  editorLogs.setValue(d+s,1);
+    	    }
+    	});
+}
+function getState(){
+        var url="/jxpy/getState/";
+        $.jxREST(url,null,function (json) {
+            //alert($.toJSON(json));
+            if(json && json.StdOut){
+    	        var d=$("#div_output").html();
+    	        var s=$.base64.atob(json.StdOut,true);
+    	        s=unzip_enter(s);
+    	        $("#div_output").html(d+s);
+    	    }
+            if(json && json.ui){
+                var length = json.ui.length;
+                //alert(length);
+                for (var i=0; i < length; i++) {
+                    var l=json.ui[i];
+                    if(l.type=="light")
+                        allControls[l.id].jxUILight(l.state);
+                    else if(l.type=="text")
+                        allControls[l.id].jxUIText("setParam","Text",l.text);
+                }
+    	    }
+    	});
+}
+
+function RunUI(){
+        var url=getUrlWithQueryString("/ui/");
+        $.jxGet(url,function (json) {
+
+        //alert($.toJSON(json));
+
+    	    $("#ui_Name").val(json.Name);
+            $("#ui_Descr").val(json.Descr);
+            var info=json.Info;
+            var initS=json.InitScript;
+            var s=initS;
+            if(s){
+                s=$.base64.atob(s,true);
+                //s=unzip_enter(s);
+            }
+    	    scriptInit=s;
+    	    var cs=json.Controls;
+    	    var length = cs.length;
+                    for (var i=0; i < length; i++) {
+    	    	    var c=cs[i];
+            	    if(c.Type=="jxUIButton"){
+
+            	        s=c.Script;
+                        if(s){
+                            s=$.base64.atob(s,true);
+                            //s=unzip_enter(s);
+                        	allControls[c.ID].jxUIButton("setScript",s);
+                        }
+    	    	        ControlsType[c.ID]=c.Type;
+            	allControls[c.ID]=$("#div_main").jxUIButton({ID:c.ID,Run:true,Text:c.Text,Top:c.Top,Left:c.Left,onRun:function(script,tip){
+            execPY(script,function(tip){if(tip)alert(tip);});
+            //getState();
+        }});
+
+            	    }else if(c.Type=="jxUIText"){
+
+    	    	        ControlsType[c.ID]=c.Type;
+            	allControls[c.ID]=$("#div_main").jxUIText({ID:c.ID,Text:c.Text,FontSize:c.FontSize,Top:c.Top,Left:c.Left});
+
+                    }else if(c.Type=="jxUILight"){
+                        ControlsType[c.ID]=c.Type;
+                        allControls[c.ID]=$("#div_main").jxUILight({ID:c.ID,Text:c.Text,Top:c.Top,Left:c.Left});
+                    }
+            	}
+            	if(initS){
+                    execPY(initS,function(){alert("初始化代码已执行！");});
+                    //getState();
+                    }
+        });
+    //每秒获取一次输出
+    //setInterval("getState()",1000);
+}
+
+
+
+function dispUI(){
+    var uiid=getQueryString("UIID");
+    if(uiid){
+        var url=getUrlWithQueryString("/ui/");
+        $.jxGet(url,function (json) {
+
+        //alert($.toJSON(json));
+
+    	    $("#ui_Name").val(json.Name);
+            $("#ui_Descr").val(json.Descr);
+            var info=json.Info;
+            var s=json.InitScript;
+            if(s){
+                s=$.base64.atob(s,true);
+                //s=unzip_enter(s);
+            }
+    	    scriptInit=s;
+    	    var cs=json.Controls;
+    	    var length = cs.length;
+    	    //否则打开一个界面再添加时就有错误了
+    	    cn=length;
+                    for (var i=0; i < length; i++) {
+    	    	    var c=cs[i];
+            	    if(c.Type=="jxUIButton"){
+
+            	        s=c.Script;
+                        if(s){
+                            s=$.base64.atob(s,true);
+                            //s=unzip_enter(s);
+                        	allControls[c.ID].jxUIButton("setScript",s);
+                        }
+    	    	        ControlsType[c.ID]=c.Type;
+            	allControls[c.ID]=$("#div_main").jxUIButton({ID:c.ID,Text:c.Text,Top:c.Top,Left:c.Left,onDispAttr:function(sub){
+                    currentControlID=sub.ID;
+            	    $("#ui_Control_Top").val(sub.Top);
+            	    $("#ui_Control_Left").val(sub.Left);
+            	    $("#ui_Control_Text").val(sub.Text);
+            	    $("#ui_Control_FontSize").val(sub.Tip);
+            	    $("#span_FontSize").html("执行后提示内容");
+            	    $("#ui_Control_FontSize").attr("disabled",false);
+            	},onOpenScriptEdit:function(id,script){
+            	    currentButtonID=id;
+                    editorForInit=false;
+            	    $("#modal_coding").modal("show");
+            	    //$("#ui_Edit_editor").html(script);
+            	    if(script)
+            		 	editor.setValue(script,-1);
+            		 else
+            		 	editor.setValue("");
+            	    
+            	}});
+
+            	    }else if(c.Type=="jxUIText"){
+
+    	    	        ControlsType[c.ID]=c.Type;
+            	allControls[c.ID]=$("#div_main").jxUIText({ID:c.ID,Text:c.Text,FontSize:c.FontSize,Top:c.Top,Left:c.Left,onDispAttr:function(sub){
+                    currentControlID=sub.ID;
+            	    $("#ui_Control_Top").val(sub.Top);
+            	    $("#ui_Control_Left").val(sub.Left);
+                    $("#ui_Control_Text").val(sub.Text);
+            	    $("#span_FontSize").html("文字字号");
+                    $("#ui_Control_FontSize").attr("disabled",false);;
+                    $("#ui_Control_FontSize").val(sub.FontSize);
+            	}});
+
+                    }else if(c.Type=="jxUILight"){
+                        ControlsType[c.ID]=c.Type;
+                        allControls[c.ID]=$("#div_main").jxUILight({ID:c.ID,Text:c.Text,Top:c.Top,Left:c.Left,onDispAttr:function(sub){
+                            currentControlID=sub.ID;
+                            $("#ui_Control_Top").val(sub.Top);
+                            $("#ui_Control_Left").val(sub.Left);
+                            $("#ui_Control_Text").val(sub.Text);
+                            $("#ui_Control_FontSize").attr("disabled",true);;
+                        }});
+
+                    }
+            	}
+
+        });
+    }
+}
+
+function uiEdit_setEvent_attrUpdate(ctlid) {
+    $("#"+ctlid).keydown(function(event) {
+        var e = event ? event : window.event;
+        if (e.keyCode == "13") {//keyCode=13是回车键
+            var paramName;
+            switch (ctlid)
+            {
+            case "ui_Control_Top":
+              paramName="Top";
+              break;
+            case "ui_Control_Left":
+              paramName="Left";
+              break;
+            case "ui_Control_Text":
+              paramName="Text";
+              break;
+            case "ui_Control_FontSize":
+                if(ControlsType[currentControlID]=="jxUIButton")
+                    paramName="Tip";
+                else
+                    paramName="FontSize";
+              break;
+            }
+            var value=$("#"+ctlid).val();
+            if(ControlsType[currentControlID]=="jxUIButton"){
+                allControls[currentControlID].jxUIButton("setParam",paramName,value)
+            }else if(ControlsType[currentControlID]=="jxUIText"){
+                allControls[currentControlID].jxUIText("setParam",paramName,value)
+            }else if(ControlsType[currentControlID]=="jxUILight"){
+                allControls[currentControlID].jxUILight("setParam",paramName,value)
+            }
+        }
+    });
+}
+function uiEdit_updateControlAttr(paramName,paramValue) {
+    if(ControlsType[currentControlID]=="jxUIButton"){
+        allControls[currentControlID].jxUIButton("setParam",paramValue)
+    }else if(ControlsType[currentControlID]=="jxUIText"){
+        allControls[currentControlID].jxUIText("setParam",paramValue)
+    }else if(ControlsType[currentControlID]=="jxUILight"){
+        allControls[currentControlID].jxUILight("setParam",paramValue)
+    }
+}
+
+function uiEdit_AddControl_Light() {
+        allControls[cn]=$("#div_main").jxUILight({ID:cn,Text: '灯泡控件_'+cn,Top: 50,Left: 100,onDispAttr:function(json){
+            currentControlID=json.ID;
+            $("#ui_Control_Top").val(json.Top);
+            $("#ui_Control_Left").val(json.Left);
+            $("#ui_Control_Text").val(json.Text);
+            $("#ui_Control_FontSize").attr("disabled",true);;
+        }});
+        ControlsType[cn]="jxUILight";
+        cn++;
+}
+function uiEdit_AddControl_Text() {
+        allControls[cn]=$("#div_main").jxUIText({ID:cn,Text: '文本控件_'+cn,Top: 50,Left: 100,onDispAttr:function(json){
+            currentControlID=json.ID;
+            $("#ui_Control_Top").val(json.Top);
+            $("#ui_Control_Left").val(json.Left);
+            $("#ui_Control_Text").val(json.Text);
+            $("#span_FontSize").html("文字字号");
+            $("#ui_Control_FontSize").attr("disabled",false);;
+            $("#ui_Control_FontSize").val(json.FontSize);
+        }});
+        ControlsType[cn]="jxUIText";
+        cn++;
+}
+function uiEdit_AddControl_Button() {
+        allControls[cn]=$("#div_main").jxUIButton({ID:cn,Text: '按钮控件_'+cn,Top: 50,Left: 100,onDispAttr:function(json){
+            currentControlID=json.ID;
+            $("#ui_Control_Top").val(json.Top);
+            $("#ui_Control_Left").val(json.Left);
+            $("#ui_Control_Text").val(json.Text);
+            $("#ui_Control_FontSize").val("");
+            $("#ui_Control_FontSize").attr("disabled",true);
+        },onOpenScriptEdit:function(id,script){
+            currentButtonID=id;
+            editorForInit=false;
+            $("#modal_coding").modal("show");
+            //$("#ui_Edit_editor").html(script);
+            if(script)
+            	    editor.setValue(script,-1);
+    			else 
+    				editor.setValue("");
+        }});
+        ControlsType[cn]="jxUIButton";
+        cn++;
+}
+function ui_Edit_coding_Commit() {
+	
+    //var s=$("#ui_Edit_editor").html();
+    var s=editor.getValue();
+    //alert(s);
+    $("#modal_coding").modal("hide");
+    if(editorForInit)
+        scriptInit=s;
+    else
+        allControls[currentButtonID].jxUIButton("setScript",s);
+}
+function uiEdit_AddControl_Init() {
+    editorForInit=true;
+    $("#modal_coding").modal("show");
+    //$("#ui_Edit_editor").html(scriptInit);
+    if(scriptInit)
+    	editor.setValue(scriptInit,-1);
+    else 
+    	editor.setValue("");
+    	
+}
+
+
+function uiEdit_Save() {
+    var ControlsDesc=new Array();
+	for(key in allControls){
+	    if(ControlsType[key]=="jxUIButton"){
+	        ControlsDesc[key]=allControls[key].jxUIButton("toJson");
+	    }else if(ControlsType[key]=="jxUIText"){
+	        ControlsDesc[key]=allControls[key].jxUIText("toJson");
+        }else if(ControlsType[key]=="jxUILight"){
+         	ControlsDesc[key]=allControls[key].jxUILight("toJson");
+        }
+	}
+	var name=$("#ui_Name").val();
+	var desc=$("#ui_Descr").val();
+	var s=scriptInit;
+	if(s){
+        //s=zip_reserveSpace(s);
+        s=$.base64.btoa(s,true);
+	}
+	var ui={Name:name,Descr:desc,InitScript:s,Controls:ControlsDesc};
+    var uiid=getQueryString("UIID");
+    if(uiid){
+        //update
+        var url=getUrlWithQueryString("/ui/");
+        $.jxUpdae(url,ui,function () {
+    	    alert("已保存");
+    	    window.location.href="uiList.html";
+        });
+    }
+    else{
+        //insert
+        var url="/ui/";
+        $.jxInsert(url,ui,function () {
+    	    alert("已保存");
+    	    window.location.href="uiList.html";
+        });
+    }
+
+    var url=getUrlWithQueryString("/ui/");
+}
+//
+//执行所录入的代码--python
+//
+function execPY(scrpit,dual,async) {
+
+    $("#div_output").html("");
+    //每秒获取一次输出
+    intervalState = setInterval("getState()",1000);
+    var url="/jxpy/exec";
+    if(async)
+    $.jxREST(url,{Script:scrpit},function () {
+    	if(dual)
+    	    dual();
+    	getState();
+        clearInterval(intervalState);
+    },function () {clearInterval(intervalState);});
+    else
+    $.jxRequest(url,{Script:scrpit},function () {
+    	if(dual)
+    	    dual();
+    	getState();
+        clearInterval(intervalState);
+    },function () {clearInterval(intervalState);});
+}
+//
+//停止脚本的运行
+//
+function stopPY() {
+	
+	clearInterval(intervalState);
+	var url="/jxpy/stop";
+	$.jxREST(url,null,function () {
+		alert("提交的脚本已停止执行！");
+	});
+}
+
+//
+//执行所录入的代码--python
+//
+function codingPY_ok() {
+	
+	//var  c1=$('#coding_editor').html();
+	var  c1=editor.getValue();
+		//alert(c1);
+		
+		 //c1=zip_reserveSpace(c1);	
+		//alert(c1);
+		c1=$.base64.btoa(c1,true);
+		//alert(c1);
+		execPY(c1,function(){
+    	    alert("代码已执行！");
+		},true);
+}
+
+//
+//执行所录入的代码--lua
+//
+function coding_ok() {
+	
+	var  c1=$('#coding_editor').html();
+		//alert(c1);
+		
+		 //c1=zip_reserveSpace(c1);
+		//alert(c1);
+		c1=$.base64.btoa(c1,true);
+		//alert(c1);
+    var url="/jxLua/exec";
+    $.jxREST(url,{Script:c1},function () {
+    	alert("代码已执行！");
+    });
+}
+
+
+//
+//清除之前所录入的代码
+//
+function coding_cancel() {
+	
+	$('#coding_editor').html("");
+}
+
+
+
+//控制器：应用
+jx.controller('controller_systemInfo', function ($scope,$http,$location) {	
+		var setName;			
+	    var url="/ui/getSystem/";
+    $.jxRequest(url,null, function (json) {
+    	$scope.CpuID=json.CpuID;
+    	$scope.VerDesc=json.VerDesc;
+    	//alert(json.UserName);
+    	  if(json.UserName&&json.UserName!=""){
+    	  		$scope.UserName=json.UserName;
+    	  		$scope.btnTip="修改密码";
+    	  		$scope.againTip="请再输入一次密码";
+    	  		setName=false;
+    	  		$scope.usernameNotDisp=false;
+    	  		$scope.inputUsernameNotDisp=true;
+    	  		$scope.againNotDisp=false;
+    	  }
+    	  	else {
+    	  		$scope.UserName="请输入用户名";
+    	  		$scope.btnTip="设置用户名密码";
+    	  		$scope.againTip="不需要输入";
+    	  		setName=true;
+    	  		$scope.usernameNotDisp=true;
+    	  		$scope.inputUsernameNotDisp=false;
+    	  		$scope.againNotDisp=true;
+    	  	}
+    	  	
+        $scope.setServerLoginInfo=function(){
+        	if(setName) {
+                if($scope.UserName.Trim()!="" && $scope.Password.Trim()!=""){
+                	var url="/ui/loginToServer";
+                	$.jxREST(url,{UserName:$scope.UserName,Passwd:$scope.Password}, function (json) {
+                		if(json.Result)
+                			alert("用户信息设置成功");
+                		else
+                			alert("用户信息设置失败");
+                	});
+                }else {
+                	alert("用户名密码不能为空！");
+                }
+        	}else{
+                if($scope.Password.Trim()!="" && $scope.Password==$scope.PwdAgain){
+                	var url="/ui/changePasswd";
+                	$.jxREST(url,{Passwd:$scope.Password}, function (json) {
+                		if(json.Result)
+                			alert("密码修改成功");
+                		else
+                			alert("密码修改失败");
+                	});
+                }else {
+                	alert("密码不能为空，且两次应输入一致！");
+                }
+        	}
+        };
+        
+        $scope.clearUserReg=function(){
+        	var url="/ui/clearUserReg";
+        	$.jxREST(url,null, function (json) {
+                			alert("用户信息已清除！");
+                			//window.location.reload();
+                	});
+        };
+        
+        $scope.updateVer=function(){
+        	var url="/ui/updateVer";
+        	$.jxREST(url,null, function (json) {
+                			$scope.VerDesc=json.VerDesc;
+                	});
+        };
+    	
+    });
+});
+
+//控制器：消息列表
+jx.controller('controller_msgList', function ($scope,$http,$location) {	
+		
+			var notRead=true;
+		
+		$scope.listMsg=function(){
+			
+	    var url="/ui/listMsg/";
+    $.jxRequest(url,{NotRead:notRead}, function (json) {
+    	
+    	$scope.list=json;
+
+    });
+			
+		};
+		
+		$scope.dispOldMsg=function(){
+			notRead=false;
+			$scope.listMsg();
+		};	
+    
+    
+        $scope.dispMsg=function(msg){
+        	$("#modal_msg").modal('show');
+        	
+      var re1 = /--br--/gmi;
+    	var str=msg.Descr.replace(re1,'')    	
+    	var s=$.base64.atob(str,true);
+    	var s2= markdown.toHTML(s);
+    	var re2 = /<a /gmi;
+    	var html= s2.replace(re2,'<a target="_blank" ');
+    	
+        	$("#msgContent").html(html);	
+        	
+        	var url="/ui/readMsg";
+			$.jxREST(url,{MsgID:msg.ID});
+			
+        };
+        
+        
+        $scope.delMsg=function(msgid){
+        	
+        	var url="/ui/delMsg";
+			$.jxRequest(url,{MsgID:msgid},function () {
+				$scope.listMsg();
+			});
+        	
+        };   
+        
+        $scope.listMsg(); 
+    
+});
+
+//
+//导航条
+//
+//通用的菜单选项
+jx.controller('controller_NavbarCtrl', function ($scope,$http,$location) {
+
+    var menulist=[
+        {
+            "label": "首页",
+            "href": "index.html",
+            "children": []
+        }, {
+            "label": "在线编程",
+            "href": "coding_py.html",
+            "children": []
+        }, {
+            "label": "界面列表",
+            "href": "uiList.html",
+            "children": []
+        }, {
+            "label": "界面设计",
+            "href": "uiEdit.html",
+            "children": []
+        }, {
+            "label": "摄像头",
+            "href": "#",
+            "children": [
+                {
+                    "label": "开摄像头",
+                    "href": "#",
+                    "func": "live_ms"
+                },
+                {
+                    "label": "关摄像头",
+                    "href": "#",
+                    "func": "stop_ms"
+                }]
+        }, {
+            "label": "系统",
+            "href": "#",
+            "children": [
+                {
+                    "label": "系统信息",
+                    "href": "systeminfo.html"
+                },
+                {
+                    "label": "消息列表",
+                    "href": "msgList.html"
+                }]
+        }];
+        var title="PythonPi";
+
+			//收集当前页面url中的session信息
+			checkSession();
+
+        $scope.navbar=menulist;
+        $scope.navTitle=title;
+        $scope.doFunc=function(funcName,modal,modalcontent,cancelcontent,okcontent,modalokcolor,modalokfunc){
+        	if(modal)
+        		openModal($scope,"modal_navbar",modalcontent,cancelcontent,okcontent,modalokcolor,modalokfunc);
+        	else
+        		//执行用户指定的函数
+    			callFunc(funcName);
+    	  };
+    	  
+    var sysmenulist=[
+        {
+            "label": "关闭ssh远程接入",
+            "href": "#",
+            "func": "stopSSH",
+            "btnColor": "success",
+            "icon": "stop"
+        }, {
+            "label": "允许ssh远程接入",
+            "href": "#",
+            "func": "startSSH",
+            "btnColor": "warning",
+            "icon": "link"
+        }, {
+            "label": "关机",
+            "href": "#",
+            "func": "null",//用不到
+            "btnColor": "danger",
+            "icon": "off",
+            "modal": true,
+            "modalContent": "系统将会被关闭！！你确定吗？",
+            "modalCancel": "那就算了吧",
+            "modalOK": "关就关吧！",
+            "modalOKColor": "danger",
+            "modalOKFunc": "shutdown"
+        }
+        ];
+
+        $scope.sysMenuList=sysmenulist;
+        $scope.openmodal=function (test) {
+        		$scope.modalContent="系统将会被关闭！！你确定吗？";
+        		$("#modal_navbar").modal('show');
+        }
+        
+        $scope.imghref="#";
+        $scope.imgsrc="/images/gallery/image-6.jpg";
+        
+	     var getNewMsgCount=function () {
+
+        	var url="/ui/getNewMsgCount";
+			$.jxRequest(url,null,function (json) {
+				//alert(typeof json.count);
+				if(json.count>0){
+        			$scope.noNewMsg=false;
+        			$scope.msgCount=json.count;
+				}else{
+        			$scope.noNewMsg=true;
+        			$scope.msgCount=0;
+				}
+			});
+	     };
+	     
+        $scope.noNewMsg=true;
+        
+        setInterval(function () {
+        	$scope.$apply(getNewMsgCount);
+        },15*60000);
+        //},3000);
+        
+        getNewMsgCount();
+
+});
+
+
+//打开对话框
+function openModal($scope,mid,conten,cancelcontent,okcontent,okcolor,okfunc) {	
+	$scope.modalContent=conten;
+	$scope.modalOKColor=okcolor;
+	$scope.modalCancel=cancelcontent;
+	$scope.modalOK=okcontent;
+	$scope.modalOKFunc=okfunc;
+	$("#"+mid).modal('show');
+}
+
+
+//控制器：ui界面列表
+jx.controller('controller_uiList', function ($scope,$http,$location) {				
+	    var url="/ui/list/";
+    $.jxRequest(url,null, function (json) {
+            var href="uiEdit.html";
+            var href2="uiRun.html";
+            var length = json.length;
+            //alert(length);
+            for (var i=0; i < length; i++) {
+    //alert($.toJSON(json[i]));
+                json[i].href=getUrlWithQueryStringAndID(href,json[i].ID,"UIID");
+                json[i].href2=getUrlWithQueryStringAndID(href2,json[i].ID,"UIID");
+                //alert(json[i].href)
+            }
+            $scope.list=json;
+    });
+});
+
+
+//控制器：课程列表
+jx.controller('controller_courseList', function ($scope,$http,$location) {				
+	    var url="/course/listCourse/";
+    $.jxRequest(url,null, function (json) {
+    	
+        var href="courseware_list.html";
+        var length = json.length;
+        //alert(length);
+        for (var i=0; i < length; i++) {
+            json[i].href=getUrlWithQueryStringAndID(href,json[i].ID,"courseID");
+            //if(json[i].Missions)
+            //	json[i].MissionState="btn-danger";
+            //alert(json[i].href)
+        }
+        
+        $scope.list=json;
+        $scope.courseUpdate=function(id){
+        	//用户点击列表后，执行跳转
+    		//window.location.href=getUrlWithQueryStringAndID("/coding.html",id,"CodingID");
+    		alert("目前暂无更新");
+    };
+    });
+});
+
+//控制器：课件列表
+jx.controller('controller_coursewareList', function ($scope,$http,$location) {				
+	    var url=getUrlWithQueryString("/course/listCourseWare/");
+    $.jxRequest(url,null, function (json) {
+    	
+        var href="course_play.html";
+        var length = json.length;
+        //alert(length);
+        for (var i=0; i < length; i++) {
+            json[i].href=getUrlWithQueryStringAndID(href,json[i].ID,"coursewareID");
+            //if(json[i].Missions)
+            //	json[i].MissionState="btn-danger";
+            //alert(json[i].href)
+        }
+        
+        $scope.list=json;
+        
+    });
+});
+
+//控制器：显示课件第一页
+jx.controller('controller_coursePlay', function ($scope,$http,$location) {				
+	getCourseWare(1);
+});
