@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1">
     <!-- 上述3个meta标签*必须*放在最前面，任何其他内容都*必须*跟随其后！ -->
-    <title>界面编辑</title>
+    <title>界面运行</title>
 
     <!-- Bootstrap -->
     <link rel="stylesheet" href="/bower_components/bootstrap/dist/css/bootstrap.min.css">
@@ -90,120 +90,53 @@
 </div>
 
 </nav>
-<!-- 模态框（Modal） -->
-<div class="modal fade" id="modal_coding" tabindex="-1" role="dialog"
-     aria-labelledby="myModalLabel" aria-hidden="true" style="position:absolute;z-index:9999;">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <button type="button" class="close"
-                        data-dismiss="modal" aria-hidden="true">
-                    &times;
-                </button>
-                <h4 class="modal-title" id="myModalLabel">
-                    代码编辑
-                </h4>
-            </div>
-            <div id="ui_Edit_editor" style="height:400px;"></div>
-
-        </div>
-        <div class="modal-footer">
-            <button type="button" class="btn btn-default"
-                    data-dismiss="modal">关闭
-            </button>
-            <button type="button" class="btn btn-primary" onclick="ui_Edit_coding_Commit()" >
-                提交更改
-            </button>
-        </div>
-    </div><!-- /.modal-content -->
-</div><!-- /.modal -->
 
 
+<!-- 主工作区 -->
 <div class="container">
-        <div class="row">
-            <div class="col-sm-1">
-            </div>
-
-            <div class="col-sm-10">
-                <div class="btn-toolbar">
-                    <div class="btn-group">
-                        <div class="nav-search">
-                            <span class="input-icon">
-                              <input type="text" placeholder="请输入界面的名字" class="nav-search-input" id="ui_Name" autocomplete="off" />
-                              <input type="text" placeholder="请输入界面的说明" class="nav-search-input" id="ui_Descr" autocomplete="off" />
-                            </span>
-                        </div>
-                    </div>
-                    <div class="btn-group">
-                        <a href="#" class="btn btn-grey" onclick="uiEdit_Save()">
-                            <i class="glyphicon glyphicon-floppy-disk"></i>
-                            保存
-                        </a>
-                    </div>
-                    <div class="btn-group">
-                        <a href="#" class="btn btn-pink" onclick="uiEdit_AddControl_Text()">
-                            <i class="glyphicon glyphicon-plus"></i>
-                            添加文本控件
-                        </a>
-                        <a href="#" class="btn btn-pink" onclick="uiEdit_AddControl_Button()">
-                            <i class="glyphicon glyphicon-plus"></i>
-                            添加按钮控件
-                        </a>
-                        <a href="#" class="btn btn-pink" onclick="uiEdit_AddControl_Light()">
-                            <i class="glyphicon glyphicon-plus"></i>
-                            添加灯泡控件
-                        </a>
-                        <a href="#" class="btn btn-pink" onclick="uiEdit_AddControl_Init()">
-                            <i class="glyphicon glyphicon-plus"></i>
-                            添加初始化脚本
-                        </a>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-sm-1">
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-sm-1">
-            </div>
-            <!-- 控件属性 -->
-            <div class="col-sm-10">
-                <div class="btn-toolbar">
-                    <div class="btn-group">
-                        <div class="nav-search">
-                            <br>
-                            <span class="input-icon">控件顶部位置:
-                              <input type="text" style="width:100px;" placeholder="控件顶部位置" class="nav-search-input" id="ui_Control_Top" autocomplete="off" />控件左侧位置：
-                              <input type="text" style="width:100px;" placeholder="控件左侧位置" class="nav-search-input" id="ui_Control_Left" autocomplete="off" />
-                            </span>                            <span class="input-icon">控件文字:
-                              <input type="text" style="width:130px;" placeholder="控件文字" class="nav-search-input" id="ui_Control_Text" autocomplete="off" /><span id="span_FontSize">文字字号</span>：
-                              <input type="text" style="width:130px;" placeholder="1号最大，6号最小" class="nav-search-input" id="ui_Control_FontSize" autocomplete="off" />
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-sm-1">
-            </div>
+    <!-- 工具条 -->
+    <!--
+    <div class="row">
+        <div class="col-sm-1">
         </div>
 
-    <!-- 主工作区 -->
+        <div class="col-sm-3">
+            <div class="btn-toolbar">
+                <div class="btn-group">
+
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-7">输出结果：
+            <div id="div_output">
+
+            </div>
+        </div>
+        <div class="col-sm-1">
+        </div>
+    </div>
+    -->
+    <br>
+    <br>
+
     <div class="row">
     <div class="col-sm-1">
     </div> <!-- 左侧 -->
 
     <div class="col-sm-10">
-        <div id="div_main" style="position:absolute;width:800px;height:600px;border:1px solid #000;">
+        <div id="div_main" style="position:absolute;width:800px;height:600px;">
 
+
+        </div>
+
+
+    </div>
+
+        <div class="col-sm-1"><!-- 右侧 -->
         </div>
     </div>
 
-    <div class="col-sm-1"><!-- 右侧 -->
-    </div> 
 
-    </div> <!-- row -->
 
     </div> <!-- /container -->
 
@@ -211,8 +144,7 @@
     <footer class="footer navbar-fixed-bottom">
       <div class="container">
         <p class="text-muted">作者：Andrew Xu mail:<a href="mailto:support@pythonpi.top">support@pythonpi.top</a>
-        <a href="http://115.29.52.95/forum.php" target="_blank">PythonPi论坛</a></p>
-        <a href="https://item.taobao.com/item.htm?id=542708981171" target="_blank">购买PythonPi</a></p>
+        <a href="https://item.taobao.com/item.htm?spm=a230r.1.14.1.4lYPJp&id=539026148762&ns=1&abbucket=12#detail" target="_blank">购买PythonPi</a></p>
       </div>
     </footer>
 
@@ -234,8 +166,7 @@
 <script src="/js/ace-elements.min.js"></script>
 <script src="/js/ace.min.js"></script>
 
-		<script src="/js/ace/ace.js"></script>
-		
+
 <script src="/js/jquery.json-2.4.min.js"></script>
 <script src="/js/JXCommon.js"></script>
 <script src="/js/jxCanvas.js"></script>
@@ -244,19 +175,12 @@
 <script src="/js/system.js"></script>
 <script src="/js/app.js"></script>
 
+
     <script type="text/javascript">
 
       window.onload = function(){
         //checkSession();
-//dispACEEditor("ui_Edit_editor");
-editor=dispCodeEditor_ace("ui_Edit_editor","python");
-
-uiEdit_setEvent_attrUpdate("ui_Control_Top");
-uiEdit_setEvent_attrUpdate("ui_Control_Left");
-uiEdit_setEvent_attrUpdate("ui_Control_Text");
-uiEdit_setEvent_attrUpdate("ui_Control_FontSize");
-        dispUI();
-
+        RunUI();
       }
 
     </script>

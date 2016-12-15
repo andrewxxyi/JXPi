@@ -16,6 +16,7 @@ function exec(devname,cmd,channel,lockname,inverserchannelid,delaysecond)
 			return "已加锁："..lockname
 		end
 	end
+	
 	--这是由于现在很多受控设备其实不是智能前端，只是一个提供了开关按钮的呆设备，为了确保操作意图的
 	--准确实现，这里是首先将反向的（如准备开，则必须首先切断关）控制取消，否则就会出现开关同时给出信号
 	--的情况，呆设备肯定会彻底呆住的

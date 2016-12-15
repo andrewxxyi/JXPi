@@ -660,16 +660,6 @@ jx.controller('controller_NavbarCtrl', function ($scope,$http,$location) {
             "href": "#",
             "children": [
                 {
-                    "label": "开启REST跟踪",
-                    "href": "#",
-                    "func": "startRESTLogs"
-                },
-                {
-                    "label": "关闭REST跟踪",
-                    "href": "#",
-                    "func": "stopRESTLogs"
-                },
-                {
                     "label": "系统信息",
                     "href": "systeminfo.html"
                 },

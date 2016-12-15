@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1">
     <!-- 上述3个meta标签*必须*放在最前面，任何其他内容都*必须*跟随其后！ -->
-    <title>编程Pi</title>
+    <title>登录到服务器</title>
 
     <!-- Bootstrap -->
     <link rel="stylesheet" href="/bower_components/bootstrap/dist/css/bootstrap.min.css">
@@ -18,7 +18,7 @@
     <![endif]-->
   </head>
   <body  ng-app="jx" style="padding-bottom:70px;">
-
+  
 <nav class="navbar navbar-default" ng-controller="controller_NavbarCtrl">
   <div class="container-fluid">
     <!-- Brand and toggle get grouped for better mobile display -->
@@ -46,17 +46,14 @@
           </ul>
         </li>
       </ul>
-        <a href="{{imghref}}" target="_blank"><img src="{{imgsrc}}" width="300" height="50" /></a>
 
+        <a href="{{imghref}}" target="_blank"><img src="{{imgsrc}}" width="300" height="50" /></a>
       <ul class="nav navbar-nav navbar-right">
-      
-      <li  ng-hide="noNewMsg"><a href="msgList.html"><i class="glyphicon glyphicon-envelope"></i>
-								新邮件<span class="badge" style="background-color:#FF0000">{{msgCount}}</span>
-							</a></li>
         <li ng-repeat="sm in sysMenuList" class="dropdown">
           <a class="btn btn-{{sm.btnColor}}" href="{{ sm.href }}" 
           ng-click="doFunc(sm.func,sm.modal,sm.modalContent,sm.modalCancel,sm.modalOK,sm.modalOKColor,sm.modalOKFunc)">
           <i class="glyphicon glyphicon-{{sm.icon}}"></i>{{ sm.label }}</a>
+        </li>
       </ul>
 
     </div><!-- /.navbar-collapse -->
@@ -77,42 +74,86 @@
          </div>
          <div class="modal-footer">
             <button type="button" class="btn btn-default" 
-               data-dismiss="modal">{{modalCancel}}
+               data-dismiss="modal">取消
             </button>
             <button type="button" class="btn btn-{{modalOKColor}}" ng-click="doFunc(modalOKFunc)" 
                data-dismiss="modal">
-               {{modalOK}}
+               确认
             </button>
          </div>
       </div><!-- /.modal-content -->
 </div><!-- /.modal -->
 </div>
-
 </nav>
 
     <div class="container">
-
+    
+<!-- 工具条 -->
     <div class="row">
     <div class="col-sm-1">
     </div>
-        <div class="col-sm-10">
-            <h1>PythonPi是运行于树莓派之上支持python在线编程的智能控制示教平台。具有在线编程、在线学习、web界面可视化设计、web界面运行等功能</h1>
+
+    <div class="col-sm-3">
+        <div class="btn-toolbar">
+                      <div class="btn-group">  
+                     <a href="#" class="btn btn-app btn-danger" onclick="stopPY()">
+                        <i class="glyphicon glyphicon-stop"></i>
+                        停止
+                      </a>        
+                      <a class="btn btn-app btn-warning" data-toggle="modal" href="#modal_cancel" >
+                        <i class="glyphicon glyphicon-remove"></i>
+                        清除
+                      </a>
+                     <a href="#" class="btn btn-app btn-primary" onclick="codingPY_ok()">
+                        <i class="glyphicon glyphicon-play"></i>
+                        执行
+                      </a>            
+                      </div>               
+        </div>
+    </div>
+        <div class="col-sm-7">输出结果：
+            <div id="div_output">
+
+            </div>
         </div>
     <div class="col-sm-1">
     </div> 
-    </div> 
+    </div>
+    <br>
+    <br>
+
+
+<!-- 主工作区 -->
+    <div class="row">
+    <div class="col-sm-1">
+    </div>
+    <div class="col-sm-10">
+
+        <h2 class="form-signin-heading">设置PythonPi课程服务器上的用户名/密码</h2>
+        <label for="login_name" class="sr-only">用户名</label>
+        <input type="email" id="username" class="form-control" placeholder="用户名" required autofocus>
+        <P>
+        <P>
+        <label for="login_passwd" class="sr-only">密码</label>
+        <input type="password" id="passwd" class="form-control" placeholder="密码" required>
+        <P>
+        <button type="button" class="btn btn-lg btn-primary" onclick="setServerLoginInfo()">设置</button>    
+        
+    </div>
+								</div>
+    <div class="col-sm-1">
+    </div>
+    </div> <!-- row -->
 
     </div> <!-- /container -->
 
 
     <footer class="footer navbar-fixed-bottom">
       <div class="container">
-        <p class="text-muted">作者：Andrew Xu mail:<a href="mailto:support@pythonpi.top">support@pythonpi.top</a>
-        <a href="http://115.29.52.95/forum.php" target="_blank">PythonPi论坛</a></p>
-        <a href="https://item.taobao.com/item.htm?id=542708981171" target="_blank">购买PythonPi</a></p>
+        <p class="text-muted">作者：Andrew Xu mail:<a href="mailto:andrew@ijingxi.cn">andrew@ijingxi.cn</a>
+        <a href="https://item.taobao.com/item.htm?spm=a230r.1.14.1.4lYPJp&id=539026148762&ns=1&abbucket=12#detail" target="_blank">购买PythonPi</a></p>
       </div>
     </footer>
-
 
 <script src="/bower_components/jquery/dist/jquery.min.js"></script>
 <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
@@ -120,6 +161,20 @@
 <script src="/bower_components/angular-route/angular-route.min.js"></script>
 <script src="/bower_components/angular-bootstrap/ui-bootstrap-tpls.min.js"></script>
 <script src="/bower_components/jquery.base64.js/jquery.base64.js"></script>
+
+		<script src="/js/ace-extra.min.js"></script>
+
+		<script src="/js/jquery-ui-1.10.3.custom.min.js"></script>
+		<script src="/js/jquery.ui.touch-punch.min.js"></script>
+		<script src="/js/markdown.js"></script>
+		<script src="/js/jquery.hotkeys.min.js"></script>
+		<script src="/js/bootstrap-wysiwyg.min.js"></script>
+		<script src="/js/bootbox.min.js"></script>
+		<script src="/js/ace-elements.min.js"></script>
+		<script src="/js/ace.min.js"></script>
+
+		<script src="/js/ace/ace.js"></script>
+
 <script src="/js/jquery.json-2.4.min.js"></script>
 <script src="/js/JXCommon.js"></script>
 
@@ -129,9 +184,10 @@
     <script type="text/javascript">
 
       window.onload = function(){
-        //checkSession();
+            
+//dispACEEditor("coding_editor");
+editor=dispCodeEditor_ace("coding_editor","python");
 
-        
       }
 
 

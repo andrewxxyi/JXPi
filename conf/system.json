@@ -1,3 +1,2 @@
-{"system":{"FrontPollingInterval":60,"HttpAccessLua":true,"NoLogin":true,"NodeMCUPort":0,"WebServerPort":10002,"ipDev":"eth0","myName":"JXPi","myNameIsID":true,"vDepServerPort":0},
-"msg":{"MsgServerIP":"127.0.0.1"}
+{"system":{"FrontPollingInterval":60,"HttpAccessLua":true,"NoLogin":true,"NodeMCUPort":0,"WebServerPort":10002,"ipDev":"eth0","myName":"JXPi","myNameIsID":true,"vDepServerPort":0}
 }
